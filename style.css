@@ -194,3 +194,5 @@ html,body{max-width:100%;overflow-x:hidden}
 @media(max-width:760px){
  .pix-settings-grid,.form-grid.two{grid-template-columns:1fr}.distribution-preview{grid-template-columns:repeat(2,minmax(0,1fr))}.prize-config-row{grid-template-columns:40px 1fr}.prize-config-row input:last-child{grid-column:2}.prize-strip,.prize-board{grid-template-columns:1fr}.quota-distribution-table{max-height:360px}
 }
+
+.admin-finance-only{display:none!important}.is-admin .admin-finance-only{display:block!important}.is-admin .kpi-grid.admin-finance-only{display:grid!important}.two-col:has(.admin-finance-only[style*="display: none"]){grid-template-columns:1fr}
