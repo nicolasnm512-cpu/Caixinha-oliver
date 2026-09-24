@@ -170,11 +170,11 @@
         <div class="pix-pay-value">${brl.format(Number(amount))}</div>
         <div class="pix-pay-key"><small>Chave Pix da caixinha</small><b>${safe(settings.pix_key)}</b></div>
         <label>Pix Copia e Cola<textarea id="pixCopyCode" rows="5" readonly>${safe(code)}</textarea></label>
-        <button id="copyPixBtn" class="primary-btn" type="button">Copiar Pix</button>
+        <button id="copyRafflePixBtn" class="primary-btn" type="button">Copiar Pix</button>
         <button id="goReceiptBtn" class="outline-btn" type="button">Já paguei • Enviar comprovante</button>
         <p class="pix-pay-note">O valor é preenchido automaticamente. Após o pagamento, envie o comprovante para a administração confirmar.</p>
       </div>`);
-    $('#copyPixBtn').addEventListener('click',async()=>{
+    $('#copyRafflePixBtn').addEventListener('click',async()=>{
       await navigator.clipboard.writeText(code);
       toast('Pix copiado.');
     });
