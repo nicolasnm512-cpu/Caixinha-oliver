@@ -300,6 +300,31 @@
     </main>
   </div>
 
+  <button id="chatbotFab" class="chatbot-fab hidden" type="button" aria-label="Abrir assistente">
+    <span>💬</span><b id="chatbotUnread" class="chatbot-unread hidden">0</b>
+  </button>
+  <section id="chatbotPanel" class="chatbot-panel hidden" aria-label="Assistente Oliver">
+    <div class="chatbot-head">
+      <div><strong>Oliver Assistente</strong><span>Dúvidas da sua caixinha</span></div>
+      <button id="chatbotClose" class="chatbot-close" type="button">×</button>
+    </div>
+    <div id="chatbotMessages" class="chatbot-messages">
+      <div class="chat-msg bot">Olá! Posso ajudar com cota, Pix, empréstimo, limite, juros, parcelas, comprovantes e sorteios.</div>
+    </div>
+    <div id="chatbotQuick" class="chatbot-quick">
+      <button type="button">Minha cota</button>
+      <button type="button">Meu limite</button>
+      <button type="button">Próxima parcela</button>
+      <button type="button">Sorteios</button>
+      <button type="button">Chave Pix</button>
+    </div>
+    <form id="chatbotForm" class="chatbot-form">
+      <input id="chatbotInput" maxlength="600" placeholder="Digite sua dúvida..." autocomplete="off" />
+      <button type="submit">Enviar</button>
+    </form>
+    <button id="chatbotEscalate" class="chatbot-escalate" type="button">Falar com a administração</button>
+  </section>
+
   <div id="modal" class="modal hidden"><div class="modal-card"><button id="closeModal" class="modal-close">×</button><div id="modalContent"></div></div></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
   <script src="/config.js"></script>
