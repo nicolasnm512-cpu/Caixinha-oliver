@@ -280,6 +280,22 @@
           </form>
           <div id="adminTransactions" class="table-wrap"></div>
         </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>Agente Financeiro Oliver</h3>
+              <p>Recebe os lançamentos enviados no chat, registra o histórico e só movimenta o caixa automaticamente quando o pagamento, entrada ou saída estiver confirmado.</p>
+            </div>
+            <span class="badge success">Ativo</span>
+          </div>
+          <div class="agent-stats">
+            <div><small>Processados</small><b id="agentProcessed">0</b></div>
+            <div><small>Em revisão</small><b id="agentReview">0</b></div>
+            <div><small>Pendentes / não pagos</small><b id="agentUnpaid">0</b></div>
+          </div>
+          <div id="agentEventsTable" class="table-wrap"></div>
+        </article>
       </section>
     </main>
   </div>
