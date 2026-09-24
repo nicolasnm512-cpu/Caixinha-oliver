@@ -327,7 +327,7 @@
       const remainder=100%Math.max(1,quota.shares);
 
       openModal(`<div class="raffle-create-v2">
-        <div class="panel-head"><div><span class="eyebrow">NOVA RIFA</span><h3>Rifa automática • 100 números</h3><p>Os 100 números serão distribuídos automaticamente entre todas as cotas ativas.</p></div></div>
+        <div class="panel-head"><div><span class="eyebrow">NOVA RIFA</span><h3>Rifa automática • 100 números</h3><p>Os 100 números serão distribuídos automaticamente e de forma equilibrada entre todas as cotas ativas. O cotista não escolhe os números.</p></div></div>
 
         <div class="distribution-preview">
           <div><small>Cotistas ativos</small><b>${quota.rows.length}</b></div>
@@ -353,8 +353,8 @@
           <div class="prize-config full-span">
             <h4>Premiação</h4>
             <div class="prize-config-row first"><span>1º</span><input id="qrP1Label" placeholder="Ex.: R$ 500,00 / TV / prêmio" required><input id="qrP1Value" type="number" min="0" step="0.01" placeholder="Valor opcional"></div>
-            <div class="prize-config-row second"><span>2º</span><input id="qrP2Label" placeholder="2º prêmio"><input id="qrP2Value" type="number" min="0" step="0.01" placeholder="Valor opcional"></div>
-            <div class="prize-config-row third"><span>3º</span><input id="qrP3Label" placeholder="3º prêmio"><input id="qrP3Value" type="number" min="0" step="0.01" placeholder="Valor opcional"></div>
+            <div class="prize-config-row second"><span>2º</span><input id="qrP2Label" placeholder="2º prêmio" required><input id="qrP2Value" type="number" min="0" step="0.01" placeholder="Valor opcional"></div>
+            <div class="prize-config-row third"><span>3º</span><input id="qrP3Label" placeholder="3º prêmio" required><input id="qrP3Value" type="number" min="0" step="0.01" placeholder="Valor opcional"></div>
           </div>
 
           <div class="raffle-total-preview full-span">
