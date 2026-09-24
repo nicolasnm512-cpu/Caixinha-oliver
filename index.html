@@ -40,6 +40,28 @@
 </div>
   </section>
 
+  <section id="firstAccessView" class="login-shell hidden">
+    <div class="login-brand">
+      <div class="brand-icon">C20</div>
+      <div><b>OLIVER Caixinha</b><small>Atualização obrigatória de cadastro</small></div>
+    </div>
+    <div class="login-card first-access-card">
+      <span class="eyebrow">PRIMEIRO ACESSO</span>
+      <h1>Atualize seu cadastro</h1>
+      <p>Confirme seus dados e crie uma nova senha pessoal antes de acessar o painel.</p>
+      <form id="firstAccessForm" class="form-grid single">
+        <label>Nome completo<input id="firstAccessName" autocomplete="name" required /></label>
+        <label>E-mail de acesso<input id="firstAccessEmail" type="email" disabled /></label>
+        <label>Telefone (opcional)<input id="firstAccessPhone" type="tel" autocomplete="tel" /></label>
+        <label>Nova senha<input id="firstAccessPassword" type="password" minlength="8" autocomplete="new-password" required /></label>
+        <label>Confirmar nova senha<input id="firstAccessPasswordConfirm" type="password" minlength="8" autocomplete="new-password" required /></label>
+        <button class="primary-btn" type="submit">Salvar e continuar</button>
+        <button id="firstAccessLogoutBtn" class="outline-btn" type="button">Sair</button>
+      </form>
+      <div class="first-access-security">A senha provisória deixa de valer após a atualização.</div>
+    </div>
+  </section>
+
   <section id="termsView" class="terms-shell hidden" aria-modal="true" role="dialog" aria-labelledby="termsTitle">
     <div class="terms-card">
       <div class="terms-head">
@@ -225,7 +247,7 @@
       </section>
 
       <section id="members" class="page admin-only">
-        <div class="panel-head standalone"><div><h3>20 cotistas</h3><p>Visão administrativa de contribuições e situação financeira.</p></div><button id="exportMembersBtn" class="outline-btn">Exportar CSV</button></div>
+        <div class="panel-head standalone"><div><h3>20 cotistas</h3><p>Visão administrativa de contribuições, histórico e situação de acesso.</p></div><div class="panel-actions"><button id="import2026Btn" class="outline-btn">Importar 8 cotistas 2026</button><button id="newMemberBtn" class="primary-btn small">Novo cotista</button><button id="exportMembersBtn" class="outline-btn">Exportar CSV</button></div></div>
         <article class="panel"><div id="membersTable" class="table-wrap"></div></article>
       </section>
 
