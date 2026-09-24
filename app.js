@@ -16,7 +16,7 @@ function toast(msg){const t=qs('#toast');t.textContent=msg;t.classList.add('show
 function formatDate(v){if(!v)return '—';const d=new Date(v.length===10?`${v}T12:00:00`:v);return d.toLocaleDateString('pt-BR')}
 function isAdmin(){return state.role==='admin'}
 function safe(v){return String(v??'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]))}
-function statusBadge(status){const map={confirmed:['success','Confirmado'],pending:['warning','Pendente'],under_review:['warning','Em análise'],approved:['success','Aprovado'],rejected:['danger','Recusado'],cancelled:['neutral','Cancelado'],open:['success','Aberto'],closed:['neutral','Encerrado'],draft:['neutral','Rascunho'],active:['info','Ativo'],paid:['success','Quitado'],late:['danger','Em atraso'],renegotiated:['warning','Renegociado']};const [c,l]=map[status]||['neutral',status||'—'];return `<span class="badge ${c}">${l}</span>`}
+function statusBadge(status){const map={confirmed:['success','Confirmado'],pending:['warning','Pendente'],under_review:['warning','Em análise'],approved:['success','Aprovado'],rejected:['danger','Recusado'],cancelled:['neutral','Cancelado'],open:['success','Aberto'],closed:['neutral','Encerrado'],draft:['neutral','Rascunho'],active:['info','Ativo'],paid:['success','Quitado'],late:['danger','Em atraso'],renegotiated:['warning','Renegociado'],recorded:['neutral','Registrado'],unpaid:['danger','Não pago'],review:['warning','Revisão'],void:['neutral','Ignorado']};const [c,l]=map[status]||['neutral',status||'—'];return `<span class="badge ${c}">${l}</span>`}
 function showLogin(){qs('#termsView').classList.add('hidden');qs('#firstAccessView').classList.add('hidden');qs('#appView').classList.add('hidden');qs('#loginView').classList.remove('hidden')}
 function showTerms(){qs('#loginView').classList.add('hidden');qs('#firstAccessView').classList.add('hidden');qs('#appView').classList.add('hidden');qs('#termsView').classList.remove('hidden');qs('#acceptTermsCheck').checked=false;qs('#acceptTermsBtn').disabled=true;qs('#acceptTermsBtn').classList.add('disabled-btn')}
 function showFirstAccess(){
@@ -203,6 +203,30 @@ qs('#import2026Btn').addEventListener('click',async()=>{
 window.toggleMemberAccess=async(id,active)=>{try{await callAdminUsers({action:'set_active',user_id:id,active});await renderMembers();toast(active?'Acesso ativado.':'Acesso desativado.')}catch(err){toast(err.message)}};
 window.resetMemberPassword=async(id)=>{const name=window.__membersById?.[id]?.full_name||'cotista';const password=prompt(`Nova senha provisória para ${name} (mínimo 8 caracteres):`,'Oliver@2026');if(!password)return;if(password.length<8){toast('Use ao menos 8 caracteres.');return}try{await callAdminUsers({action:'reset_password',user_id:id,password});await renderMembers();toast('Senha provisória redefinida. O cotista deverá trocá-la no próximo login.')}catch(err){toast(err.message)}};
 
+async function renderFinanceAgent(){
+  if(!isAdmin())return;
+  const {data:events,error}=await db.from('finance_agent_events').select('id,created_at,event_date,reference_month,event_type,amount,status,description,member_id,profiles!finance_agent_events_member_id_fkey(full_name)').order('created_at',{ascending:false}).limit(40);
+  if(error){qs('#agentEventsTable').innerHTML='<div class="stack-item"><p>Não foi possível carregar o agente.</p></div>';return}
+  const rows=events||[];
+  qs('#agentProcessed').textContent=String(rows.filter(e=>e.status==='confirmed'||e.status==='recorded').length);
+  qs('#agentReview').textContent=String(rows.filter(e=>e.status==='review').length);
+  qs('#agentUnpaid').textContent=String(rows.filter(e=>e.status==='unpaid').length);
+  const typeLabel={contribution:'Cota',raffle:'Rifa',trip:'Passeio',loan_release:'Empréstimo',loan_payment:'Pgto. empréstimo',interest:'Juros',prize:'Prêmio',income:'Entrada',expense:'Saída',other:'Outro'};
+  qs('#agentEventsTable').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Cotista</th><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Status</th><th>Ação</th></tr></thead><tbody>${rows.map(e=>`<tr><td>${formatDate(e.event_date||e.reference_month||e.created_at)}</td><td>${safe(e.profiles?.full_name||'Geral')}</td><td>${safe(typeLabel[e.event_type]||e.event_type)}</td><td>${safe(e.description)}</td><td>${e.amount==null?'—':brl.format(Number(e.amount))}</td><td>${statusBadge(e.status)}</td><td>${e.status==='review'?`<div class="row-actions"><button class="primary-btn tiny" onclick="confirmAgentEvent('${e.id}')">Confirmar</button><button class="outline-btn tiny" onclick="ignoreAgentEvent('${e.id}')">Ignorar</button></div>`:'—'}</td></tr>`).join('')}</tbody></table>`;
+}
+window.confirmAgentEvent=async id=>{
+  const {error}=await db.from('finance_agent_events').update({status:'confirmed',updated_at:new Date().toISOString()}).eq('id',id);
+  if(error){toast(error.message);return}
+  await Promise.all([renderFinanceAgent(),renderAdmin(),renderDashboard()]);
+  toast('Lançamento confirmado e aplicado.');
+};
+window.ignoreAgentEvent=async id=>{
+  const {error}=await db.from('finance_agent_events').update({status:'void',updated_at:new Date().toISOString()}).eq('id',id);
+  if(error){toast(error.message);return}
+  await renderFinanceAgent();
+  toast('Lançamento ignorado sem alterar o caixa.');
+};
+
 async function renderAdmin(){if(!isAdmin())return;qs('#settingShare').value=state.settings?.monthly_share_amount??100;qs('#settingRate').value=state.settings?.operation_interest_rate??20;qs('#settingPix').value=state.settings?.pix_key??'';qs('#settingName').value=state.settings?.fund_name??'OLIVER Caixinha';qs('#settingCreditBonus').value=state.settings?.credit_bonus_percent??25;qs('#settingMaxInstallments').value=state.settings?.max_installments??3;const {data:reqs}=await db.from('loan_requests').select('*,profiles!loan_requests_member_id_fkey(full_name)').in('status',['pending','under_review']).order('requested_at');qs('#pendingCount').textContent=`${(reqs||[]).length} pendente${(reqs||[]).length===1?'':'s'}`;qs('#adminRequests').innerHTML=(reqs||[]).map(r=>`<div class="stack-item"><div><h4>${safe(r.profiles?.full_name||'Cotista')} • ${brl.format(Number(r.requested_amount))}</h4><p>${r.requested_installments} parcela(s) • ${safe(r.purpose)}${r.beneficiary_type==='third_party'?` • Terceiro: ${safe(r.third_party_name)}`:''}</p></div><div><button class="primary-btn small" onclick="approveRequest('${r.id}')">Aprovar</button> <button class="outline-btn" onclick="rejectRequest('${r.id}')">Recusar</button></div></div>`).join('')||'<div class="stack-item"><p>Nenhuma solicitação aguardando análise.</p></div>';const {data:tx}=await db.from('fund_transactions').select('*').order('transaction_date',{ascending:false}).limit(40);qs('#adminTransactions').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th>Valor</th></tr></thead><tbody>${(tx||[]).map(t=>`<tr><td>${formatDate(t.transaction_date)}</td><td>${t.direction==='income'?'Entrada':'Saída'}</td><td>${safe(t.category)}</td><td>${safe(t.description)}</td><td class="amount ${t.direction==='income'?'in':'out'}">${t.direction==='income'?'+':'−'} ${brl.format(Number(t.amount))}</td></tr>`).join('')}</tbody></table>`}
 window.approveRequest=async id=>{const def=new Date();def.setMonth(def.getMonth()+1);const due=prompt('Primeiro vencimento (AAAA-MM-DD):',def.toISOString().slice(0,10));if(!due)return;const {error}=await db.rpc('admin_approve_loan_request',{p_request_id:id,p_first_due_date:due});if(error){toast(error.message);return}await renderAll();toast('Empréstimo aprovado e parcelas criadas.')};
 window.rejectRequest=async id=>{const reason=prompt('Motivo da recusa:')||'';const {error}=await db.rpc('admin_reject_loan_request',{p_request_id:id,p_reason:reason});if(error){toast(error.message);return}await renderAll();toast('Solicitação recusada.')};
@@ -213,7 +237,7 @@ qs('#newActivityBtn').addEventListener('click',()=>{if(!isAdmin()){toast('Soment
 function openModal(html){qs('#modalContent').innerHTML=html;qs('#modal').classList.remove('hidden');setTimeout(()=>{const f=qs('#activityForm');if(f)f.addEventListener('submit',async e=>{e.preventDefault();const {error}=await db.from('activities').insert({type:qs('#actType').value,title:qs('#actTitle').value.trim(),description:qs('#actDesc').value.trim()||null,unit_price:Number(qs('#actPrice').value),target_amount:Number(qs('#actGoal').value||0),status:'open',created_by:state.user.id});if(error){toast(error.message);return}closeModal();await renderActivities();toast('Atividade criada.')})},0)}
 function closeModal(){qs('#modal').classList.add('hidden')}qs('#closeModal').addEventListener('click',closeModal);qs('#modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
 
-async function renderAll(){await Promise.all([renderDashboard(),renderRequests(),renderLoans(),renderPayments(),renderActivities()]);if(isAdmin())await Promise.all([renderMembers(),renderAdmin()]);updateSimulation()}
+async function renderAll(){await Promise.all([renderDashboard(),renderRequests(),renderLoans(),renderPayments(),renderActivities()]);if(isAdmin())await Promise.all([renderMembers(),renderAdmin(),renderFinanceAgent()]);updateSimulation()}
 
 db.auth.onAuthStateChange((_event,session)=>{if(!session&&state.session){state.session=null;state.user=null;state.profile=null;showLogin()}});
 loadCore();
