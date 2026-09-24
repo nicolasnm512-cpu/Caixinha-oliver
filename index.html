@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0e172a" />
+  <title>OLIVER Caixinha • Gestão dos Cotistas</title>
+  <meta name="description" content="Sistema interno de gestão financeira para 20 cotistas." />
+  <link rel="stylesheet" href="/style.css" />
+
+</head>
+<body>
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <section id="loginView" class="login-shell">
+    <div class="login-brand">
+      <div class="brand-mark">C20</div>
+      <div>
+        <strong>OLIVER Caixinha</strong>
+        <span>Gestão financeira dos cotistas</span>
+      </div>
+    </div>
+    <div class="login-card">
+      <div class="eyebrow">ACESSO RESTRITO</div>
+      <h1>Entre no seu painel</h1>
+      <p>Cada cotista acessa somente seus dados individuais de empréstimos, parcelas e comprovantes.</p>
+      <form id="loginForm" class="form-grid single">
+        <label>E-mail
+          <input id="loginEmail" type="email" autocomplete="username" required />
+        </label>
+        <label>Senha
+          <div class="password-wrap">
+            <input id="loginPassword" type="password" autocomplete="current-password" required />
+            <button class="link-btn" id="togglePassword" type="button">Mostrar</button>
+          </div>
+        </label>
+        <button class="primary-btn" type="submit">Entrar no sistema</button>
+      </form>
+      <div style="margin-top:18px;text-align:center;font-size:12px;color:#667085">Acesso exclusivo aos cotistas cadastrados. <a href="/setup.html" style="color:#315bc6;font-weight:800;text-decoration:none">Configuração inicial</a></div>
+</div>
+  </section>
+
+  <section id="termsView" class="terms-shell hidden" aria-modal="true" role="dialog" aria-labelledby="termsTitle">
+    <div class="terms-card">
+      <div class="terms-head">
+        <div class="eyebrow">PRIMEIRO ACESSO • REGULAMENTO V1.0</div>
+        <h2 id="termsTitle">Termos de participação da OLIVER Caixinha</h2>
+        <p>Leia as condições de participação, privacidade e responsabilidade antes de acessar seu painel.</p>
+      </div>
+      <div class="terms-body">
+        <div class="terms-grid">
+          <div class="terms-stat"><span>Cota mensal</span><b>R$ 100,00</b></div>
+          <div class="terms-stat"><span>Limite-base</span><b>Contribuições + 25%</b></div>
+          <div class="terms-stat"><span>Parcelamento máximo</span><b>3x</b></div>
+          <div class="terms-stat"><span>Taxa vigente</span><b>20% por operação</b></div>
+        </div>
+        <h3>1. Participação e acesso</h3>
+        <p>A OLIVER Caixinha é uma plataforma fechada para até 20 cotistas previamente cadastrados pela administração. Cada usuário possui login individual e acessa somente seus próprios dados financeiros. Informações coletivas, como passeios, sorteios e demonstrativos gerais, poderão ser compartilhadas entre os participantes.</p>
+        <h3>2. Cotas e limite de crédito</h3>
+        <p>A cota mensal inicial é de R$ 100,00 por cota. O limite individual de crédito será calculado sobre o total de contribuições elegíveis efetivamente pagas, acrescido de 25%, descontando valores de crédito já utilizados. Exemplo: R$ 500,00 pagos geram limite-base de R$ 625,00, sujeito à análise e à disponibilidade de caixa.</p>
+        <h3>3. Análise de crédito</h3>
+        <p>Toda solicitação passa por análise. Serão considerados o pagamento das cotas, compromissos de passeios e sorteios, histórico de empréstimos, atrasos, quantidade de cotas, limite disponível e capacidade financeira do fundo. O limite calculado não representa aprovação automática.</p>
+        <h3>4. Empréstimos, juros e parcelamento</h3>
+        <p>Os empréstimos poderão ser parcelados em até 3 vezes. A taxa vigente desta versão é de 20% sobre a operação contratada. Antes da confirmação, a plataforma apresentará valor solicitado, juros, total a pagar, quantidade de parcelas e vencimentos.</p>
+        <h3>5. Atrasos e renegociação</h3>
+        <p>Em caso de atraso, o débito será identificado e poderá seguir para renegociação formal. O saldo renegociado deverá ser registrado como nova operação com histórico preservado, sem duplicação da dívida anterior.</p>
+        <h3>6. Valores destinados a terceiros</h3>
+        <p>Quando um cotista solicitar crédito para repassar a um terceiro, o cotista solicitante continuará responsável pela obrigação perante a OLIVER Caixinha. O eventual não pagamento pelo terceiro não elimina nem transfere a responsabilidade do cotista.</p>
+        <h3>7. Garantias</h3>
+        <p>Quando aplicável e formalmente aprovado, a administração poderá registrar bem ou garantia vinculada à operação, com documentação, ciência das partes e histórico próprio.</p>
+        <h3>8. Pagamentos e comprovantes</h3>
+        <p>Os pagamentos serão realizados pela chave Pix ou QR Code informado na plataforma. Comprovantes de cota, empréstimo, passeio, sorteio e demais obrigações deverão ser anexados. O envio do comprovante não significa confirmação automática: o pagamento ficará pendente até a conferência da administração.</p>
+        <h3>9. Privacidade</h3>
+        <p>Os dados individuais de empréstimos, parcelas, solicitações e comprovantes não serão disponibilizados aos demais cotistas. A administração terá acesso somente para operar, conferir e auditar a caixinha. O histórico financeiro será preservado mesmo quando um acesso for desativado.</p>
+        <h3>10. Sorteios e eventos</h3>
+        <p>Sorteios, passeios e outros eventos serão registrados separadamente, com valores, participantes, arrecadações e prestação de contas. A terminologia utilizada na plataforma não substitui a necessidade de observar as regras legais aplicáveis à forma concreta de cada atividade.</p>
+        <h3>11. Resultado anual</h3>
+        <p>Ao final do período, a administração poderá fechar o demonstrativo anual com contribuições, receitas, juros efetivamente recebidos, despesas, inadimplência, eventos e saldo disponível. A forma de distribuição do resultado deverá seguir o regulamento vigente aprovado pelos participantes.</p>
+        <h3>12. Atualizações do regulamento</h3>
+        <p>Cada versão relevante do regulamento será registrada. Quando houver atualização, o cotista poderá ser solicitado a aceitar novamente a versão vigente antes de continuar usando a plataforma.</p>
+      </div>
+      <div class="terms-foot">
+        <label class="terms-check"><input id="acceptTermsCheck" type="checkbox" /> <span>Declaro que li, compreendi e aceito os Termos de Participação, o Regulamento e as condições de privacidade da OLIVER Caixinha.</span></label>
+        <div class="terms-actions"><button id="termsLogoutBtn" class="outline-btn" type="button">Sair</button><button id="acceptTermsBtn" class="primary-btn disabled-btn" type="button" disabled>Aceitar e entrar</button></div>
+      </div>
+    </div>
+  </section>
+
+  <div id="appView" class="app-shell hidden">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark small">C20</div>
+        <div><strong>OLIVER Caixinha</strong><span>Área dos cotistas</span></div>
+      </div>
+      <nav id="mainNav">
+        <button class="nav-item active" data-page="dashboard"><span>◫</span>Visão geral</button>
+        <button class="nav-item" data-page="requests"><span>✦</span>Central de solicitações</button>
+        <button class="nav-item" data-page="loans"><span>↗</span>Empréstimos</button>
+        <button class="nav-item" data-page="payments"><span>✓</span>Pagamentos e comprovantes</button>
+        <button class="nav-item" data-page="activities"><span>★</span>Sorteios e passeios</button>
+        <button class="nav-item admin-only" data-page="members"><span>◎</span>Cotistas</button>
+        <button class="nav-item admin-only" data-page="admin"><span>⚙</span>Administração</button>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="mini-user"><div class="avatar" id="sidebarAvatar">C1</div><div><b id="sidebarName">Cotista 01</b><small id="sidebarRole">Cotista</small></div></div>
+        <button id="logoutBtn" class="ghost-btn full">Sair</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <div class="mobile-brand">OLIVER Caixinha</div>
+          <h2 id="pageTitle">Visão geral</h2>
+          <p id="pageSubtitle">Acompanhe a saúde da caixinha e sua situação individual.</p>
+        </div>
+        <div class="top-actions">
+          <span class="status-dot"><i></i> Dados atualizados</span>
+          <button class="outline-btn" data-page-jump="payments">Pagar agora</button>
+        </div>
+      </header>
+
+      <section id="dashboard" class="page active-page">
+        <div class="hero-card">
+          <div>
+            <div class="eyebrow light">RESUMO DA CAIXINHA</div>
+            <h3>Controle coletivo, visão individual.</h3>
+            <p>As informações gerais são compartilhadas. Empréstimos, parcelas e comprovantes ficam restritos ao próprio cotista e à administração.</p>
+          </div>
+          <div class="hero-balance"><span>Saldo atual</span><strong id="fundBalance">R$ 0,00</strong><small id="balanceUpdated">Atualizado agora</small></div>
+        </div>
+
+        <div class="kpi-grid">
+          <article class="kpi"><div class="kpi-label">Cotistas ativos</div><strong id="kpiMembers">20/20</strong><span>Base mensal de R$ 100</span></article>
+          <article class="kpi"><div class="kpi-label">Cotas recebidas no mês</div><strong id="kpiContributions">R$ 0,00</strong><span id="kpiContributionStatus">0 de 20 pagos</span></article>
+          <article class="kpi"><div class="kpi-label">Juros gerados</div><strong id="kpiInterest">R$ 0,00</strong><span>Retorno para a caixinha</span></article>
+          <article class="kpi"><div class="kpi-label">Empréstimos em aberto</div><strong id="kpiLoans">R$ 0,00</strong><span id="kpiLoanCount">0 contratos ativos</span></article>
+        </div>
+
+        <div class="two-col">
+          <article class="panel">
+            <div class="panel-head"><div><h3>Minha situação</h3><p>Resumo individual do mês.</p></div><span class="badge success" id="myStatusBadge">Em dia</span></div>
+            <div class="personal-summary">
+              <div><span>Cota mensal</span><b id="myMonthlyShare">R$ 100,00</b><small id="myContributionState">Paga</small></div>
+              <div><span>Empréstimo atual</span><b id="myLoanBalance">R$ 0,00</b><small id="myLoanState">Sem contrato ativo</small></div>
+              <div><span>Próximo vencimento</span><b id="myNextDue">—</b><small id="myNextAmount">Nenhuma parcela</small></div>
+            </div>
+            <button class="secondary-btn" data-page-jump="payments">Ver pagamentos</button>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><h3>Movimentações recentes</h3><p>Entradas e saídas gerais da caixinha.</p></div><button class="link-btn" data-page-jump="admin">Ver extrato</button></div>
+            <div id="recentTransactions" class="transaction-list"></div>
+          </article>
+        </div>
+
+        <article class="panel">
+          <div class="panel-head"><div><h3>Evolução da caixinha</h3><p>Saldo consolidado dos últimos 6 meses.</p></div><span class="badge neutral">Demonstrativo</span></div>
+          <div id="chart" class="bar-chart"></div>
+        </article>
+      </section>
+
+      <section id="requests" class="page">
+        <div class="page-grid">
+          <article class="panel">
+            <div class="panel-head"><div><h3>Solicitar empréstimo</h3><p>Envie para análise da administração.</p></div><span class="badge warning">Sujeito à aprovação</span></div>
+            <div class="credit-box" id="creditAnalysisBox"></div>
+            <form id="loanRequestForm" class="form-grid">
+              <label>Valor solicitado<input id="requestAmount" type="number" min="100" step="50" placeholder="Ex.: 500" required /></label>
+              <label>Número de parcelas<select id="requestInstallments"><option>1</option><option>2</option><option>3</option></select></label>
+              <label>Destino do crédito<select id="requestBeneficiary"><option value="self">Uso do próprio cotista</option><option value="third_party">Repasse para terceiro</option></select></label>
+              <label>Terceiro beneficiário<input id="requestThirdPartyName" type="text" placeholder="Preencher quando houver terceiro" /></label>
+              <label class="full-span">Finalidade<textarea id="requestPurpose" rows="4" placeholder="Explique brevemente o motivo da solicitação" required></textarea></label>
+              <div class="third-party-note full-span">Se o valor for destinado a terceiro, o cotista solicitante continuará integralmente responsável pela operação perante a OLIVER Caixinha.</div>
+              <div class="simulation full-span" id="loanSimulation"></div>
+              <button class="primary-btn full-span" type="submit">Enviar para análise de crédito</button>
+            </form>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><h3>Minhas solicitações</h3><p>Acompanhe o andamento.</p></div></div>
+            <div id="requestList" class="stack-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="loans" class="page">
+        <div class="kpi-grid mini">
+          <article class="kpi"><div class="kpi-label">Saldo devedor</div><strong id="loanTotalDebt">R$ 0,00</strong><span>Seu total em aberto</span></article>
+          <article class="kpi"><div class="kpi-label">Taxa atual</div><strong id="loanRate">20,00% por operação</strong><span>Configurável pela administração</span></article>
+          <article class="kpi"><div class="kpi-label">Parcelas restantes</div><strong id="loanRemaining">0</strong><span>Do contrato ativo</span></article>
+          <article class="kpi"><div class="kpi-label">Juros estimados</div><strong id="loanInterestEstimate">R$ 0,00</strong><span>Sobre a operação contratada</span></article>
+        </div>
+        <article class="panel">
+          <div class="panel-head"><div><h3>Meus empréstimos</h3><p>Detalhamento por contrato.</p></div><button class="primary-btn small" data-page-jump="requests">Nova solicitação</button></div>
+          <div id="loanCards" class="loan-cards"></div>
+        </article>
+      </section>
+
+      <section id="payments" class="page">
+        <div class="page-grid payment-layout">
+          <article class="panel pix-card">
+            <div class="panel-head"><div><h3>Pagamento via Pix</h3><p>Use o QR Code oficial da caixinha.</p></div><span class="badge success">Pix</span></div>
+            <div class="qr-wrap"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAXIAAAFyAQAAAADAX2ykAAACc0lEQVR4nO2bTWrkMBBGX40NvZRv0EexbxbmSHMD6yg5QEBaNth8s5Ds7h4SmIDjiYbSwrTab/FBofqVTXxmxR+fwsF555133nnnnf+It7r6/ZcZsBrkbT+dqMf5g/lRkpQA6KQ5SGZDJ5voJEl65r9aj/MH87meUM3hZowJGNNqmgEz68/W4/wxfP/H3spfeUBxSLLx17l6nP9aXtKCTXSyl1ezf67H+WP4IGkGiHYR8Xoz4nUp7yQtZ+tx/lA+mpnZAPaSgPH1ovKAdU+nT9Tj/EE8el5QEubtwI7Pr+fvpt/5v+FtymZEM9McFswGimkh9xCH1evfNvmaP8cBjPDWGxiQe0QegHAzQef1b5t88c+MWij51d7fqA65mLZT8dTunxvjH+PvHKTa2tgaVlICKXUef9vk6/klbAaduVsVGFMnzWHB7dswrzn3lK7zFFS6zhUIC0Anm07U4/xR/NafDG8mssE4r73i9WYiCCMPaHw1dI4e54/lH/KrmmQFqQbcVCthKXl+1Sj/lF/RiTHVR43EWijR2e3bIs/dtFvXqh5dCFvNNMrzq6Z5e9GCTblH0s2Iww6E2rM8VY/zx/J1dHRdMBt2W+YeyGb36f931e/8h2vzz8CY4KFhtdfEZXn8bZH/eH60Jdaqkdjjb7v8/f5k2U75IpvK/cn+Hf6r9Th/FP9wTGuZm6qTfjy/Pl9ond/vT/4cKAUR0epMmDGtfn+jTf6d+5PdAqw9hARx6haLA96f/G/41SBfpPl+J9rnC63zoRZJW320Wu1U6ub+uWF+m/+W1e21UJ0qPI4bPL9qkDf/vtt555133nnnT+d/A/w399wVrih9AAAAAElFTkSuQmCC" alt="QR Code Pix demonstrativo" /><div><span>Chave Pix</span><b id="pixKeyText">Configurar na administração</b><small>O valor será identificado pelo comprovante anexado.</small></div></div>
+            <div class="pix-copy"><code id="pixPayload">PIX • Configure a chave da caixinha</code><button id="copyPixBtn" class="outline-btn">Copiar</button></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><h3>Anexar comprovante</h3><p>Envie o comprovante para conferência.</p></div></div>
+            <form id="receiptForm" class="form-grid">
+              <label>Referente a<select id="receiptType"><option value="contribution">Cota mensal</option><option value="loan">Parcela de empréstimo</option><option value="draw">Sorteio</option><option value="trip">Passeio</option><option value="other">Outro</option></select></label>
+              <label>Valor pago<input id="receiptAmount" type="number" min="1" step="0.01" placeholder="100,00" required /></label>
+              <label class="full-span">Comprovante<input id="receiptFile" type="file" accept="image/*,.pdf" required /></label>
+              <label class="full-span">Observação<input id="receiptNote" type="text" placeholder="Opcional" /></label>
+              <button class="primary-btn full-span" type="submit">Enviar para conferência</button>
+            </form>
+          </article>
+        </div>
+        <article class="panel">
+          <div class="panel-head"><div><h3>Histórico de pagamentos</h3><p>Seus lançamentos e comprovantes.</p></div></div>
+          <div id="paymentHistory" class="table-wrap"></div>
+        </article>
+      </section>
+
+      <section id="activities" class="page">
+        <div class="panel-head standalone"><div><h3>Sorteios e passeios</h3><p>Atividades coletivas, arrecadações e adesões.</p></div><button class="primary-btn small admin-only" id="newActivityBtn">Nova atividade</button></div>
+        <div id="activityCards" class="activity-grid"></div>
+      </section>
+
+      <section id="members" class="page admin-only">
+        <div class="panel-head standalone"><div><h3>20 cotistas</h3><p>Visão administrativa de contribuições e situação financeira.</p></div><button id="exportMembersBtn" class="outline-btn">Exportar CSV</button></div>
+        <article class="panel"><div id="membersTable" class="table-wrap"></div></article>
+      </section>
+
+      <section id="admin" class="page admin-only">
+        <div class="page-grid">
+          <article class="panel">
+            <div class="panel-head"><div><h3>Configurações da caixinha</h3><p>Parâmetros usados nos cálculos e cobranças.</p></div></div>
+            <form id="settingsForm" class="form-grid">
+              <label>Valor da cota mensal<input id="settingShare" type="number" min="1" step="0.01" /></label>
+              <label>Taxa de juros por operação<input id="settingRate" type="number" min="0" step="0.01" /></label>
+              <label>Chave Pix<input id="settingPix" type="text" placeholder="CPF, telefone, e-mail ou aleatória" /></label>
+              <label>Nome da caixinha<input id="settingName" type="text" /></label><label>Limite adicional (%)<input id="settingCreditBonus" type="number" min="0" step="1" /></label><label>Máximo de parcelas<input id="settingMaxInstallments" type="number" min="1" max="3" step="1" /></label>
+              <button class="primary-btn full-span" type="submit">Salvar configurações</button>
+            </form>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><h3>Solicitações pendentes</h3><p>Aprovar ou recusar empréstimos.</p></div><span class="badge warning" id="pendingCount">0 pendentes</span></div>
+            <div id="adminRequests" class="stack-list"></div>
+          </article>
+        </div>
+        <article class="panel">
+          <div class="panel-head"><div><h3>Lançamentos da caixinha</h3><p>Registre entradas, saídas e ajustes administrativos.</p></div></div>
+          <form id="transactionForm" class="inline-form">
+            <select id="transactionType"><option value="income">Entrada</option><option value="expense">Saída</option></select>
+            <select id="transactionCategory"><option value="contribution">Cotas</option><option value="interest">Juros</option><option value="draw">Sorteio</option><option value="trip">Passeio</option><option value="loan_release">Liberação de empréstimo</option><option value="loan_payment">Pagamento de empréstimo</option><option value="expense">Despesa</option><option value="adjustment">Ajuste</option><option value="other">Outros</option></select>
+            <input id="transactionDescription" type="text" placeholder="Descrição" required />
+            <input id="transactionAmount" type="number" min="0.01" step="0.01" placeholder="Valor" required />
+            <button class="primary-btn small" type="submit">Lançar</button>
+          </form>
+          <div id="adminTransactions" class="table-wrap"></div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <div id="modal" class="modal hidden"><div class="modal-card"><button id="closeModal" class="modal-close">×</button><div id="modalContent"></div></div></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
+  <script src="/config.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
