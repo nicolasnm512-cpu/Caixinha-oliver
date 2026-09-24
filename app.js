@@ -92,36 +92,52 @@ const pageMeta={dashboard:['Visão geral','Acompanhe a saúde da caixinha e sua 
 function navigate(page){if((page==='members'||page==='admin')&&!isAdmin()){toast('Área exclusiva da administração.');return}qsa('.page').forEach(p=>p.classList.remove('active-page'));qs(`#${page}`)?.classList.add('active-page');qsa('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page===page));qs('#pageTitle').textContent=pageMeta[page]?.[0]||'OLIVER Caixinha';qs('#pageSubtitle').textContent=pageMeta[page]?.[1]||'';window.scrollTo({top:0,behavior:'smooth'})}
 
 async function renderDashboard(){
-  const [{data:summary},{data:credit},{data:myContribution},{data:loans},{data:tx}] = await Promise.all([
-    db.from('shared_fund_summary').select('*').maybeSingle(),
+  const baseQueries=[
     db.from('member_credit_summary').select('*').eq('member_id',state.user.id).maybeSingle(),
     db.from('monthly_contributions').select('*').eq('member_id',state.user.id).eq('reference_month',currentMonthRef).maybeSingle(),
-    db.from('loans').select('id,outstanding_amount,status').in('status',['active','late']),
-    db.from('fund_transactions').select('*').eq('visibility','shared').order('transaction_date',{ascending:false}).limit(8)
-  ]);
+    db.from('loans').select('id,outstanding_amount,status').in('status',['active','late'])
+  ];
+  const [{data:credit},{data:myContribution},{data:loans}] = await Promise.all(baseQueries);
   state.credit=credit;
-  qs('#fundBalance').textContent=brl.format(Number(summary?.cash_balance||0));
+
   if(isAdmin()){
-    const {count}=await db.from('profiles').select('id',{count:'exact',head:true}).eq('active',true).not('cotista_number','is',null);
+    const [{data:summary},{data:tx},{count},{data:monthContrib}] = await Promise.all([
+      db.from('shared_fund_summary').select('*').maybeSingle(),
+      db.from('fund_transactions').select('*').order('transaction_date',{ascending:false}).limit(8),
+      db.from('profiles').select('id',{count:'exact',head:true}).eq('active',true).not('cotista_number','is',null),
+      db.from('monthly_contributions').select('amount_paid,status').eq('reference_month',currentMonthRef)
+    ]);
+
+    qs('#fundBalance').textContent=brl.format(Number(summary?.cash_balance||0));
     qs('#kpiMembers').textContent=`${count||0}/20`;
-    const {data:monthContrib}=await db.from('monthly_contributions').select('amount_paid,status').eq('reference_month',currentMonthRef);
     const confirmed=(monthContrib||[]).filter(x=>x.status==='confirmed');
     qs('#kpiContributions').textContent=brl.format(confirmed.reduce((s,x)=>s+Number(x.amount_paid||0),0));
     qs('#kpiContributionStatus').textContent=`${confirmed.length} cotista(s) confirmado(s)`;
-  }else{
-    qs('#kpiMembers').textContent='Grupo fechado';
-    qs('#kpiContributions').textContent=brl.format(Number(myContribution?.amount_paid||0));
-    qs('#kpiContributionStatus').textContent=myContribution?.status==='confirmed'?'Sua cota está em dia':'Sua cota está pendente';
+    qs('#kpiInterest').textContent=brl.format(Number(summary?.interest_received||0));
+    const totalDebt=(loans||[]).reduce((s,l)=>s+Number(l.outstanding_amount||0),0);
+    qs('#kpiLoans').textContent=brl.format(totalDebt);
+    qs('#kpiLoanCount').textContent=`${(loans||[]).length} contrato(s) ativo(s)`;
+
+    qs('#recentTransactions').innerHTML=(tx||[]).map(t=>`<div class="transaction"><div class="transaction-meta"><div class="tx-icon">${t.direction==='income'?'↙':'↗'}</div><div><b>${safe(t.description)}</b><small>${formatDate(t.transaction_date)} • ${safe(t.category)}</small></div></div><b class="amount ${t.direction==='income'?'in':'out'}">${t.direction==='income'?'+':'−'} ${brl.format(Number(t.amount))}</b></div>`).join('')||'<div class="stack-item"><p>Nenhuma movimentação registrada.</p></div>';
+
+    const months=[];for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push({key:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,label:d.toLocaleDateString('pt-BR',{month:'short'}),value:0})}
+    (tx||[]).forEach(t=>{const m=months.find(x=>t.transaction_date?.startsWith(x.key));if(m)m.value+=t.direction==='income'?Number(t.amount):-Number(t.amount)});
+    const max=Math.max(1,...months.map(x=>Math.abs(x.value)));
+    qs('#chart').innerHTML=months.map(m=>`<div class="bar-col"><div class="bar" data-value="${brl.format(m.value)}" style="height:${Math.max(12,Math.round(Math.abs(m.value)/max*170))}px"></div><span>${m.label}</span></div>`).join('');
   }
-  qs('#kpiInterest').textContent=brl.format(Number(summary?.interest_received||0));
-  const debt=(loans||[]).reduce((s,l)=>s+Number(l.outstanding_amount||0),0);qs('#kpiLoans').textContent=brl.format(debt);qs('#kpiLoanCount').textContent=`${(loans||[]).length} contrato(s) ativo(s)`;
-  qs('#myMonthlyShare').textContent=brl.format(Number(state.settings?.monthly_share_amount||100)*(Number(state.profile?.share_count)||1));qs('#myContributionState').textContent=myContribution?.status==='confirmed'?'Paga neste mês':'Pendente neste mês';qs('#myStatusBadge').className=`badge ${myContribution?.status==='confirmed'?'success':'warning'}`;qs('#myStatusBadge').textContent=myContribution?.status==='confirmed'?'Em dia':'Pendente';
-  const myDebt=(loans||[]).reduce((s,l)=>s+Number(l.outstanding_amount||0),0);qs('#myLoanBalance').textContent=brl.format(myDebt);qs('#myLoanState').textContent=(loans||[]).length?`${loans.length} contrato(s)`:'Sem empréstimos ativos';
+
+  qs('#myMonthlyShare').textContent=brl.format(Number(state.settings?.monthly_share_amount||100)*(Number(state.profile?.share_count)||1));
+  qs('#myContributionState').textContent=myContribution?.status==='confirmed'?'Paga neste mês':'Pendente neste mês';
+  qs('#myStatusBadge').className=`badge ${myContribution?.status==='confirmed'?'success':'warning'}`;
+  qs('#myStatusBadge').textContent=myContribution?.status==='confirmed'?'Em dia':'Pendente';
+
+  const myDebt=(loans||[]).reduce((s,l)=>s+Number(l.outstanding_amount||0),0);
+  qs('#myLoanBalance').textContent=brl.format(myDebt);
+  qs('#myLoanState').textContent=(loans||[]).length?`${loans.length} contrato(s)`:'Sem empréstimos ativos';
+
   const {data:nextInst}=await db.from('loan_installments').select('due_date,total_amount,amount_paid,status,loan_id').eq('status','pending').order('due_date',{ascending:true}).limit(1).maybeSingle();
-  qs('#myNextDue').textContent=nextInst?formatDate(nextInst.due_date):'—';qs('#myNextAmount').textContent=nextInst?brl.format(Math.max(0,Number(nextInst.total_amount)-Number(nextInst.amount_paid||0))):'Sem parcela pendente';
-  qs('#recentTransactions').innerHTML=(tx||[]).map(t=>`<div class="transaction"><div class="transaction-meta"><div class="tx-icon">${t.direction==='income'?'↙':'↗'}</div><div><b>${safe(t.description)}</b><small>${formatDate(t.transaction_date)} • ${safe(t.category)}</small></div></div><b class="amount ${t.direction==='income'?'in':'out'}">${t.direction==='income'?'+':'−'} ${brl.format(Number(t.amount))}</b></div>`).join('')||'<div class="stack-item"><p>Nenhuma movimentação registrada.</p></div>';
-  const months=[];for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push({key:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,label:d.toLocaleDateString('pt-BR',{month:'short'}),value:0})}
-  (tx||[]).forEach(t=>{const m=months.find(x=>t.transaction_date?.startsWith(x.key));if(m)m.value+=t.direction==='income'?Number(t.amount):-Number(t.amount)});const max=Math.max(1,...months.map(x=>Math.abs(x.value)));qs('#chart').innerHTML=months.map(m=>`<div class="bar-col"><div class="bar" data-value="${brl.format(m.value)}" style="height:${Math.max(12,Math.round(Math.abs(m.value)/max*170))}px"></div><span>${m.label}</span></div>`).join('');
+  qs('#myNextDue').textContent=nextInst?formatDate(nextInst.due_date):'—';
+  qs('#myNextAmount').textContent=nextInst?brl.format(Math.max(0,Number(nextInst.total_amount)-Number(nextInst.amount_paid||0))):'Sem parcela pendente';
 }
 
 async function renderRequests(){
