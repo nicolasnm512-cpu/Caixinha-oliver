@@ -1,1 +1,47 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Configuração inicial • OLIVER Caixinha</title><style>body{margin:0;font-family:Inter,system-ui;background:#0b1324;color:#101828;min-height:100vh;display:grid;place-items:center;padding:20px}.card{width:min(460px,100%);background:#fff;border-radius:24px;padding:30px;box-shadow:0 30px 70px rgba(0,0,0,.35)}h1{margin:4px 0 8px;font-size:28px}p{color:#667085;line-height:1.5}.eyebrow{font-size:11px;font-weight:800;letter-spacing:.14em;color:#2f6bdd}label{display:grid;gap:7px;font-weight:700;font-size:13px;margin:14px 0}input{padding:12px 13px;border:1px solid #d8dee9;border-radius:11px;font:inherit}.btn{width:100%;border:0;background:#17305e;color:#fff;padding:13px;border-radius:11px;font-weight:800;cursor:pointer}.msg{margin-top:14px;font-size:13px}.ok{color:#12815a}.err{color:#b43d36}a{color:#315bc6;text-decoration:none;font-weight:700}</style></head><body><div class="card"><div class="eyebrow">CONFIGURAÇÃO ÚNICA</div><h1>Criar administrador</h1><p>Use esta tela apenas uma vez para criar o primeiro acesso administrativo da OLIVER Caixinha.</p><form id="f"><label>Nome completo<input id="name" required></label><label>E-mail<input id="email" type="email" required></label><label>Senha inicial<input id="password" type="password" minlength="8" required></label><label>Código de ativação<input id="token" required></label><button class="btn" type="submit">Criar administrador</button></form><div id="msg" class="msg"></div><p><a href="/">← Voltar ao login</a></p></div><script src="/config.js"></script><script>const f=document.querySelector('#f'),msg=document.querySelector('#msg');f.addEventListener('submit',async e=>{e.preventDefault();msg.textContent='Criando...';msg.className='msg';const r=await fetch(`${window.OLIVER_CONFIG.supabaseUrl}/functions/v1/bootstrap-admin`,{method:'POST',headers:{'Content-Type':'application/json','apikey':window.OLIVER_CONFIG.supabaseKey},body:JSON.stringify({token:token.value,email:email.value,password:password.value,full_name:name.value})});const j=await r.json().catch(()=>({error:'Resposta inválida.'}));if(!r.ok){msg.textContent=j.error||'Não foi possível criar o administrador.';msg.className='msg err';return}msg.textContent='Administrador criado. Você já pode voltar ao login.';msg.className='msg ok';f.reset()});</script></body></html>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Configuração inicial • OLIVER Caixinha</title><style>body{margin:0;font-family:Inter,system-ui;background:#0b1324;color:#101828;min-height:100vh;display:grid;place-items:center;padding:20px}.card{width:min(460px,100%);background:#fff;border-radius:24px;padding:30px;box-shadow:0 30px 70px rgba(0,0,0,.35)}h1{margin:4px 0 8px;font-size:28px}p{color:#667085;line-height:1.5}.eyebrow{font-size:11px;font-weight:800;letter-spacing:.14em;color:#2f6bdd}label{display:grid;gap:7px;font-weight:700;font-size:13px;margin:14px 0}input{padding:12px 13px;border:1px solid #d8dee9;border-radius:11px;font:inherit}.btn{width:100%;border:0;background:#17305e;color:#fff;padding:13px;border-radius:11px;font-weight:800;cursor:pointer}.msg{margin-top:14px;font-size:13px}.ok{color:#12815a}.err{color:#b43d36}a{color:#315bc6;text-decoration:none;font-weight:700}</style></head><body><div class="card"><div class="eyebrow">CONFIGURAÇÃO ÚNICA</div><h1>Criar administrador</h1><p>Use esta tela apenas uma vez para criar o primeiro acesso administrativo da OLIVER Caixinha.</p><form id="f"><label>Nome completo<input id="name" required></label><label>E-mail<input id="email" type="email" required></label><label>Senha inicial<input id="password" type="password" minlength="8" required></label><label>Código de ativação<input id="token" required></label><button class="btn" type="submit">Criar administrador</button></form><div id="msg" class="msg"></div><p><a href="/">← Voltar ao login</a></p></div><script src="/config.js"></script><script>
+const f=document.querySelector('#f');
+const msg=document.querySelector('#msg');
+const nameInput=document.querySelector('#name');
+const emailInput=document.querySelector('#email');
+const passwordInput=document.querySelector('#password');
+const tokenInput=document.querySelector('#token');
+
+f.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const payload={
+    token:tokenInput.value.trim(),
+    email:emailInput.value.trim().toLowerCase(),
+    password:passwordInput.value,
+    full_name:nameInput.value.trim()
+  };
+
+  if(!payload.token||!payload.email||!payload.password||!payload.full_name){
+    msg.textContent='Preencha todos os campos.';
+    msg.className='msg err';
+    return;
+  }
+
+  msg.textContent='Criando...';
+  msg.className='msg';
+
+  try{
+    const r=await fetch(`${window.OLIVER_CONFIG.supabaseUrl}/functions/v1/bootstrap-admin`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':window.OLIVER_CONFIG.supabaseKey},
+      body:JSON.stringify(payload)
+    });
+    const j=await r.json().catch(()=>({error:'Resposta inválida.'}));
+    if(!r.ok){
+      msg.textContent=j.error||'Não foi possível criar o administrador.';
+      msg.className='msg err';
+      return;
+    }
+    msg.textContent='Administrador criado. Você já pode voltar ao login.';
+    msg.className='msg ok';
+    f.reset();
+  }catch{
+    msg.textContent='Falha de conexão. Tente novamente.';
+    msg.className='msg err';
+  }
+});
+</script></body></html>
