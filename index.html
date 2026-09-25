@@ -177,6 +177,23 @@
           </article>
         </div>
 
+        <article class="panel member-only" id="annualBalancePanel">
+          <div class="panel-head">
+            <div><h3>Meu saldo para o fim do ano</h3><p>Acumulado atualizado conforme seus pagamentos e rendimentos.</p></div>
+            <span class="badge neutral" id="annualBalanceYear">—</span>
+          </div>
+          <div class="annual-balance-total">
+            <span>Estimativa acumulada até agora</span>
+            <strong id="annualBalanceTotal">R$ 0,00</strong>
+          </div>
+          <div class="annual-balance-grid">
+            <div><span>Cotas pagas</span><b id="annualContributions">R$ 0,00</b></div>
+            <div><span>10% dos juros dos seus empréstimos</span><b id="annualOwnInterestBonus">R$ 0,00</b></div>
+            <div><span>Sua parte dos juros coletivos</span><b id="annualCollectiveShare">R$ 0,00</b><small id="annualCollectivePercent">—</small></div>
+            <div><span>Passeios pagos</span><b id="annualTripsPaid">R$ 0,00</b><small id="annualTripReturnNote">Percentual de retorno ainda não configurado</small></div>
+          </div>
+        </article>
+
         <article class="panel admin-finance-only">
           <div class="panel-head"><div><h3>Evolução da caixinha</h3><p>Saldo consolidado dos últimos 6 meses.</p></div><span class="badge neutral">Demonstrativo</span></div>
           <div id="chart" class="bar-chart"></div>
@@ -231,6 +248,7 @@
             <form id="receiptForm" class="form-grid">
               <label>Referente a<select id="receiptType"><option value="contribution">Cota mensal</option><option value="loan">Parcela de empréstimo</option><option value="draw">Sorteio</option><option value="trip">Passeio</option><option value="other">Outro</option></select></label>
               <label>Valor pago<input id="receiptAmount" type="number" min="1" step="0.01" placeholder="100,00" required /></label>
+              <label id="receiptActivityLabel" class="full-span hidden">Referência<select id="receiptActivity"></select></label>
               <label class="full-span">Comprovante<input id="receiptFile" type="file" accept="image/*,.pdf" required /></label>
               <label class="full-span">Observação<input id="receiptNote" type="text" placeholder="Opcional" /></label>
               <button class="primary-btn full-span" type="submit">Enviar para conferência</button>
@@ -244,7 +262,7 @@
       </section>
 
       <section id="activities" class="page">
-        <div class="panel-head standalone"><div><h3>Rifas e passeios</h3><p>Rifas com 100 números distribuídos automaticamente por cota e demais atividades coletivas.</p></div><button class="primary-btn small admin-only" id="newActivityBtn">Nova rifa</button></div>
+        <div class="panel-head standalone"><div><h3>Rifas e passeios</h3><p>O cotista vê somente as próprias rifas, números e situação dos passeios.</p></div><div class="panel-actions admin-only"><button class="primary-btn small" id="newActivityBtn">Nova rifa</button><button class="outline-btn" id="newTripBtn">Novo passeio</button></div></div>
         <div id="activityCards" class="activity-grid"></div>
       </section>
 
