@@ -330,8 +330,13 @@ async function refreshReceiptReference(){
 }
 
 async function renderPayments(){
-  qs('#pixKeyText').textContent=state.settings?.pix_key||'Aguardando configuração';
-  qs('#pixPayload').textContent=state.settings?.pix_key||'Configure a chave Pix na administração';
+  qs('#pixKeyText').textContent=state.settings?.pix_key||'58.119.805/0001-39';
+  qs('#pixPayload').textContent=state.settings?.pix_base_payload||state.settings?.pix_key||'';
+  if(qs('#pixBank'))qs('#pixBank').textContent=state.settings?.bank_name||'Inter';
+  if(qs('#pixBankCode'))qs('#pixBankCode').textContent=state.settings?.bank_code||'077';
+  if(qs('#pixHolder'))qs('#pixHolder').textContent=state.settings?.pix_receiver_name||'Gabriela Lima Duarte';
+  if(qs('#pixAgency'))qs('#pixAgency').textContent=state.settings?.bank_agency||'0001';
+  if(qs('#pixAccount'))qs('#pixAccount').textContent=state.settings?.bank_account||'41655540-3';
   const q=db.from('payment_receipts').select('*').order('submitted_at',{ascending:false});
   if(!isAdmin())q.eq('member_id',state.user.id);
   const {data:rows}=await q;
@@ -340,7 +345,7 @@ async function renderPayments(){
 }
 
 qs('#receiptType').addEventListener('change',refreshReceiptReference);
-qs('#copyPixBtn').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(qs('#pixPayload').textContent);toast('Chave Pix copiada.')}catch{toast('Copie a chave exibida na tela.')}});
+qs('#copyPixBtn').addEventListener('click',async()=>{try{const value=qs('#pixPayload').textContent||state.settings?.pix_key||'';await navigator.clipboard.writeText(value);toast('Pix Copia e Cola copiado.')}catch{toast('Não foi possível copiar automaticamente.')}});
 
 qs('#receiptForm').addEventListener('submit',async e=>{
   e.preventDefault();
