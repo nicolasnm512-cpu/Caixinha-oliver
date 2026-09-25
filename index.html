@@ -319,6 +319,23 @@
           <div id="adminTransactions" class="table-wrap"></div>
         </article>
 
+        <div class="page-grid">
+          <article class="panel">
+            <div class="panel-head"><div><h3>Avisos aos cotistas</h3><p>Envie uma notificação para todos os cotistas ativos.</p></div></div>
+            <form id="broadcastForm" class="form-grid">
+              <label class="full-span">Título<input id="broadcastTitle" required placeholder="Ex.: Aviso importante"></label>
+              <label class="full-span">Mensagem<textarea id="broadcastMessage" rows="4" required></textarea></label>
+              <label>Tipo<select id="broadcastType"><option value="info">Informativo</option><option value="warning">Atenção</option><option value="success">Confirmação</option><option value="raffle">Rifa</option><option value="loan">Empréstimo</option></select></label>
+              <label>Levar para<select id="broadcastPage"><option value="">Nenhuma página</option><option value="payments">Pagamentos</option><option value="activities">Rifas e passeios</option><option value="requests">Solicitações</option><option value="loans">Empréstimos</option></select></label>
+              <button class="primary-btn full-span" type="submit">Enviar aviso</button>
+            </form>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><h3>Histórico do chatbot</h3><p>Últimas dúvidas enviadas pelos cotistas.</p></div></div>
+            <div id="chatbotAdminHistory" class="stack-list"></div>
+          </article>
+        </div>
+
         <article class="panel">
           <div class="panel-head">
             <div>
