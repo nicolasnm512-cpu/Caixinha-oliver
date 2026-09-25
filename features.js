@@ -207,71 +207,86 @@
   }
 
   window.renderActivities=async function(){
-    const {data:acts,error}=await db.from('activities').select('*,raffle_configs(*),raffle_prizes(*)').neq('status','draft').order('created_at',{ascending:false});
+    const {data:acts,error}=await db.from('activities')
+      .select('*,raffle_configs(*),raffle_prizes(*),trip_configs(*),trip_prizes(*)')
+      .neq('status','draft')
+      .order('created_at',{ascending:false});
     if(error){$('#activityCards').innerHTML='<div class="stack-item"><p>Não foi possível carregar as atividades.</p></div>';return}
 
-    let entries=[];
-    if((acts||[]).length){
-      const {data}=await db.from('activity_entries').select('*').in('activity_id',acts.map(a=>a.id));
+    let entries=[],tripSeats=[];
+    const ids=(acts||[]).map(a=>a.id);
+    const tripIds=(acts||[]).filter(a=>a.type==='trip').map(a=>a.id);
+    if(ids.length){
+      const {data}=await db.from('activity_entries').select('*').in('activity_id',ids);
       entries=data||[];
+    }
+    if(tripIds.length){
+      const {data}=await db.from('trip_seats').select('*').in('activity_id',tripIds).order('seat_number');
+      tripSeats=data||[];
     }
 
     $('#activityCards').innerHTML=(acts||[]).map(a=>{
-      const cfg=Array.isArray(a.raffle_configs)?a.raffle_configs[0]:a.raffle_configs;
-      const prizes=(a.raffle_prizes||[]).sort((x,y)=>x.prize_position-y.prize_position);
+      const raffleCfg=Array.isArray(a.raffle_configs)?a.raffle_configs[0]:a.raffle_configs;
+      const rafflePrizes=(a.raffle_prizes||[]).sort((x,y)=>x.prize_position-y.prize_position);
       const myEntry=entries.find(e=>e.activity_id===a.id&&e.member_id===state.user.id);
       const adminEntries=entries.filter(e=>e.activity_id===a.id);
       const paid=adminEntries.reduce((s,e)=>s+Number(e.amount_paid||0),0);
-      const prizesHtml=prizes.length?`<div class="prize-strip">${prizes.map(p=>`<div><span>${p.prize_position}º prêmio</span><b>${safe(p.prize_label)}</b>${p.prize_value!=null?`<small>${brl.format(Number(p.prize_value))}</small>`:''}</div>`).join('')}</div>`:'';
+      const prizesHtml=rafflePrizes.length?'<div class="prize-strip">'+rafflePrizes.map(p=>'<div><span>'+p.prize_position+'º prêmio</span><b>'+safe(p.prize_label)+'</b>'+(p.prize_value!=null?'<small>'+brl.format(Number(p.prize_value))+'</small>':'')+'</div>').join('')+'</div>':'';
 
-      if(a.type==='draw'&&cfg?.allocation_mode==='quota_equal'){
-        return `<article class="activity-card raffle-card-v2">
-          <div class="activity-cover sorteio"><span>RIFA • 100 NÚMEROS</span>${statusBadge(a.status)}</div>
-          <div class="activity-body">
-            <h4>${safe(a.title)}</h4><p>${safe(a.description||'')}</p>
-            ${prizesHtml}
-            <div class="activity-stats">
-              <div><span>Valor por número</span><b>${brl.format(Number(cfg.number_price))}</b></div>
-              <div><span>${isAdmin()?'Arrecadado':'Seu total'}</span><b>${brl.format(isAdmin()?paid:Number(myEntry?.amount_due||0))}</b></div>
-              <div><span>Distribuição</span><b>Por cota</b></div>
-            </div>
-            <button class="primary-btn raffle-open-btn" onclick="openQuotaRaffle('${a.id}')">${isAdmin()?'Gerenciar distribuição':'Ver meus números e pagar'}</button>
-          </div>
-        </article>`;
+      if(a.type==='draw'&&raffleCfg?.allocation_mode==='quota_equal'){
+        return '<article class="activity-card raffle-card-v2">'+
+          '<div class="activity-cover sorteio"><span>RIFA • 100 NÚMEROS</span>'+statusBadge(a.status)+'</div>'+
+          '<div class="activity-body"><h4>'+safe(a.title)+'</h4><p>'+safe(a.description||'')+'</p>'+
+          prizesHtml+
+          '<div class="activity-stats">'+
+            '<div><span>Valor por número</span><b>'+brl.format(Number(raffleCfg.number_price))+'</b></div>'+
+            '<div><span>'+(isAdmin()?'Arrecadado':'Seu total')+'</span><b>'+brl.format(isAdmin()?paid:Number(myEntry?.amount_due||0))+'</b></div>'+
+            '<div><span>Distribuição</span><b>Aleatória por cota</b></div>'+
+          '</div>'+
+          '<button class="primary-btn raffle-open-btn" onclick="openQuotaRaffle(\''+a.id+'\')">'+(isAdmin()?'Gerenciar rifa':'Ver meus números e pagar')+'</button>'+
+          '</div></article>';
       }
 
       if(a.type==='trip'){
-        const due=isAdmin()?Number(a.unit_price||0):Number(myEntry?.amount_due||a.unit_price||0);
+        const tripCfg=Array.isArray(a.trip_configs)?a.trip_configs[0]:a.trip_configs;
+        const tripPrizes=(a.trip_prizes||[]).sort((x,y)=>x.prize_position-y.prize_position);
+        const seats=tripSeats.filter(s=>s.activity_id===a.id);
+        const mySeats=seats.filter(s=>s.member_id===state.user.id);
+        const available=seats.filter(s=>s.status==='available').length;
+        const assigned=seats.filter(s=>s.member_id).length;
+        const paidSeats=seats.filter(s=>s.status==='paid').length;
+        const due=isAdmin()?Number(tripCfg?.seat_price||a.unit_price||0):Number(myEntry?.amount_due||0);
         const paidMine=Number(myEntry?.amount_paid||0);
         const remaining=Math.max(0,due-paidMine);
         const paidStatus=myEntry?.status==='confirmed';
         const eventText=a.event_at?new Date(a.event_at).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):(a.ends_at?formatDate(a.ends_at):'A definir');
-        const dueText=a.payment_due_date?formatDate(a.payment_due_date):'A definir';
-        const pendingCount=adminEntries.filter(e=>e.status!=='confirmed').length;
-        return `<article class="activity-card trip-card">
-          <div class="activity-cover passeio"><span>PASSEIO ${a.mandatory?'• OBRIGATÓRIO':''}</span>${statusBadge(a.status)}</div>
-          <div class="activity-body">
-            <h4>${safe(a.title)}</h4><p>${safe(a.description||'')}</p>
-            <div class="trip-details">
-              <div><span>Data e horário</span><b>${safe(eventText)}</b></div>
-              <div><span>Local</span><b>${safe(a.location||'A definir')}</b></div>
-              <div><span>Pagamento até</span><b>${safe(dueText)}</b></div>
-            </div>
-            <div class="activity-stats">
-              <div><span>Valor</span><b>${brl.format(Number(a.unit_price||0))}</b></div>
-              <div><span>${isAdmin()?'Arrecadado':'Pago'}</span><b>${brl.format(isAdmin()?paid:paidMine)}</b></div>
-              <div><span>${isAdmin()?'Pendentes':'Situação'}</span><b>${isAdmin()?pendingCount:(paidStatus?'Pago':'Pendente')}</b></div>
-            </div>
-            ${!isAdmin()&&!paidStatus?`<div class="mandatory-trip-note">Participação obrigatória. Se o saldo não for pago até ${safe(dueText)}, no dia seguinte ele passa para empréstimo com juros de 1% ao dia.</div><button class="primary-btn raffle-open-btn" onclick="payActivity('${a.id}','trip',${remaining})">Pagar ${brl.format(remaining)}</button>`:''}
-          </div>
-        </article>`;
+        const dueText=a.payment_due_date?formatDate(a.payment_due_date):'Aguardando definição';
+        const seatChips=!isAdmin()&&mySeats.length?'<div class="my-seat-preview">'+mySeats.map(s=>'<span>'+String(s.seat_number).padStart(2,'0')+'</span>').join('')+'</div>':'';
+        const tripPrizeHtml=tripPrizes.length?'<div class="trip-prize-mini">'+tripPrizes.map(p=>'<span><b>'+p.prize_position+'º</b> '+safe(p.prize_label)+(p.prize_value!=null?' • '+brl.format(Number(p.prize_value)):'')+'</span>').join('')+'</div>':'';
+
+        return '<article class="activity-card trip-card bus-trip-card">'+
+          '<div class="activity-cover passeio"><span>ÔNIBUS • PASSEIO</span>'+statusBadge(a.status)+'</div>'+
+          '<div class="activity-body">'+
+            '<h4>'+safe(a.title)+'</h4><p>'+safe(a.description||'')+'</p>'+
+            tripPrizeHtml+
+            '<div class="trip-details">'+
+              '<div><span>Data e horário</span><b>'+safe(eventText)+'</b></div>'+
+              '<div><span>Local / saída</span><b>'+safe(a.location||'A definir')+'</b></div>'+
+              '<div><span>Valor por assento</span><b>'+brl.format(Number(tripCfg?.seat_price||a.unit_price||0))+'</b></div>'+
+            '</div>'+
+            (isAdmin()
+              ?'<div class="activity-stats"><div><span>Poltronas</span><b>'+Number(tripCfg?.total_seats||seats.length)+'</b></div><div><span>Atribuídas</span><b>'+assigned+'</b></div><div><span>Disponíveis</span><b>'+available+'</b></div></div>'
+              :'<div class="activity-stats"><div><span>Suas poltronas</span><b>'+mySeats.length+'</b></div><div><span>Total</span><b>'+brl.format(due)+'</b></div><div><span>Situação</span><b>'+(paidStatus?'Pago':'Pendente')+'</b></div></div>')+
+            seatChips+
+            (!isAdmin()&&!paidStatus&&mySeats.length
+              ?'<div class="mandatory-trip-note">'+(a.payment_due_date?'Pagamento até '+safe(dueText)+'. Após o vencimento, no dia seguinte o saldo não pago vira empréstimo com juros de 1% ao dia.':'A administração ainda não definiu a data limite de pagamento.')+'</div>'
+              :'')+
+            '<button class="'+(isAdmin()?'outline-btn':'primary-btn')+' raffle-open-btn" onclick="openBusTrip(\''+a.id+'\')">'+(isAdmin()?'Gerenciar poltronas':'Ver minhas poltronas')+'</button>'+
+            (!isAdmin()&&!paidStatus&&remaining>0?'<button class="primary-btn raffle-open-btn" onclick="payActivity(\''+a.id+'\',\'trip\','+remaining+')">Pagar '+brl.format(remaining)+'</button>':'')+
+          '</div></article>';
       }
 
-      return `<article class="activity-card">
-        <div class="activity-cover sorteio"><span>EVENTO</span>${statusBadge(a.status)}</div>
-        <div class="activity-body"><h4>${safe(a.title)}</h4><p>${safe(a.description||'')}</p>
-        <div class="activity-stats"><div><span>Valor</span><b>${brl.format(Number(a.unit_price||0))}</b></div><div><span>Meta</span><b>${brl.format(Number(a.target_amount||0))}</b></div><div><span>Status</span><b>${safe(a.status)}</b></div></div></div>
-      </article>`;
+      return '<article class="activity-card"><div class="activity-cover sorteio"><span>EVENTO</span>'+statusBadge(a.status)+'</div><div class="activity-body"><h4>'+safe(a.title)+'</h4><p>'+safe(a.description||'')+'</p><div class="activity-stats"><div><span>Valor</span><b>'+brl.format(Number(a.unit_price||0))+'</b></div><div><span>Meta</span><b>'+brl.format(Number(a.target_amount||0))+'</b></div><div><span>Status</span><b>'+safe(a.status)+'</b></div></div></div></article>';
     }).join('')||'<div class="stack-item"><p>Nenhuma atividade cadastrada.</p></div>';
   };
 
@@ -286,7 +301,82 @@
     },80);
   };
 
-  window.openQuotaRaffle=async function(activityId){
+  window.openBusTrip=async function(activityId){
+    try{
+      const [{data:activity,error:aerr},{data:cfg,error:cerr},{data:seats,error:serr},{data:prizes,error:perr}]=await Promise.all([
+        db.from('activities').select('*').eq('id',activityId).single(),
+        db.from('trip_configs').select('*').eq('activity_id',activityId).single(),
+        db.from('trip_seats').select('*').eq('activity_id',activityId).order('seat_number'),
+        db.from('trip_prizes').select('*').eq('activity_id',activityId).order('prize_position')
+      ]);
+      if(aerr||cerr||serr||perr)throw aerr||cerr||serr||perr;
+
+      const prizeHtml=(prizes||[]).length?'<div class="prize-board">'+prizes.map(p=>'<div class="prize-place p'+Math.min(3,p.prize_position)+'"><span>'+p.prize_position+'º</span><b>'+safe(p.prize_label)+'</b>'+(p.prize_value!=null?'<small>'+brl.format(Number(p.prize_value))+'</small>':'')+'</div>').join('')+'</div>':'';
+
+      if(isAdmin()){
+        const ids=[...new Set((seats||[]).map(s=>s.member_id).filter(Boolean))];
+        const {data:members}=await db.from('profiles').select('id,full_name,cotista_number,share_count,active').eq('active',true).not('cotista_number','is',null).order('cotista_number');
+        const memberMap=Object.fromEntries((members||[]).map(m=>[m.id,m]));
+        const grouped=(members||[]).map(m=>{
+          const own=(seats||[]).filter(s=>s.member_id===m.id);
+          return {m,own,paid:own.length>0&&own.every(s=>s.status==='paid'),total:own.reduce((sum,s)=>sum+Number(s.seat_price),0)};
+        }).filter(x=>x.own.length);
+        const available=(seats||[]).filter(s=>s.status==='available');
+
+        openModal('<div class="bus-admin-modal">'+
+          '<div class="panel-head"><div><span class="eyebrow">PASSEIO DE ÔNIBUS</span><h3>'+safe(activity.title)+'</h3><p>'+Number(cfg.total_seats)+' poltronas • '+brl.format(Number(cfg.seat_price))+' por assento • '+Number(cfg.seats_per_share)+' assento(s) por cota como referência.</p></div></div>'+
+          prizeHtml+
+          '<div class="bus-admin-tools">'+
+            '<div class="bus-assign-box"><h4>Atribuir poltronas exatas</h4><div class="form-grid two"><label>Cotista<select id="tripAssignMember">'+(members||[]).map(m=>'<option value="'+m.id+'">'+String(m.cotista_number).padStart(2,'0')+' • '+safe(m.full_name)+'</option>').join('')+'</select></label><label>Poltronas<input id="tripAssignSeats" placeholder="Ex.: 6, 7"></label></div><button id="tripAssignBtn" class="primary-btn" type="button">Atribuir poltronas</button><small>Disponíveis: '+(available.map(s=>s.seat_number).join(', ')||'nenhuma')+'</small></div>'+
+            '<div class="bus-due-box"><h4>Data limite de pagamento</h4><div class="form-grid two"><label>Vencimento<input id="tripManageDue" type="date" value="'+safe(activity.payment_due_date||'')+'"></label><div class="form-action-end"><button id="tripSaveDueBtn" class="outline-btn" type="button">Salvar vencimento</button></div></div><small>Se houver saldo após essa data, no dia seguinte ele vira empréstimo a 1% ao dia.</small></div>'+
+          '</div>'+
+          '<div class="table-wrap"><table class="data-table"><thead><tr><th>Cotista</th><th>Poltronas</th><th>Números vinculados</th><th>Total</th><th>Status</th><th>Ação</th></tr></thead><tbody>'+
+            grouped.map(g=>'<tr><td><b>'+safe(g.m.full_name)+'</b></td><td><div class="number-chips">'+g.own.map(s=>'<span class="'+s.status+'">'+String(s.seat_number).padStart(2,'0')+'</span>').join('')+'</div></td><td><div class="raffle-seat-pairs">'+g.own.map(s=>(s.raffle_number_1||s.raffle_number_2)?'<span>P'+s.seat_number+': N'+String(s.raffle_number_1||'—').padStart(2,'0')+' / N'+String(s.raffle_number_2||'—').padStart(2,'0')+'</span>':'').join('')+'</div></td><td>'+brl.format(g.total)+'</td><td>'+statusBadge(g.paid?'confirmed':'pending')+'</td><td>'+(g.paid?'—':'<button class="primary-btn tiny" onclick="confirmTripMember(\''+activityId+'\',\''+g.m.id+'\')">Confirmar pagamento</button>')+'</td></tr>').join('')+
+          '</tbody></table></div>'+
+          '<div class="bus-seat-map"><h4>Mapa das poltronas</h4><div class="bus-seat-grid">'+(seats||[]).map(s=>{const owner=s.member_id?memberMap[s.member_id]?.full_name:'';return '<div class="bus-seat '+s.status+'" title="'+safe(owner||'Disponível')+'"><b>'+String(s.seat_number).padStart(2,'0')+'</b><small>'+safe(owner||'Livre')+'</small></div>'}).join('')+'</div></div>'+
+        '</div>');
+
+        $('#tripAssignBtn').addEventListener('click',async()=>{
+          const memberId=$('#tripAssignMember').value;
+          const nums=$('#tripAssignSeats').value.split(',').map(x=>Number(x.trim())).filter(Number.isInteger);
+          if(!nums.length){toast('Informe as poltronas, separadas por vírgula.');return}
+          const {error}=await db.rpc('admin_assign_trip_seats',{p_activity_id:activityId,p_member_id:memberId,p_seat_numbers:nums});
+          if(error){toast(error.message);return}
+          toast('Poltronas atribuídas.');closeModal();await renderActivities();await openBusTrip(activityId);
+        });
+
+        $('#tripSaveDueBtn').addEventListener('click',async()=>{
+          const due=$('#tripManageDue').value||null;
+          const {error}=await db.from('activities').update({payment_due_date:due}).eq('id',activityId);
+          if(error){toast(error.message);return}
+          toast('Vencimento atualizado.');closeModal();await renderActivities();await openBusTrip(activityId);
+        });
+      }else{
+        const own=seats||[];
+        const total=own.reduce((s,x)=>s+Number(x.seat_price),0);
+        const allPaid=own.length>0&&own.every(s=>s.status==='paid');
+        openModal('<div class="bus-member-modal">'+
+          '<div class="panel-head"><div><span class="eyebrow">MEU PASSEIO</span><h3>'+safe(activity.title)+'</h3><p>'+safe(activity.description||'')+'</p></div></div>'+
+          prizeHtml+
+          '<div class="trip-details"><div><span>Data e horário</span><b>'+(activity.event_at?new Date(activity.event_at).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'A definir')+'</b></div><div><span>Local / saída</span><b>'+safe(activity.location||'A definir')+'</b></div><div><span>Valor por assento</span><b>'+brl.format(Number(cfg.seat_price))+'</b></div></div>'+
+          '<div class="my-bus-seats"><small>Suas poltronas</small><div class="my-number-grid">'+own.map(s=>'<span class="'+s.status+'">'+String(s.seat_number).padStart(2,'0')+'</span>').join('')+'</div></div>'+
+          ((own||[]).some(s=>s.raffle_number_1||s.raffle_number_2)?'<div class="my-trip-raffle"><small>Números vinculados às suas poltronas</small>'+own.map(s=>(s.raffle_number_1||s.raffle_number_2)?'<div><b>Poltrona '+s.seat_number+'</b><span>N'+String(s.raffle_number_1||'—').padStart(2,'0')+' • N'+String(s.raffle_number_2||'—').padStart(2,'0')+'</span></div>':'').join('')+'</div>':'')+
+          '<div class="my-raffle-total"><span>'+own.length+' assento(s)</span><b>'+brl.format(total)+'</b></div>'+
+          (allPaid?'<div class="paid-banner">Pagamento confirmado ✅</div>':'<button class="primary-btn full-span" onclick="payActivity(\''+activityId+'\',\'trip\','+total+')">Pagar '+brl.format(total)+'</button>')+
+        '</div>');
+      }
+    }catch(err){toast(err.message||'Não foi possível abrir o passeio.')}
+  };
+
+  window.confirmTripMember=async function(activityId,memberId){
+    if(!confirm('Confirmar o pagamento de todas as poltronas deste cotista?'))return;
+    const {data,error}=await db.rpc('admin_confirm_trip_member',{p_activity_id:activityId,p_member_id:memberId});
+    if(error){toast(error.message);return}
+    toast((data?.confirmed_seats||0)+' poltrona(s) confirmada(s).');
+    closeModal();await Promise.all([renderActivities(),renderDashboard(),renderAdmin()]);
+  };
+
+    window.openQuotaRaffle=async function(activityId){
     try{
       const [{data:activity,error:aerr},{data:cfg,error:cerr},{data:prizes,error:perr},numbers]=await Promise.all([
         db.from('activities').select('*').eq('id',activityId).single(),
@@ -433,42 +523,50 @@
       });
     },true);
   }
-  const newTripBtn=$('#newTripBtn');
-  if(newTripBtn){
+  const oldTripBtn=$('#newTripBtn');
+  if(oldTripBtn){
+    const newTripBtn=oldTripBtn.cloneNode(true);
+    oldTripBtn.replaceWith(newTripBtn);
     newTripBtn.addEventListener('click',e=>{
-      e.preventDefault();e.stopImmediatePropagation();
+      e.preventDefault();
       if(!isAdmin()){toast('Somente a administração pode criar passeios.');return}
-      openModal(`<div class="panel-head"><div><span class="eyebrow">NOVO PASSEIO</span><h3>Passeio obrigatório</h3><p>Todos os cotistas ativos receberão a cobrança. Se não pagar até o vencimento, no dia seguinte o saldo vira empréstimo com juros de 1% ao dia.</p></div></div>
-        <form id="mandatoryTripForm" class="form-grid">
-          <label class="full-span">Nome do passeio<input id="tripTitle" required placeholder="Ex.: Passeio de confraternização"></label>
-          <label class="full-span">Descrição<textarea id="tripDescription" rows="3"></textarea></label>
-          <label>Valor por cotista<input id="tripAmount" type="number" min="0.01" step="0.01" required></label>
-          <label>Data limite para pagamento<input id="tripDueDate" type="date" required></label>
-          <label>Data e horário do passeio<input id="tripEventAt" type="datetime-local" required></label>
-          <label>Local<input id="tripLocation" required placeholder="Local do passeio"></label>
-          <div class="mandatory-rule full-span"><b>Regra automática:</b> o passeio é obrigatório e não possui opção de cancelar. No primeiro dia após o vencimento, qualquer saldo pendente será convertido em empréstimo com juros de 1% ao dia.</div>
-          <button class="primary-btn full-span" type="submit">Criar passeio obrigatório</button>
-        </form>`);
-      $('#mandatoryTripForm').addEventListener('submit',async ev=>{
+      openModal('<div class="panel-head"><div><span class="eyebrow">NOVO PASSEIO</span><h3>Passeio de ônibus</h3><p>Cadastre o ônibus, quantidade de poltronas, valor por assento e quantos assentos correspondem a cada cota. Depois atribua as poltronas exatas.</p></div></div>'+
+        '<form id="busTripForm" class="form-grid">'+
+          '<label class="full-span">Nome do passeio<input id="busTripTitle" required placeholder="Ex.: Passeio para o Balneário"></label>'+
+          '<label class="full-span">Descrição<textarea id="busTripDescription" rows="3"></textarea></label>'+
+          '<label>Total de poltronas<input id="busTripSeats" type="number" min="1" max="200" value="52" required></label>'+
+          '<label>Assentos por cota<input id="busTripSeatsPerShare" type="number" min="1" max="50" value="5" required></label>'+
+          '<label>Valor por assento<input id="busTripSeatPrice" type="number" min="0.01" step="0.01" value="120" required></label>'+
+          '<label>Data limite para pagamento<input id="busTripDueDate" type="date"></label>'+
+          '<label>Data e horário<input id="busTripEventAt" type="datetime-local" required></label>'+
+          '<label>Local / ponto de saída<input id="busTripLocation" required></label>'+
+          '<label class="full-span">Transporte<input id="busTripTransport" value="Ônibus • transporte incluso"></label>'+
+          '<div class="mandatory-rule full-span"><b>Fluxo:</b> após criar o passeio, a administração escolhe exatamente quais poltronas pertencem a cada cotista. Quando houver vencimento definido, saldo não pago passa para empréstimo no dia seguinte, com juros de 1% ao dia.</div>'+
+          '<button class="primary-btn full-span" type="submit">Criar passeio e mapa de poltronas</button>'+
+        '</form>');
+      $('#busTripForm').addEventListener('submit',async ev=>{
         ev.preventDefault();
-        const btn=ev.submitter;btn.disabled=true;btn.textContent='Criando...';
+        const btn=ev.submitter;btn.disabled=true;btn.textContent='Criando mapa...';
         try{
-          const local=$('#tripEventAt').value;
-          const eventIso=new Date(local).toISOString();
-          const {error}=await db.rpc('admin_create_mandatory_trip',{
-            p_title:$('#tripTitle').value.trim(),
-            p_description:$('#tripDescription').value.trim()||null,
-            p_amount:Number($('#tripAmount').value),
-            p_event_at:eventIso,
-            p_location:$('#tripLocation').value.trim(),
-            p_payment_due_date:$('#tripDueDate').value
+          const local=$('#busTripEventAt').value;
+          const {data,error}=await db.rpc('admin_create_bus_trip',{
+            p_title:$('#busTripTitle').value.trim(),
+            p_description:$('#busTripDescription').value.trim()||null,
+            p_total_seats:Number($('#busTripSeats').value),
+            p_seat_price:Number($('#busTripSeatPrice').value),
+            p_seats_per_share:Number($('#busTripSeatsPerShare').value),
+            p_event_at:new Date(local).toISOString(),
+            p_location:$('#busTripLocation').value.trim(),
+            p_payment_due_date:$('#busTripDueDate').value||null,
+            p_transport_details:$('#busTripTransport').value.trim()||null
           });
           if(error)throw error;
-          closeModal();await renderActivities();toast('Passeio criado e cobrança distribuída para os cotistas.');
+          closeModal();await renderActivities();toast('Passeio criado. Agora atribua as poltronas exatas.');
+          if(data)await openBusTrip(data);
         }catch(err){toast(err.message||'Não foi possível criar o passeio.')}
-        finally{btn.disabled=false;btn.textContent='Criar passeio obrigatório'}
+        finally{btn.disabled=false;btn.textContent='Criar passeio e mapa de poltronas'}
       });
-    },true);
+    });
   }
 })();
 

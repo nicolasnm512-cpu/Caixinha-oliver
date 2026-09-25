@@ -1,0 +1,26 @@
+.brand-logo{display:block;object-fit:contain;flex:0 0 auto}
+.login-logo{width:76px;height:76px;filter:drop-shadow(0 10px 22px rgba(215,172,75,.18))}
+.sidebar-logo{width:54px;height:54px;filter:drop-shadow(0 7px 16px rgba(215,172,75,.17))}
+.sidebar-brand,.login-brand{align-items:center}
+.official-pix-card{overflow:hidden}
+.official-pix-layout{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(260px,1.2fr);gap:22px;align-items:center}
+.qr-wrap.official{display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px}
+.qr-wrap.official img{width:min(260px,100%);height:auto;border-radius:10px}
+.qr-instruction{text-align:center;margin-top:10px}.qr-instruction b{display:block;color:var(--ink)}.qr-instruction span{display:block;margin-top:3px;color:var(--muted);font-size:11px}
+.payment-account{border-radius:18px;background:linear-gradient(145deg,#0a0a0a,#21190d);color:#fff;padding:18px;border:1px solid rgba(215,172,75,.35)}
+.payment-account-logo{display:flex;gap:12px;align-items:center;padding-bottom:14px;border-bottom:1px solid rgba(215,172,75,.22)}
+.payment-account-logo img{width:58px;height:58px;object-fit:contain}.payment-account-logo b{display:block;color:#f1d27c;font-size:17px}.payment-account-logo span{display:block;font-size:11px;color:#c8bea7;margin-top:3px}
+.payment-data-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.payment-data-grid>div{background:rgba(255,255,255,.05);border:1px solid rgba(215,172,75,.15);padding:10px;border-radius:10px}.payment-data-grid .wide{grid-column:1/-1}.payment-data-grid span{display:block;font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:#b9af99}.payment-data-grid b{display:block;margin-top:4px;color:#fff;word-break:break-word}
+.pix-copy{margin-top:16px}.pix-copy code{max-height:68px;overflow:auto;word-break:break-all;white-space:normal}
+.pix-security-note{display:block;margin-top:10px;color:var(--muted);line-height:1.45}
+.payment-settings-preview{border:1px solid var(--line);border-radius:12px;padding:12px;background:#faf8f2}.payment-settings-preview span,.payment-settings-preview small{display:block;color:var(--muted);font-size:10px}.payment-settings-preview b{display:block;margin:4px 0;color:var(--ink)}
+.bus-trip-card .activity-cover{background:linear-gradient(135deg,#0b172e,#1f4b7e)!important}
+.my-seat-preview{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.my-seat-preview span,.bus-seat{border:1px solid #d9c27f;background:#fff8df;color:#6d5114;border-radius:10px;font-weight:900}
+.my-seat-preview span{min-width:38px;height:34px;display:grid;place-items:center}
+.trip-prize-mini{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}.trip-prize-mini span{font-size:10px;padding:6px 8px;border-radius:999px;background:#fff7df;border:1px solid #ead59d;color:#66501b}.trip-prize-mini b{color:#8a6518}
+.bus-admin-tools{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}.bus-assign-box,.bus-due-box{border:1px solid var(--line);border-radius:14px;padding:14px;background:#faf8f2}.bus-assign-box h4,.bus-due-box h4{margin:0 0 10px}.bus-assign-box small,.bus-due-box small{display:block;margin-top:8px;color:var(--muted);line-height:1.4}.form-action-end{display:flex;align-items:end}
+.bus-seat-map{margin-top:18px}.bus-seat-map h4{margin:0 0 10px}.bus-seat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:7px}.bus-seat{min-height:54px;padding:7px;display:flex;flex-direction:column;justify-content:center;text-align:center}.bus-seat b{font-size:15px}.bus-seat small{font-size:8px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bus-seat.available{background:#fff;color:#4b5563;border-style:dashed}.bus-seat.assigned{background:#fff7df}.bus-seat.paid{background:#ecfdf3;border-color:#86efac;color:#166534}
+.raffle-seat-pairs{display:flex;flex-direction:column;gap:3px;min-width:130px}.raffle-seat-pairs span{font-size:10px;color:var(--muted);white-space:nowrap}
+.my-bus-seats{border:1px solid var(--line);border-radius:14px;padding:14px;background:#faf8f2;margin:12px 0}.my-bus-seats>small,.my-trip-raffle>small{display:block;color:var(--muted);margin-bottom:8px}
+.my-trip-raffle{border:1px solid #ead59d;background:#fffaf0;border-radius:14px;padding:14px;margin:12px 0}.my-trip-raffle>div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #f0e5c7}.my-trip-raffle>div:last-child{border-bottom:0}.my-trip-raffle span{font-size:12px;color:#6d5114}
+@media(max-width:760px){.official-pix-layout,.bus-admin-tools{grid-template-columns:1fr}.payment-data-grid{grid-template-columns:1fr}.payment-data-grid .wide{grid-column:auto}.login-logo{width:64px;height:64px}.sidebar-logo{width:46px;height:46px}}
