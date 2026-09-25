@@ -120,7 +120,8 @@
         <button class="nav-item" data-page="requests"><span>✦</span>Central de solicitações</button>
         <button class="nav-item" data-page="loans"><span>↗</span>Empréstimos</button>
         <button class="nav-item" data-page="payments"><span>✓</span>Pagamentos e comprovantes</button>
-        <button class="nav-item" data-page="activities"><span>★</span>Sorteios e passeios</button>
+        <button class="nav-item" data-page="activities"><span>★</span>Rifas e passeios</button>
+        <button class="nav-item" data-page="account"><span>◉</span>Meu cadastro</button>
         <button class="nav-item admin-only" data-page="members"><span>◎</span>Cotistas</button>
         <button class="nav-item admin-only" data-page="admin"><span>⚙</span>Administração</button>
       </nav>
@@ -245,6 +246,43 @@
       <section id="activities" class="page">
         <div class="panel-head standalone"><div><h3>Rifas e passeios</h3><p>Rifas com 100 números distribuídos automaticamente por cota e demais atividades coletivas.</p></div><button class="primary-btn small admin-only" id="newActivityBtn">Nova rifa</button></div>
         <div id="activityCards" class="activity-grid"></div>
+      </section>
+
+      <section id="account" class="page">
+        <div class="page-grid">
+          <article class="panel">
+            <div class="panel-head"><div><h3>Meu cadastro</h3><p>Veja e atualize seus dados de contato.</p></div></div>
+            <div class="account-summary">
+              <div><span>Nome</span><b id="accountName">—</b></div>
+              <div><span>Número do cotista</span><b id="accountNumber">—</b></div>
+              <div><span>Quantidade de cotas</span><b id="accountShares">—</b></div>
+            </div>
+            <form id="accountContactForm" class="form-grid">
+              <label class="full-span">E-mail<input id="accountEmail" type="email" required></label>
+              <label class="full-span">Telefone<input id="accountPhone" type="tel" placeholder="(63) 99999-9999"></label>
+              <button class="primary-btn full-span" type="submit">Salvar dados de contato</button>
+            </form>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><h3>Segurança</h3><p>Altere sua senha quando quiser.</p></div></div>
+            <form id="accountPasswordForm" class="form-grid single">
+              <label>Nova senha<input id="accountPassword" type="password" minlength="8" required></label>
+              <label>Confirmar nova senha<input id="accountPasswordConfirm" type="password" minlength="8" required></label>
+              <button class="primary-btn" type="submit">Alterar senha</button>
+            </form>
+            <div class="security-note">Você receberá um aviso quando um novo dispositivo acessar sua conta.</div>
+          </article>
+        </div>
+
+        <article class="panel">
+          <div class="panel-head"><div><h3>Documentos e relatórios</h3><p>Acesse apenas informações vinculadas ao seu cadastro.</p></div></div>
+          <div class="document-actions">
+            <button class="outline-btn" id="downloadPaymentsBtn" type="button">Baixar histórico de pagamentos</button>
+            <button class="outline-btn" id="downloadAnnualBtn" type="button">Baixar resumo anual</button>
+            <button class="outline-btn" id="printLoanContractsBtn" type="button">Ver contratos de empréstimo</button>
+            <button class="outline-btn" id="viewRulesBtn" type="button">Ver regulamento</button>
+          </div>
+        </article>
       </section>
 
       <section id="members" class="page admin-only">
