@@ -137,6 +137,22 @@ async function renderDashboard(){
   const {data:nextInst}=await db.from('loan_installments').select('due_date,total_amount,amount_paid,status,loan_id').eq('status','pending').order('due_date',{ascending:true}).limit(1).maybeSingle();
   qs('#myNextDue').textContent=nextInst?formatDate(nextInst.due_date):'—';
   qs('#myNextAmount').textContent=nextInst?brl.format(Math.max(0,Number(nextInst.total_amount)-Number(nextInst.amount_paid||0))):'Sem parcela pendente';
+
+  if(!isAdmin()){
+    const {data:annual,error:annualError}=await db.rpc('get_my_annual_balance',{p_year:now.getFullYear()});
+    const a=Array.isArray(annual)?annual[0]:annual;
+    if(!annualError&&a){
+      qs('#annualBalanceYear').textContent=String(a.year);
+      qs('#annualBalanceTotal').textContent=brl.format(Number(a.estimated_year_end_total||0));
+      qs('#annualContributions').textContent=brl.format(Number(a.contributions_paid||0));
+      qs('#annualOwnInterestBonus').textContent=brl.format(Number(a.own_interest_bonus||0));
+      qs('#annualCollectiveShare').textContent=brl.format(Number(a.collective_interest_share||0));
+      qs('#annualCollectivePercent').textContent=`${Number(a.collective_share_percent||0).toLocaleString('pt-BR',{maximumFractionDigits:2})}% da divisão por cota`;
+      qs('#annualTripsPaid').textContent=brl.format(Number(a.trips_paid||0));
+      const tripReturn=Number(a.trip_return||0);
+      qs('#annualTripReturnNote').textContent=tripReturn>0?`Retorno calculado: ${brl.format(tripReturn)}`:'Retorno do passeio aguardando percentual definido';
+    }
+  }
 }
 
 async function renderRequests(){
@@ -246,15 +262,147 @@ window.acceptAvailableCredit=async requestId=>{
   await renderRequests();toast('Nova solicitação enviada com o valor disponível.');
 };
 
-async function renderLoans(){const q=db.from('loans').select('*').order('created_at',{ascending:false});if(!isAdmin())q.eq('member_id',state.user.id);const {data:loans}=await q;const ids=(loans||[]).map(x=>x.id);let installments=[];if(ids.length){const {data}=await db.from('loan_installments').select('*').in('loan_id',ids).order('installment_number');installments=data||[]}
-  const active=(loans||[]).filter(l=>['active','late'].includes(l.status));const debt=active.reduce((s,l)=>s+Number(l.outstanding_amount),0);qs('#loanTotalDebt').textContent=brl.format(debt);qs('#loanRate').textContent=`${Number(state.settings?.operation_interest_rate??20).toFixed(2)}% por operação`;const pending=installments.filter(i=>i.status==='pending');qs('#loanRemaining').textContent=pending.length;qs('#loanInterestEstimate').textContent=brl.format(active.reduce((s,l)=>s+Number(l.interest_amount||0),0));
-  qs('#loanCards').innerHTML=(loans||[]).map(l=>{const ins=installments.filter(i=>i.loan_id===l.id),paid=ins.filter(i=>i.status==='confirmed').length,pct=l.installments?Math.round(paid/l.installments*100):0;return `<div class="loan-card"><div class="loan-card-head"><div><h4>${l.id.slice(0,8).toUpperCase()}</h4><small>${l.beneficiary_type==='third_party'?`Terceiro: ${safe(l.third_party_name)} • `:''}Início ${formatDate(l.released_at)}</small></div>${statusBadge(l.status)}</div><div class="big">${brl.format(Number(l.outstanding_amount))}</div><small>Saldo devedor</small><div class="progress"><i style="width:${pct}%"></i></div><div class="loan-meta"><div><span>Progresso</span><b>${paid}/${l.installments} parcelas</b></div><div><span>Total</span><b>${brl.format(Number(l.total_contract_amount))}</b></div><div><span>Juros</span><b>${Number(l.operation_rate).toFixed(2)}%</b></div></div></div>`}).join('')||'<div class="stack-item"><p>Nenhum empréstimo cadastrado.</p></div>';
+async function renderLoans(){
+  const q=db.from('loans').select('*').order('created_at',{ascending:false});
+  if(!isAdmin())q.eq('member_id',state.user.id);
+  const {data:loans}=await q;
+  const ids=(loans||[]).map(x=>x.id);
+  let installments=[];
+  if(ids.length){
+    const {data}=await db.from('loan_installments').select('*').in('loan_id',ids).order('installment_number');
+    installments=data||[];
+  }
+
+  const active=(loans||[]).filter(l=>['active','late'].includes(l.status));
+  const debt=active.reduce((s,l)=>s+Number(l.outstanding_amount||0),0);
+  qs('#loanTotalDebt').textContent=brl.format(debt);
+  qs('#loanRate').textContent=`${Number(state.settings?.operation_interest_rate??20).toFixed(2)}% próprio • ${Number(state.settings?.third_party_interest_rate??30).toFixed(2)}% terceiro`;
+  const pending=installments.filter(i=>i.status==='pending');
+  qs('#loanRemaining').textContent=pending.length;
+  qs('#loanInterestEstimate').textContent=brl.format(active.reduce((s,l)=>s+Number(l.interest_amount||0),0));
+
+  qs('#loanCards').innerHTML=(loans||[]).map(l=>{
+    const ins=installments.filter(i=>i.loan_id===l.id);
+    const paid=ins.filter(i=>i.status==='confirmed').length;
+    const pct=l.installments?Math.round(paid/l.installments*100):0;
+    const tripLoan=l.source_kind==='trip_overdue';
+    const rateLabel=tripLoan
+      ?`${Number(l.daily_interest_rate||1).toLocaleString('pt-BR')}% ao dia`
+      :`${Number(l.operation_rate).toFixed(2)}%`;
+    const origin=tripLoan?'Passeio obrigatório não pago':(l.beneficiary_type==='third_party'?`Terceiro: ${safe(l.third_party_name)}`:'Empréstimo próprio');
+    return `<div class="loan-card ${tripLoan?'trip-overdue-loan':''}">
+      <div class="loan-card-head">
+        <div><h4>${tripLoan?'PASSEIO • ':''}${l.id.slice(0,8).toUpperCase()}</h4><small>${origin} • início ${formatDate(l.released_at)}</small></div>
+        ${statusBadge(l.status)}
+      </div>
+      <div class="big">${brl.format(Number(l.outstanding_amount||0))}</div><small>Saldo devedor</small>
+      <div class="progress"><i style="width:${pct}%"></i></div>
+      <div class="loan-meta">
+        <div><span>Progresso</span><b>${paid}/${l.installments} parcela(s)</b></div>
+        <div><span>Total acumulado</span><b>${brl.format(Number(l.total_contract_amount||0))}</b></div>
+        <div><span>Juros</span><b>${rateLabel}</b></div>
+      </div>
+      ${tripLoan?`<div class="trip-loan-note">Os juros são atualizados diariamente sobre o principal ainda em aberto.</div>`:''}
+    </div>`;
+  }).join('')||'<div class="stack-item"><p>Nenhum empréstimo cadastrado.</p></div>';
 }
 
-async function renderPayments(){qs('#pixKeyText').textContent=state.settings?.pix_key||'Aguardando configuração';qs('#pixPayload').textContent=state.settings?.pix_key||'Configure a chave Pix na administração';const q=db.from('payment_receipts').select('*').order('submitted_at',{ascending:false});if(!isAdmin())q.eq('member_id',state.user.id);const {data:rows}=await q;qs('#paymentHistory').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Tipo</th><th>Valor</th><th>Arquivo</th><th>Status</th>${isAdmin()?'<th>Ação</th>':''}</tr></thead><tbody>${(rows||[]).map(p=>`<tr><td>${formatDate(p.submitted_at)}</td><td>${safe(p.payment_kind)}</td><td>${brl.format(Number(p.amount))}</td><td>${safe(p.original_filename||'Arquivo')}</td><td>${statusBadge(p.status)}</td>${isAdmin()?`<td>${p.status==='pending'?`<button class="primary-btn small" onclick="reviewReceipt('${p.id}',true)">Confirmar</button> <button class="outline-btn" onclick="reviewReceipt('${p.id}',false)">Recusar</button>`:'—'}</td>`:''}</tr>`).join('')||`<tr><td colspan="${isAdmin()?6:5}">Nenhum comprovante enviado.</td></tr>`}</tbody></table>`}
+async function refreshReceiptReference(){
+  const kind=qs('#receiptType').value;
+  const label=qs('#receiptActivityLabel'),sel=qs('#receiptActivity');
+  if(!label||!sel)return;
+  label.classList.add('hidden');sel.innerHTML='';
+
+  if(kind==='loan'){
+    const {data:loans}=await db.from('loans').select('id,source_kind').eq('member_id',state.user.id).in('status',['active','late']);
+    const ids=(loans||[]).map(l=>l.id);
+    if(ids.length){
+      const {data:rows}=await db.from('loan_installments').select('id,loan_id,due_date,total_amount,amount_paid,status').in('loan_id',ids).eq('status','pending').order('due_date');
+      sel.innerHTML=(rows||[]).map(i=>`<option value="loan:${i.id}">${formatDate(i.due_date)} • ${brl.format(Math.max(0,Number(i.total_amount)-Number(i.amount_paid||0)))}</option>`).join('');
+      if((rows||[]).length)label.classList.remove('hidden');
+    }
+  }else if(kind==='draw'||kind==='trip'){
+    const {data:entries}=await db.from('activity_entries').select('activity_id,amount_due,amount_paid,status,activities(id,title,type,status,event_at,payment_due_date)').eq('member_id',state.user.id);
+    const rows=(entries||[]).filter(e=>e.activities?.type===kind&&e.activities?.status==='open'&&e.status!=='confirmed');
+    sel.innerHTML=rows.map(e=>`<option value="activity:${e.activity_id}">${safe(e.activities?.title||'Atividade')} • ${brl.format(Math.max(0,Number(e.amount_due)-Number(e.amount_paid||0)))}</option>`).join('');
+    if(rows.length)label.classList.remove('hidden');
+  }
+}
+
+async function renderPayments(){
+  qs('#pixKeyText').textContent=state.settings?.pix_key||'Aguardando configuração';
+  qs('#pixPayload').textContent=state.settings?.pix_key||'Configure a chave Pix na administração';
+  const q=db.from('payment_receipts').select('*').order('submitted_at',{ascending:false});
+  if(!isAdmin())q.eq('member_id',state.user.id);
+  const {data:rows}=await q;
+  qs('#paymentHistory').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Tipo</th><th>Valor</th><th>Arquivo</th><th>Status</th>${isAdmin()?'<th>Ação</th>':''}</tr></thead><tbody>${(rows||[]).map(p=>`<tr><td>${formatDate(p.submitted_at)}</td><td>${safe(p.payment_kind)}</td><td>${brl.format(Number(p.amount))}</td><td>${safe(p.original_filename||'Arquivo')}</td><td>${statusBadge(p.status)}</td>${isAdmin()?`<td>${p.status==='pending'?`<button class="primary-btn small" onclick="reviewReceipt('${p.id}',true)">Confirmar</button> <button class="outline-btn" onclick="reviewReceipt('${p.id}',false)">Recusar</button>`:'—'}</td>`:''}</tr>`).join('')||`<tr><td colspan="${isAdmin()?6:5}">Nenhum comprovante enviado.</td></tr>`}</tbody></table>`;
+  if(!isAdmin())await refreshReceiptReference();
+}
+
+qs('#receiptType').addEventListener('change',refreshReceiptReference);
 qs('#copyPixBtn').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(qs('#pixPayload').textContent);toast('Chave Pix copiada.')}catch{toast('Copie a chave exibida na tela.')}});
-qs('#receiptForm').addEventListener('submit',async e=>{e.preventDefault();if(isAdmin()){toast('Entre como cotista para anexar comprovante pessoal.');return}const file=qs('#receiptFile').files[0];if(!file){toast('Selecione um comprovante.');return}const ext=(file.name.split('.').pop()||'bin').toLowerCase();const name=`${state.user.id}/${crypto.randomUUID()}.${ext}`;const {error:upErr}=await db.storage.from('payment-receipts').upload(name,file,{upsert:false});if(upErr){toast(upErr.message);return}const kind=qs('#receiptType').value;let contributionId=null,installmentId=null;if(kind==='contribution'){const {data:c}=await db.from('monthly_contributions').select('id').eq('member_id',state.user.id).eq('reference_month',currentMonthRef).maybeSingle();contributionId=c?.id||null;if(!contributionId){await db.storage.from('payment-receipts').remove([name]);toast('A cota deste mês ainda não foi gerada pela administração.');return}}if(kind==='loan'){const {data:i}=await db.from('loan_installments').select('id').eq('status','pending').order('due_date',{ascending:true}).limit(1).maybeSingle();installmentId=i?.id||null;if(!installmentId){await db.storage.from('payment-receipts').remove([name]);toast('Não há parcela pendente vinculada ao seu acesso.');return}}const {error}=await db.from('payment_receipts').insert({member_id:state.user.id,contribution_id:contributionId,installment_id:installmentId,payment_kind:kind,amount:Number(qs('#receiptAmount').value),storage_path:name,original_filename:file.name,note:qs('#receiptNote').value.trim()||null});if(error){await db.storage.from('payment-receipts').remove([name]);toast(error.message);return}e.target.reset();await renderPayments();toast('Comprovante enviado para conferência.')});
-window.reviewReceipt=async(id,ok)=>{const note=ok?'':prompt('Motivo da recusa:')||'';const {error}=await db.rpc('admin_confirm_receipt',{p_receipt_id:id,p_confirm:ok,p_note:note});if(error){toast(error.message);return}await Promise.all([renderPayments(),renderDashboard()]);toast(ok?'Pagamento confirmado.':'Comprovante recusado.')};
+
+qs('#receiptForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(isAdmin()){toast('Entre como cotista para anexar comprovante pessoal.');return}
+  const file=qs('#receiptFile').files[0];
+  if(!file){toast('Selecione um comprovante.');return}
+  const ext=(file.name.split('.').pop()||'bin').toLowerCase();
+  const name=`${state.user.id}/${crypto.randomUUID()}.${ext}`;
+  const {error:upErr}=await db.storage.from('payment-receipts').upload(name,file,{upsert:false});
+  if(upErr){toast(upErr.message);return}
+
+  const kind=qs('#receiptType').value;
+  let contributionId=null,installmentId=null,activityId=null;
+
+  if(kind==='contribution'){
+    const {data:contrib}=await db.from('monthly_contributions').select('id').eq('member_id',state.user.id).eq('reference_month',currentMonthRef).maybeSingle();
+    contributionId=contrib?.id||null;
+    if(!contributionId){
+      await db.storage.from('payment-receipts').remove([name]);
+      toast('A cota deste mês ainda não foi gerada pela administração.');
+      return;
+    }
+  }
+
+  if(kind==='loan'){
+    const ref=qs('#receiptActivity').value;
+    installmentId=ref?.startsWith('loan:')?ref.slice(5):null;
+    if(!installmentId){
+      await db.storage.from('payment-receipts').remove([name]);
+      toast('Selecione a parcela que está pagando.');
+      return;
+    }
+  }
+
+  if(kind==='draw'||kind==='trip'){
+    const ref=qs('#receiptActivity').value;
+    activityId=ref?.startsWith('activity:')?ref.slice(9):null;
+    if(!activityId){
+      await db.storage.from('payment-receipts').remove([name]);
+      toast('Selecione a atividade referente ao pagamento.');
+      return;
+    }
+  }
+
+  const {error}=await db.from('payment_receipts').insert({
+    member_id:state.user.id,contribution_id:contributionId,installment_id:installmentId,activity_id:activityId,
+    payment_kind:kind,amount:Number(qs('#receiptAmount').value),storage_path:name,
+    original_filename:file.name,note:qs('#receiptNote').value.trim()||null
+  });
+  if(error){
+    await db.storage.from('payment-receipts').remove([name]);toast(error.message);return
+  }
+  e.target.reset();await renderPayments();toast('Comprovante enviado para conferência.');
+});
+
+window.reviewReceipt=async(id,ok)=>{
+  const note=ok?'':prompt('Motivo da recusa:')||'';
+  const {error}=await db.rpc('admin_confirm_receipt',{p_receipt_id:id,p_confirm:ok,p_note:note});
+  if(error){toast(error.message);return}
+  await Promise.all([renderPayments(),renderDashboard(),renderLoans(),renderActivities()]);
+  toast(ok?'Pagamento confirmado.':'Comprovante recusado.');
+};
 
 async function renderActivities(){const {data:acts}=await db.from('activities').select('*').neq('status','draft').order('created_at',{ascending:false});let entries=[];if(isAdmin()&&(acts||[]).length){const {data}=await db.from('activity_entries').select('*').in('activity_id',acts.map(a=>a.id));entries=data||[]}
   qs('#activityCards').innerHTML=(acts||[]).map(a=>{const list=entries.filter(e=>e.activity_id===a.id),raised=list.reduce((s,e)=>s+Number(e.amount_paid||0),0);return `<article class="activity-card"><div class="activity-cover ${a.type==='draw'?'sorteio':'passeio'}"><span>${a.type==='draw'?'SORTEIO':a.type==='trip'?'PASSEIO':'EVENTO'}</span>${statusBadge(a.status)}</div><div class="activity-body"><h4>${safe(a.title)}</h4><p>${safe(a.description||'')}</p><div class="activity-stats"><div><span>Valor</span><b>${brl.format(Number(a.unit_price||0))}</b></div><div><span>${isAdmin()?'Arrecadado':'Meta'}</span><b>${brl.format(isAdmin()?raised:Number(a.target_amount||0))}</b></div><div><span>Status</span><b>${safe(a.status)}</b></div></div></div></article>`}).join('')||'<div class="stack-item"><p>Nenhuma atividade cadastrada.</p></div>'}
