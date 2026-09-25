@@ -519,3 +519,53 @@
 
   setTimeout(()=>{renderAccount();registerDevice()},300);
 })();
+
+
+/* ===== Extras administrativos ===== */
+(() => {
+  const $=s=>document.querySelector(s);
+
+  window.renderAdminExtras=async function(){
+    if(!isAdmin())return;
+    const box=$('#chatbotAdminHistory');
+    if(box){
+      const {data,error}=await db.from('chatbot_messages')
+        .select('id,question,answer,intent,created_at,profiles!chatbot_messages_member_id_fkey(full_name)')
+        .order('created_at',{ascending:false})
+        .limit(30);
+      if(error){
+        box.innerHTML='<div class="stack-item"><p>Não foi possível carregar o histórico.</p></div>';
+      }else{
+        box.innerHTML=(data||[]).map(m=>`<div class="stack-item chatbot-admin-item"><div><h4>${safe(m.profiles?.full_name||'Cotista')}</h4><p><b>Pergunta:</b> ${safe(m.question)}<br><b>Resposta:</b> ${safe(m.answer)}</p><small>${formatDate(m.created_at)} • ${safe(m.intent||'geral')}</small></div></div>`).join('')||'<div class="stack-item"><p>Nenhuma conversa registrada.</p></div>';
+      }
+    }
+  };
+
+  $('#broadcastForm')?.addEventListener('submit',async e=>{
+    e.preventDefault();
+    if(!isAdmin())return;
+    const btn=e.submitter;if(btn){btn.disabled=true;btn.textContent='Enviando...'}
+    try{
+      const {data,error}=await db.rpc('admin_broadcast_notification',{
+        p_title:$('#broadcastTitle').value.trim(),
+        p_message:$('#broadcastMessage').value.trim(),
+        p_notification_type:$('#broadcastType').value,
+        p_link_page:$('#broadcastPage').value||null
+      });
+      if(error)throw error;
+      e.target.reset();
+      toast('Aviso enviado para '+Number(data||0)+' cotista(s).');
+    }catch(err){toast(err.message||'Não foi possível enviar o aviso.')}
+    finally{if(btn){btn.disabled=false;btn.textContent='Enviar aviso'}}
+  });
+
+  async function refreshReminders(){
+    if(!state?.user||isAdmin())return;
+    await db.rpc('refresh_my_reminders').catch(()=>{});
+  }
+
+  setTimeout(async()=>{
+    await refreshReminders();
+    if(isAdmin())await renderAdminExtras();
+  },500);
+})();
