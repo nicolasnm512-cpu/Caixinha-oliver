@@ -396,3 +396,126 @@
     },true);
   }
 })();
+
+/* ===== Conta do cotista ===== */
+(() => {
+  const $ = s => document.querySelector(s);
+  const csvEscape=v=>'"'+String(v??'').replaceAll('"','""')+'"';
+  const downloadText=(name,text,type='text/csv;charset=utf-8')=>{
+    const blob=new Blob([text],{type});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);a.download=name;a.click();URL.revokeObjectURL(a.href);
+  };
+
+  async function waitForUser(){
+    for(let i=0;i<30;i++){
+      if(window.state?.user||typeof state!=='undefined'&&state?.user)return true;
+      await new Promise(r=>setTimeout(r,100));
+    }
+    return false;
+  }
+
+  async function registerDevice(){
+    if(!await waitForUser())return;
+    if(isAdmin())return;
+    let key=localStorage.getItem('oliver_device_key');
+    if(!key){key=crypto.randomUUID();localStorage.setItem('oliver_device_key',key)}
+    const label=[navigator.platform||'',navigator.userAgent.includes('Mobile')?'Mobile':'Navegador'].filter(Boolean).join(' • ');
+    await db.rpc('register_my_device',{p_device_key:key,p_device_label:label}).catch(()=>{});
+  }
+
+  window.renderAccount=async function(){
+    if(!$('#accountName')||!state?.user)return;
+    $('#accountName').textContent=state.profile?.full_name||'—';
+    $('#accountNumber').textContent=state.profile?.cotista_number?String(state.profile.cotista_number).padStart(2,'0'):'ADM';
+    $('#accountShares').textContent=String(state.profile?.share_count||1);
+    $('#accountEmail').value=state.user?.email||state.profile?.email||'';
+    $('#accountPhone').value=state.profile?.phone||'';
+  };
+
+  $('#accountContactForm')?.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const email=$('#accountEmail').value.trim().toLowerCase();
+    const phone=$('#accountPhone').value.trim();
+    const btn=e.submitter; if(btn){btn.disabled=true;btn.textContent='Salvando...'}
+    try{
+      const {error:phoneError}=await db.rpc('update_my_contact',{p_phone:phone||null});
+      if(phoneError)throw phoneError;
+
+      const current=String(state.user?.email||'').toLowerCase();
+      if(email&&email!==current){
+        const {data,error}=await db.auth.updateUser({email});
+        if(error)throw error;
+        if(data?.user?.email&&String(data.user.email).toLowerCase()===email){
+          await db.rpc('sync_my_email');
+        }
+        toast('Dados salvos. Confirme o novo e-mail se receber uma mensagem de verificação.');
+      }else{
+        toast('Dados atualizados.');
+      }
+      state.profile.phone=phone||null;
+      await renderAccount();
+    }catch(err){toast(err.message||'Não foi possível atualizar os dados.')}
+    finally{if(btn){btn.disabled=false;btn.textContent='Salvar dados de contato'}}
+  });
+
+  $('#accountPasswordForm')?.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const p=$('#accountPassword').value, c=$('#accountPasswordConfirm').value;
+    if(p.length<8){toast('A senha precisa ter pelo menos 8 caracteres.');return}
+    if(p!==c){toast('As senhas não conferem.');return}
+    const btn=e.submitter;if(btn){btn.disabled=true;btn.textContent='Alterando...'}
+    try{
+      const {error}=await db.auth.updateUser({password:p});
+      if(error)throw error;
+      e.target.reset();toast('Senha alterada com sucesso.');
+    }catch(err){toast(err.message||'Não foi possível alterar a senha.')}
+    finally{if(btn){btn.disabled=false;btn.textContent='Alterar senha'}}
+  });
+
+  $('#downloadPaymentsBtn')?.addEventListener('click',async()=>{
+    const {data,error}=await db.from('payment_receipts').select('submitted_at,payment_kind,amount,status,reviewed_at,review_note,original_filename').eq('member_id',state.user.id).order('submitted_at');
+    if(error){toast(error.message);return}
+    const header='data,tipo,valor,status,confirmado_em,observacao,arquivo\n';
+    const rows=(data||[]).map(r=>[
+      r.submitted_at,r.payment_kind,Number(r.amount||0).toFixed(2),r.status,r.reviewed_at||'',r.review_note||'',r.original_filename||''
+    ].map(csvEscape).join(',')).join('\n');
+    downloadText('historico-pagamentos-oliver.csv',header+rows);
+  });
+
+  $('#downloadAnnualBtn')?.addEventListener('click',async()=>{
+    const year=new Date().getFullYear();
+    const [{data:contrib},{data:loans},{data:entries}]=await Promise.all([
+      db.from('monthly_contributions').select('reference_month,amount_due,amount_paid,status,due_date').eq('member_id',state.user.id).gte('reference_month',year+'-01-01').lte('reference_month',year+'-12-31').order('reference_month'),
+      db.from('loans').select('released_at,principal_amount,operation_rate,interest_amount,total_contract_amount,outstanding_amount,status,beneficiary_type').eq('member_id',state.user.id).gte('released_at',year+'-01-01').lte('released_at',year+'-12-31').order('released_at'),
+      db.from('activity_entries').select('created_at,quantity,amount_due,amount_paid,status,activities(title,type)').eq('member_id',state.user.id).gte('created_at',year+'-01-01T00:00:00').lte('created_at',year+'-12-31T23:59:59').order('created_at')
+    ]);
+    let out='RESUMO ANUAL OLIVER CAIXINHA '+year+'\n\nCOTAS\n';
+    out+='mes,valor_devido,valor_pago,status\n'+(contrib||[]).map(x=>[x.reference_month,x.amount_due,x.amount_paid,x.status].map(csvEscape).join(',')).join('\n');
+    out+='\n\nEMPRESTIMOS\ndata,principal,taxa,juros,total,saldo,status,tipo\n'+(loans||[]).map(x=>[x.released_at,x.principal_amount,x.operation_rate,x.interest_amount,x.total_contract_amount,x.outstanding_amount,x.status,x.beneficiary_type].map(csvEscape).join(',')).join('\n');
+    out+='\n\nRIFAS E PASSEIOS\ndata,atividade,tipo,quantidade,valor_devido,valor_pago,status\n'+(entries||[]).map(x=>[x.created_at,x.activities?.title||'',x.activities?.type||'',x.quantity,x.amount_due,x.amount_paid,x.status].map(csvEscape).join(',')).join('\n');
+    downloadText('resumo-anual-oliver-'+year+'.csv',out);
+  });
+
+  $('#printLoanContractsBtn')?.addEventListener('click',async()=>{
+    const {data,error}=await db.from('loans').select('*').eq('member_id',state.user.id).order('created_at',{ascending:false});
+    if(error){toast(error.message);return}
+    openModal(`<div class="panel-head"><div><h3>Meus contratos de empréstimo</h3><p>Somente contratos vinculados ao seu cadastro.</p></div></div>
+      <div class="stack-list">${(data||[]).map(l=>`<div class="stack-item"><div><h4>${brl.format(Number(l.principal_amount))} • ${Number(l.operation_rate).toLocaleString('pt-BR')}%</h4><p>Total: ${brl.format(Number(l.total_contract_amount))} • Saldo: ${brl.format(Number(l.outstanding_amount))}<br>Liberação: ${formatDate(l.released_at)} • ${safe(l.status)}</p></div></div>`).join('')||'<div class="stack-item"><p>Nenhum contrato registrado.</p></div>'}</div>`);
+  });
+
+  $('#viewRulesBtn')?.addEventListener('click',()=>{
+    const t=state.terms;
+    openModal(`<div class="panel-head"><div><h3>${safe(t?.title||'Regulamento da OLIVER Caixinha')}</h3><p>Versão ${safe(t?.version||'atual')}</p></div></div><div class="terms-body"><pre>${safe(t?.terms_body||'Regulamento indisponível.')}</pre>${t?.privacy_body?`<h4>Privacidade</h4><pre>${safe(t.privacy_body)}</pre>`:''}</div>`);
+  });
+
+  const origNavigate=window.navigate;
+  if(typeof origNavigate==='function'){
+    window.navigate=function(page){
+      origNavigate(page);
+      if(page==='account')setTimeout(()=>renderAccount(),0);
+    };
+  }
+
+  setTimeout(()=>{renderAccount();registerDevice()},300);
+})();
