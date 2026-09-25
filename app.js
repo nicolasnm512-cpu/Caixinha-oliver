@@ -33,7 +33,6 @@ async function loadCore(){
   if(pe||!profile){toast('Perfil não encontrado.');await db.auth.signOut();showLogin();return}
   state.profile=profile;
   if(!profile.active){toast('Seu acesso está desativado.');await db.auth.signOut();showLogin();return}
-  if(profile.must_change_password && !isAdmin()){showFirstAccess();return}
   const [{data:settings},{data:terms}] = await Promise.all([
     db.from('fund_settings').select('*').eq('id',1).single(),
     db.from('terms_versions').select('*').eq('active',true).single()
@@ -88,7 +87,7 @@ qs('#logoutBtn').addEventListener('click',async()=>{await db.auth.signOut();show
 qsa('.nav-item').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.page)));
 qsa('[data-page-jump]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.pageJump)));
 
-const pageMeta={dashboard:['Visão geral','Acompanhe sua situação, pagamentos, empréstimos e atividades.'],requests:['Central de solicitações','Solicite empréstimos e acompanhe a análise.'],loans:['Empréstimos','Contratos, parcelas, juros e saldo devedor.'],payments:['Pagamentos e comprovantes','Pague via Pix e envie seu comprovante.'],activities:['Sorteios e passeios','Atividades coletivas, arrecadações e prestação de contas.'],members:['Cotistas','Situação dos participantes.'],admin:['Administração','Configurações, aprovações e lançamentos.']};
+const pageMeta={dashboard:['Visão geral','Acompanhe sua situação, pagamentos, empréstimos e atividades.'],requests:['Central de solicitações','Solicite empréstimos e acompanhe a análise.'],loans:['Empréstimos','Contratos, parcelas, juros e saldo devedor.'],payments:['Pagamentos e comprovantes','Pague via Pix e envie seu comprovante.'],activities:['Rifas e passeios','Veja suas rifas, números, passeios e pagamentos.'],account:['Meu cadastro','Dados pessoais, segurança e documentos.'],members:['Cotistas','Situação dos participantes.'],admin:['Administração','Configurações, aprovações e lançamentos.']};
 function navigate(page){if((page==='members'||page==='admin')&&!isAdmin()){toast('Área exclusiva da administração.');return}qsa('.page').forEach(p=>p.classList.remove('active-page'));qs(`#${page}`)?.classList.add('active-page');qsa('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page===page));qs('#pageTitle').textContent=pageMeta[page]?.[0]||'OLIVER Caixinha';qs('#pageSubtitle').textContent=pageMeta[page]?.[1]||'';window.scrollTo({top:0,behavior:'smooth'})}
 
 async function renderDashboard(){
@@ -143,13 +142,109 @@ async function renderDashboard(){
 async function renderRequests(){
   const {data:credit}=await db.from('member_credit_summary').select('*').eq('member_id',state.user.id).maybeSingle();state.credit=credit;
   const box=qs('#creditAnalysisBox');
-  if(credit){box.innerHTML=`<div class="personal-summary"><div><span>Contribuições elegíveis</span><b>${brl.format(Number(credit.eligible_contributions))}</b><small>${credit.share_count} cota(s)</small></div><div><span>Limite calculado</span><b>${brl.format(Number(credit.credit_limit))}</b><small>+${state.settings?.credit_bonus_percent??25}%</small></div><div><span>Disponível</span><b>${brl.format(Number(credit.available_credit))}</b><small>${credit.has_overdue_contributions||credit.has_overdue_activities||credit.has_overdue_loans?'Existem pendências':'Sem pendências registradas'}</small></div></div>`}else{box.innerHTML='<div class="stack-item"><p>O limite será calculado após os primeiros pagamentos confirmados.</p></div>'}
-  const q=db.from('loan_requests').select('*').order('requested_at',{ascending:false});if(!isAdmin())q.eq('member_id',state.user.id);const {data:rows}=await q;
-  qs('#requestList').innerHTML=(rows||[]).map(r=>`<div class="stack-item"><div><h4>${brl.format(Number(r.requested_amount))} • ${r.requested_installments}x</h4><p>${safe(r.purpose)}${r.beneficiary_type==='third_party'?` • Terceiro: ${safe(r.third_party_name)}`:''}<br>${formatDate(r.requested_at)}</p></div>${statusBadge(r.status)}</div>`).join('')||'<div class="stack-item"><p>Nenhuma solicitação registrada.</p></div>';
+  if(credit){
+    box.innerHTML=`<div class="personal-summary">
+      <div><span>Contribuições elegíveis</span><b>${brl.format(Number(credit.eligible_contributions))}</b><small>${credit.share_count} cota(s)</small></div>
+      <div><span>Limite calculado</span><b>${brl.format(Number(credit.credit_limit))}</b><small>+${state.settings?.credit_bonus_percent??25}%</small></div>
+      <div><span>Disponível</span><b>${brl.format(Number(credit.available_credit))}</b><small>${credit.has_overdue_contributions||credit.has_overdue_activities||credit.has_overdue_loans?'Existem pendências':'Sem pendências registradas'}</small></div>
+    </div>`;
+  }else{
+    box.innerHTML='<div class="stack-item"><p>O limite será calculado após os primeiros pagamentos confirmados.</p></div>';
+  }
+
+  const q=db.from('loan_requests').select('*').order('requested_at',{ascending:false});
+  if(!isAdmin())q.eq('member_id',state.user.id);
+  const {data:rows}=await q;
+  qs('#requestList').innerHTML=(rows||[]).map(r=>{
+    const rate=r.beneficiary_type==='third_party'
+      ? Number(state.settings?.third_party_interest_rate??30)
+      : Number(state.settings?.operation_interest_rate??20);
+    const canAccept=!isAdmin()&&r.status==='rejected'&&Number(r.available_credit_snapshot)>0&&Number(r.requested_amount)>Number(r.available_credit_snapshot);
+    return `<div class="stack-item request-card">
+      <div>
+        <h4>${brl.format(Number(r.requested_amount))} • ${r.requested_installments}x</h4>
+        <p>${safe(r.purpose)}${r.beneficiary_type==='third_party'?` • Terceiro: ${safe(r.third_party_name)} • juros ${rate.toLocaleString('pt-BR')}%`:''}<br>${formatDate(r.requested_at)}</p>
+        ${r.admin_decision_note?`<small class="decision-note">Motivo/observação: ${safe(r.admin_decision_note)}</small>`:''}
+        ${canAccept?`<div class="limit-offer"><span>Valor disponível: <b>${brl.format(Number(r.available_credit_snapshot))}</b></span><button class="primary-btn tiny" onclick="acceptAvailableCredit('${r.id}')">Aceitar este valor</button></div>`:''}
+      </div>
+      ${statusBadge(r.status)}
+    </div>`;
+  }).join('')||'<div class="stack-item"><p>Nenhuma solicitação registrada.</p></div>';
 }
-qs('#requestAmount').addEventListener('input',updateSimulation);qs('#requestInstallments').addEventListener('change',updateSimulation);qs('#requestBeneficiary').addEventListener('change',()=>{const third=qs('#requestBeneficiary').value==='third_party';qs('#requestThirdPartyName').closest('label').classList.toggle('hidden',!third);updateSimulation()});
-function updateSimulation(){const amount=Number(qs('#requestAmount').value||0),n=Number(qs('#requestInstallments').value||1),rate=Number(state.settings?.operation_interest_rate??20),total=amount*(1+rate/100);qs('#loanSimulation').innerHTML=`<span>Juros: <b>${brl.format(amount*rate/100)}</b></span><span>Total: <b>${brl.format(total)}</b></span><span>${n}x de <b>${brl.format(n?total/n:0)}</b></span>`}
-qs('#loanRequestForm').addEventListener('submit',async e=>{e.preventDefault();if(isAdmin()){toast('Use um acesso de cotista para solicitar crédito.');return}const amount=Number(qs('#requestAmount').value),inst=Number(qs('#requestInstallments').value),benef=qs('#requestBeneficiary').value,third=qs('#requestThirdPartyName').value.trim(),purpose=qs('#requestPurpose').value.trim();if(benef==='third_party'&&!third){toast('Informe o nome do terceiro.');return}if(benef==='third_party'&&!confirm('Confirmo que continuo integralmente responsável perante a OLIVER Caixinha por este valor, mesmo que o terceiro não pague.'))return;const c=state.credit;const payload={member_id:state.user.id,requested_amount:amount,requested_installments:inst,beneficiary_type:benef,third_party_name:benef==='third_party'?third:null,purpose,third_party_responsibility_accepted_at:benef==='third_party'?new Date().toISOString():null,eligible_contributions_snapshot:Number(c?.eligible_contributions||0),credit_limit_snapshot:Number(c?.credit_limit||0),used_credit_snapshot:Number(c?.used_credit||0),available_credit_snapshot:Number(c?.available_credit||0),current_share_count_snapshot:Number(c?.share_count||state.profile?.share_count||1),contribution_ok_snapshot:!c?.has_overdue_contributions,activities_ok_snapshot:!c?.has_overdue_activities,loan_history_ok_snapshot:!c?.has_overdue_loans,multi_share_snapshot:Boolean(c?.has_multiple_shares)};if(c&&amount>Number(c.available_credit)){toast('O valor solicitado ultrapassa seu limite disponível.');return}const {error}=await db.from('loan_requests').insert(payload);if(error){toast(error.message);return}e.target.reset();qs('#requestThirdPartyName').closest('label').classList.add('hidden');updateSimulation();await renderRequests();toast('Solicitação enviada para análise.')});
+
+qs('#requestAmount').addEventListener('input',updateSimulation);
+qs('#requestInstallments').addEventListener('change',updateSimulation);
+qs('#requestBeneficiary').addEventListener('change',()=>{
+  const third=qs('#requestBeneficiary').value==='third_party';
+  qs('#requestThirdPartyName').closest('label').classList.toggle('hidden',!third);
+  updateSimulation();
+});
+
+function updateSimulation(){
+  const amount=Number(qs('#requestAmount').value||0);
+  const n=Number(qs('#requestInstallments').value||1);
+  const third=qs('#requestBeneficiary').value==='third_party';
+  const rate=third?Number(state.settings?.third_party_interest_rate??30):Number(state.settings?.operation_interest_rate??20);
+  const total=amount*(1+rate/100);
+  const available=Number(state.credit?.available_credit||0);
+  const over=amount>available&&available>0;
+  qs('#loanSimulation').innerHTML=`<span>Taxa: <b>${rate.toLocaleString('pt-BR')}%</b></span><span>Juros: <b>${brl.format(amount*rate/100)}</b></span><span>Total: <b>${brl.format(total)}</b></span><span>${n}x de <b>${brl.format(n?total/n:0)}</b></span>${over?`<span class="simulation-warning">Seu limite atual é ${brl.format(available)}. Você ainda pode enviar a solicitação para análise.</span>`:''}`;
+}
+
+qs('#loanRequestForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(isAdmin()){toast('Use um acesso de cotista para solicitar crédito.');return}
+  const amount=Number(qs('#requestAmount').value),inst=Number(qs('#requestInstallments').value),benef=qs('#requestBeneficiary').value,third=qs('#requestThirdPartyName').value.trim(),purpose=qs('#requestPurpose').value.trim();
+  if(benef==='third_party'&&!third){toast('Informe o nome do terceiro.');return}
+  if(benef==='third_party'&&!confirm('Confirmo que continuo integralmente responsável perante a OLIVER Caixinha por este valor, mesmo que o terceiro não pague. A taxa para terceiro é de 30%.'))return;
+  const cr=state.credit;
+  const payload={
+    member_id:state.user.id,requested_amount:amount,requested_installments:inst,beneficiary_type:benef,
+    third_party_name:benef==='third_party'?third:null,purpose,
+    third_party_responsibility_accepted_at:benef==='third_party'?new Date().toISOString():null,
+    eligible_contributions_snapshot:Number(cr?.eligible_contributions||0),
+    credit_limit_snapshot:Number(cr?.credit_limit||0),
+    used_credit_snapshot:Number(cr?.used_credit||0),
+    available_credit_snapshot:Number(cr?.available_credit||0),
+    current_share_count_snapshot:Number(cr?.share_count||state.profile?.share_count||1),
+    contribution_ok_snapshot:!cr?.has_overdue_contributions,
+    activities_ok_snapshot:!cr?.has_overdue_activities,
+    loan_history_ok_snapshot:!cr?.has_overdue_loans,
+    multi_share_snapshot:Boolean(cr?.has_multiple_shares)
+  };
+  const {error}=await db.from('loan_requests').insert(payload);
+  if(error){toast(error.message);return}
+  e.target.reset();qs('#requestThirdPartyName').closest('label').classList.add('hidden');updateSimulation();await renderRequests();
+  toast(amount>Number(cr?.available_credit||0)&&Number(cr?.available_credit||0)>0?'Solicitação enviada. O valor está acima do limite e será analisado pela administração.':'Solicitação enviada para análise.');
+});
+
+window.acceptAvailableCredit=async requestId=>{
+  const {data:r,error}=await db.from('loan_requests').select('*').eq('id',requestId).eq('member_id',state.user.id).single();
+  if(error||!r){toast('Solicitação não encontrada.');return}
+  const amount=Number(r.available_credit_snapshot||0);
+  if(amount<=0){toast('Não há valor disponível para aceitar.');return}
+  const payload={
+    member_id:state.user.id,
+    requested_amount:amount,
+    requested_installments:r.requested_installments,
+    beneficiary_type:r.beneficiary_type,
+    third_party_name:r.third_party_name,
+    purpose:`Nova solicitação após ajuste de limite. Origem: ${r.purpose||''}`,
+    third_party_responsibility_accepted_at:r.beneficiary_type==='third_party'?new Date().toISOString():null,
+    eligible_contributions_snapshot:Number(state.credit?.eligible_contributions||0),
+    credit_limit_snapshot:Number(state.credit?.credit_limit||0),
+    used_credit_snapshot:Number(state.credit?.used_credit||0),
+    available_credit_snapshot:Number(state.credit?.available_credit||0),
+    current_share_count_snapshot:Number(state.credit?.share_count||state.profile?.share_count||1),
+    contribution_ok_snapshot:!state.credit?.has_overdue_contributions,
+    activities_ok_snapshot:!state.credit?.has_overdue_activities,
+    loan_history_ok_snapshot:!state.credit?.has_overdue_loans,
+    multi_share_snapshot:Boolean(state.credit?.has_multiple_shares)
+  };
+  const {error:insertError}=await db.from('loan_requests').insert(payload);
+  if(insertError){toast(insertError.message);return}
+  await renderRequests();toast('Nova solicitação enviada com o valor disponível.');
+};
 
 async function renderLoans(){const q=db.from('loans').select('*').order('created_at',{ascending:false});if(!isAdmin())q.eq('member_id',state.user.id);const {data:loans}=await q;const ids=(loans||[]).map(x=>x.id);let installments=[];if(ids.length){const {data}=await db.from('loan_installments').select('*').in('loan_id',ids).order('installment_number');installments=data||[]}
   const active=(loans||[]).filter(l=>['active','late'].includes(l.status));const debt=active.reduce((s,l)=>s+Number(l.outstanding_amount),0);qs('#loanTotalDebt').textContent=brl.format(debt);qs('#loanRate').textContent=`${Number(state.settings?.operation_interest_rate??20).toFixed(2)}% por operação`;const pending=installments.filter(i=>i.status==='pending');qs('#loanRemaining').textContent=pending.length;qs('#loanInterestEstimate').textContent=brl.format(active.reduce((s,l)=>s+Number(l.interest_amount||0),0));
