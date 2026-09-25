@@ -240,12 +240,50 @@
         </article>`;
       }
 
+      if(a.type==='trip'){
+        const due=isAdmin()?Number(a.unit_price||0):Number(myEntry?.amount_due||a.unit_price||0);
+        const paidMine=Number(myEntry?.amount_paid||0);
+        const remaining=Math.max(0,due-paidMine);
+        const paidStatus=myEntry?.status==='confirmed';
+        const eventText=a.event_at?new Date(a.event_at).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):(a.ends_at?formatDate(a.ends_at):'A definir');
+        const dueText=a.payment_due_date?formatDate(a.payment_due_date):'A definir';
+        const pendingCount=adminEntries.filter(e=>e.status!=='confirmed').length;
+        return `<article class="activity-card trip-card">
+          <div class="activity-cover passeio"><span>PASSEIO ${a.mandatory?'• OBRIGATÓRIO':''}</span>${statusBadge(a.status)}</div>
+          <div class="activity-body">
+            <h4>${safe(a.title)}</h4><p>${safe(a.description||'')}</p>
+            <div class="trip-details">
+              <div><span>Data e horário</span><b>${safe(eventText)}</b></div>
+              <div><span>Local</span><b>${safe(a.location||'A definir')}</b></div>
+              <div><span>Pagamento até</span><b>${safe(dueText)}</b></div>
+            </div>
+            <div class="activity-stats">
+              <div><span>Valor</span><b>${brl.format(Number(a.unit_price||0))}</b></div>
+              <div><span>${isAdmin()?'Arrecadado':'Pago'}</span><b>${brl.format(isAdmin()?paid:paidMine)}</b></div>
+              <div><span>${isAdmin()?'Pendentes':'Situação'}</span><b>${isAdmin()?pendingCount:(paidStatus?'Pago':'Pendente')}</b></div>
+            </div>
+            ${!isAdmin()&&!paidStatus?`<div class="mandatory-trip-note">Participação obrigatória. Se o saldo não for pago até ${safe(dueText)}, no dia seguinte ele passa para empréstimo com juros de 1% ao dia.</div><button class="primary-btn raffle-open-btn" onclick="payActivity('${a.id}','trip',${remaining})">Pagar ${brl.format(remaining)}</button>`:''}
+          </div>
+        </article>`;
+      }
+
       return `<article class="activity-card">
-        <div class="activity-cover ${a.type==='trip'?'passeio':'sorteio'}"><span>${a.type==='trip'?'PASSEIO':'EVENTO'}</span>${statusBadge(a.status)}</div>
+        <div class="activity-cover sorteio"><span>EVENTO</span>${statusBadge(a.status)}</div>
         <div class="activity-body"><h4>${safe(a.title)}</h4><p>${safe(a.description||'')}</p>
         <div class="activity-stats"><div><span>Valor</span><b>${brl.format(Number(a.unit_price||0))}</b></div><div><span>Meta</span><b>${brl.format(Number(a.target_amount||0))}</b></div><div><span>Status</span><b>${safe(a.status)}</b></div></div></div>
       </article>`;
     }).join('')||'<div class="stack-item"><p>Nenhuma atividade cadastrada.</p></div>';
+  };
+
+  window.payActivity=async function(activityId,kind,amount){
+    navigate('payments');
+    setTimeout(async()=>{
+      $('#receiptType').value=kind;
+      if(window.refreshReceiptReference)await refreshReceiptReference();
+      const sel=$('#receiptActivity');
+      if(sel)sel.value='activity:'+activityId;
+      $('#receiptAmount').value=Number(amount||0).toFixed(2);
+    },80);
   };
 
   window.openQuotaRaffle=async function(activityId){
@@ -392,6 +430,43 @@
           closeModal();await renderActivities();toast('Rifa criada e números distribuídos automaticamente.');
         }catch(err){toast(err.message||'Não foi possível criar a rifa.')}
         finally{btn.disabled=false;btn.textContent='Criar rifa e distribuir 100 números'}
+      });
+    },true);
+  }
+  const newTripBtn=$('#newTripBtn');
+  if(newTripBtn){
+    newTripBtn.addEventListener('click',e=>{
+      e.preventDefault();e.stopImmediatePropagation();
+      if(!isAdmin()){toast('Somente a administração pode criar passeios.');return}
+      openModal(`<div class="panel-head"><div><span class="eyebrow">NOVO PASSEIO</span><h3>Passeio obrigatório</h3><p>Todos os cotistas ativos receberão a cobrança. Se não pagar até o vencimento, no dia seguinte o saldo vira empréstimo com juros de 1% ao dia.</p></div></div>
+        <form id="mandatoryTripForm" class="form-grid">
+          <label class="full-span">Nome do passeio<input id="tripTitle" required placeholder="Ex.: Passeio de confraternização"></label>
+          <label class="full-span">Descrição<textarea id="tripDescription" rows="3"></textarea></label>
+          <label>Valor por cotista<input id="tripAmount" type="number" min="0.01" step="0.01" required></label>
+          <label>Data limite para pagamento<input id="tripDueDate" type="date" required></label>
+          <label>Data e horário do passeio<input id="tripEventAt" type="datetime-local" required></label>
+          <label>Local<input id="tripLocation" required placeholder="Local do passeio"></label>
+          <div class="mandatory-rule full-span"><b>Regra automática:</b> o passeio é obrigatório e não possui opção de cancelar. No primeiro dia após o vencimento, qualquer saldo pendente será convertido em empréstimo com juros de 1% ao dia.</div>
+          <button class="primary-btn full-span" type="submit">Criar passeio obrigatório</button>
+        </form>`);
+      $('#mandatoryTripForm').addEventListener('submit',async ev=>{
+        ev.preventDefault();
+        const btn=ev.submitter;btn.disabled=true;btn.textContent='Criando...';
+        try{
+          const local=$('#tripEventAt').value;
+          const eventIso=new Date(local).toISOString();
+          const {error}=await db.rpc('admin_create_mandatory_trip',{
+            p_title:$('#tripTitle').value.trim(),
+            p_description:$('#tripDescription').value.trim()||null,
+            p_amount:Number($('#tripAmount').value),
+            p_event_at:eventIso,
+            p_location:$('#tripLocation').value.trim(),
+            p_payment_due_date:$('#tripDueDate').value
+          });
+          if(error)throw error;
+          closeModal();await renderActivities();toast('Passeio criado e cobrança distribuída para os cotistas.');
+        }catch(err){toast(err.message||'Não foi possível criar o passeio.')}
+        finally{btn.disabled=false;btn.textContent='Criar passeio obrigatório'}
       });
     },true);
   }
