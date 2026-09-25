@@ -14,7 +14,7 @@
 
   <section id="loginView" class="login-shell">
     <div class="login-brand">
-      <div class="brand-mark">C20</div>
+      <img class="brand-logo login-logo" src="/assets/oliver-logo.svg" alt="OLIVER Caixinha" />
       <div>
         <strong>OLIVER Caixinha</strong>
         <span>Gestão financeira dos cotistas</span>
@@ -43,7 +43,7 @@
 
   <section id="firstAccessView" class="login-shell hidden">
     <div class="login-brand">
-      <div class="brand-icon">C20</div>
+      <img class="brand-logo login-logo" src="/assets/oliver-logo.svg" alt="OLIVER Caixinha" />
       <div><b>OLIVER Caixinha</b><small>Atualização obrigatória de cadastro</small></div>
     </div>
     <div class="login-card first-access-card">
@@ -112,7 +112,7 @@
   <div id="appView" class="app-shell hidden">
     <aside class="sidebar">
       <div class="sidebar-brand">
-        <div class="brand-mark small">C20</div>
+        <img class="brand-logo sidebar-logo" src="/assets/oliver-logo.svg" alt="OLIVER Caixinha" />
         <div><strong>OLIVER Caixinha</strong><span>Área dos cotistas</span></div>
       </div>
       <nav id="mainNav">
@@ -238,10 +238,33 @@
 
       <section id="payments" class="page">
         <div class="page-grid payment-layout">
-          <article class="panel pix-card">
-            <div class="panel-head"><div><h3>Pagamento via Pix</h3><p>Use o QR Code oficial da caixinha.</p></div><span class="badge success">Pix</span></div>
-            <div class="qr-wrap"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAXIAAAFyAQAAAADAX2ykAAACc0lEQVR4nO2bTWrkMBBGX40NvZRv0EexbxbmSHMD6yg5QEBaNth8s5Ds7h4SmIDjiYbSwrTab/FBofqVTXxmxR+fwsF555133nnnnf+It7r6/ZcZsBrkbT+dqMf5g/lRkpQA6KQ5SGZDJ5voJEl65r9aj/MH87meUM3hZowJGNNqmgEz68/W4/wxfP/H3spfeUBxSLLx17l6nP9aXtKCTXSyl1ezf67H+WP4IGkGiHYR8Xoz4nUp7yQtZ+tx/lA+mpnZAPaSgPH1ovKAdU+nT9Tj/EE8el5QEubtwI7Pr+fvpt/5v+FtymZEM9McFswGimkh9xCH1evfNvmaP8cBjPDWGxiQe0QegHAzQef1b5t88c+MWij51d7fqA65mLZT8dTunxvjH+PvHKTa2tgaVlICKXUef9vk6/klbAaduVsVGFMnzWHB7dswrzn3lK7zFFS6zhUIC0Anm07U4/xR/NafDG8mssE4r73i9WYiCCMPaHw1dI4e54/lH/KrmmQFqQbcVCthKXl+1Sj/lF/RiTHVR43EWijR2e3bIs/dtFvXqh5dCFvNNMrzq6Z5e9GCTblH0s2Iww6E2rM8VY/zx/J1dHRdMBt2W+YeyGb36f931e/8h2vzz8CY4KFhtdfEZXn8bZH/eH60Jdaqkdjjb7v8/f5k2U75IpvK/cn+Hf6r9Th/FP9wTGuZm6qTfjy/Pl9ond/vT/4cKAUR0epMmDGtfn+jTf6d+5PdAqw9hARx6haLA96f/G/41SBfpPl+J9rnC63zoRZJW320Wu1U6ub+uWF+m/+W1e21UJ0qPI4bPL9qkDf/vtt555133nnnT+d/A/w399wVrih9AAAAAElFTkSuQmCC" alt="QR Code Pix demonstrativo" /><div><span>Chave Pix</span><b id="pixKeyText">Configurar na administração</b><small>O valor será identificado pelo comprovante anexado.</small></div></div>
-            <div class="pix-copy"><code id="pixPayload">PIX • Configure a chave da caixinha</code><button id="copyPixBtn" class="outline-btn">Copiar</button></div>
+          <article class="panel pix-card official-pix-card">
+            <div class="panel-head"><div><h3>Pagamento via Pix</h3><p>Conta oficial da OLIVER Caixinha.</p></div><span class="badge success">Inter • 077</span></div>
+            <div class="official-pix-layout">
+              <div class="qr-wrap official">
+                <img src="/assets/pix-qr.svg" alt="QR Code Pix oficial da OLIVER Caixinha" />
+                <div class="qr-instruction">
+                  <b>Escaneie o QR Code</b>
+                  <span>Informe o valor exato do pagamento no seu banco.</span>
+                </div>
+              </div>
+              <div class="payment-account">
+                <div class="payment-account-logo"><img src="/assets/oliver-logo.svg" alt="" /><div><b>OLIVER Caixinha</b><span>Dados oficiais para pagamento</span></div></div>
+                <div class="payment-data-grid">
+                  <div><span>Banco</span><b id="pixBank">Inter</b></div>
+                  <div><span>Código</span><b id="pixBankCode">077</b></div>
+                  <div class="wide"><span>Titular</span><b id="pixHolder">Gabriela Lima Duarte</b></div>
+                  <div class="wide"><span>CNPJ / Chave Pix</span><b id="pixKeyText">58.119.805/0001-39</b></div>
+                  <div><span>Agência</span><b id="pixAgency">0001</b></div>
+                  <div><span>Conta</span><b id="pixAccount">41655540-3</b></div>
+                </div>
+              </div>
+            </div>
+            <div class="pix-copy">
+              <code id="pixPayload">000201010211...</code>
+              <button id="copyPixBtn" class="outline-btn" type="button">Copiar Pix</button>
+            </div>
+            <small class="pix-security-note">O pagamento somente será considerado quitado após a confirmação do comprovante pela administração.</small>
           </article>
           <article class="panel">
             <div class="panel-head"><div><h3>Anexar comprovante</h3><p>Envie o comprovante para conferência.</p></div></div>
@@ -316,6 +339,11 @@
               <label>Valor da cota mensal<input id="settingShare" type="number" min="1" step="0.01" /></label>
               <label>Taxa de juros por operação<input id="settingRate" type="number" min="0" step="0.01" /></label>
               <label>Chave Pix<input id="settingPix" type="text" placeholder="CPF, telefone, e-mail ou aleatória" /></label>
+              <div class="full-span payment-settings-preview">
+                <span>Conta oficial</span>
+                <b>Inter 077 • Ag. 0001 • Conta 41655540-3</b>
+                <small>Gabriela Lima Duarte • CNPJ 58.119.805/0001-39</small>
+              </div>
               <label>Nome da caixinha<input id="settingName" type="text" /></label><label>Limite adicional (%)<input id="settingCreditBonus" type="number" min="0" step="1" /></label><label>Máximo de parcelas<input id="settingMaxInstallments" type="number" min="1" max="3" step="1" /></label>
               <label>Juros para terceiro (%)<input id="settingThirdPartyRate" type="number" min="0" step="0.01" /></label>
               <label>Retorno dos juros próprios (%)<input id="settingOwnInterestReturn" type="number" min="0" max="100" step="0.01" /></label>
