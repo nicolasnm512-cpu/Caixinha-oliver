@@ -91,67 +91,70 @@ const pageMeta={dashboard:['Visão geral','Acompanhe sua situação, pagamentos,
 function navigate(page){if((page==='members'||page==='admin')&&!isAdmin()){toast('Área exclusiva da administração.');return}qsa('.page').forEach(p=>p.classList.remove('active-page'));qs(`#${page}`)?.classList.add('active-page');qsa('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page===page));qs('#pageTitle').textContent=pageMeta[page]?.[0]||'OLIVER Caixinha';qs('#pageSubtitle').textContent=pageMeta[page]?.[1]||'';window.scrollTo({top:0,behavior:'smooth'})}
 
 async function renderDashboard(){
-  const baseQueries=[
-    db.from('member_credit_summary').select('*').eq('member_id',state.user.id).maybeSingle(),
-    db.from('monthly_contributions').select('*').eq('member_id',state.user.id).eq('reference_month',currentMonthRef).maybeSingle(),
-    db.from('loans').select('id,outstanding_amount,status').in('status',['active','late'])
-  ];
-  const [{data:credit},{data:myContribution},{data:loans}] = await Promise.all(baseQueries);
-  state.credit=credit;
+  const hour=new Date().getHours();
+  const greeting=hour<12?'Bom dia':hour<18?'Boa tarde':'Boa noite';
+  const fullName=String(state.profile?.full_name||'Cotista').trim();
+  const firstName=fullName.split(/\s+/)[0]||'Cotista';
+  qs('#homeGreeting').textContent=greeting;
+  qs('#homeName').textContent=firstName;
+  qs('#homeRole').textContent=isAdmin()?'Administração da OLIVER Caixinha':`Cotista ${state.profile?.cotista_number?String(state.profile.cotista_number).padStart(2,'0'):''} • resumo de ${now.getFullYear()}`;
 
   if(isAdmin()){
-    const [{data:summary},{data:tx},{count},{data:monthContrib}] = await Promise.all([
+    const yearStart=`${now.getFullYear()}-01-01`;
+    const yearEnd=`${now.getFullYear()}-12-31`;
+    const [{data:summary},{data:yearTx},{data:loans},{count:pendingReq},{count:pendingReceipts},{count:members}] = await Promise.all([
       db.from('shared_fund_summary').select('*').maybeSingle(),
-      db.from('fund_transactions').select('*').order('transaction_date',{ascending:false}).limit(8),
-      db.from('profiles').select('id',{count:'exact',head:true}).eq('active',true).not('cotista_number','is',null),
-      db.from('monthly_contributions').select('amount_paid,status').eq('reference_month',currentMonthRef)
+      db.from('fund_transactions').select('direction,category,amount,transaction_date').gte('transaction_date',yearStart).lte('transaction_date',yearEnd),
+      db.from('loans').select('id,outstanding_amount,status').in('status',['active','late']),
+      db.from('loan_requests').select('id',{count:'exact',head:true}).in('status',['pending','under_review']),
+      db.from('payment_receipts').select('id',{count:'exact',head:true}).eq('status','pending'),
+      db.from('profiles').select('id',{count:'exact',head:true}).eq('active',true).not('cotista_number','is',null)
     ]);
+    const paid=(yearTx||[]).filter(t=>t.direction==='income'&&['contribution','draw','trip'].includes(t.category));
+    const paidTotal=paid.reduce((s,t)=>s+Number(t.amount||0),0);
+    const contrib=paid.filter(t=>t.category==='contribution').reduce((s,t)=>s+Number(t.amount||0),0);
+    const raffles=paid.filter(t=>t.category==='draw').reduce((s,t)=>s+Number(t.amount||0),0);
+    const trips=paid.filter(t=>t.category==='trip').reduce((s,t)=>s+Number(t.amount||0),0);
+    const debt=(loans||[]).reduce((s,l)=>s+Number(l.outstanding_amount||0),0);
 
-    qs('#fundBalance').textContent=brl.format(Number(summary?.cash_balance||0));
-    qs('#kpiMembers').textContent=`${count||0}/20`;
-    const confirmed=(monthContrib||[]).filter(x=>x.status==='confirmed');
-    qs('#kpiContributions').textContent=brl.format(confirmed.reduce((s,x)=>s+Number(x.amount_paid||0),0));
-    qs('#kpiContributionStatus').textContent=`${confirmed.length} cotista(s) confirmado(s)`;
-    qs('#kpiInterest').textContent=brl.format(Number(summary?.interest_received||0));
-    const totalDebt=(loans||[]).reduce((s,l)=>s+Number(l.outstanding_amount||0),0);
-    qs('#kpiLoans').textContent=brl.format(totalDebt);
-    qs('#kpiLoanCount').textContent=`${(loans||[]).length} contrato(s) ativo(s)`;
-
-    qs('#recentTransactions').innerHTML=(tx||[]).map(t=>`<div class="transaction"><div class="transaction-meta"><div class="tx-icon">${t.direction==='income'?'↙':'↗'}</div><div><b>${safe(t.description)}</b><small>${formatDate(t.transaction_date)} • ${safe(t.category)}</small></div></div><b class="amount ${t.direction==='income'?'in':'out'}">${t.direction==='income'?'+':'−'} ${brl.format(Number(t.amount))}</b></div>`).join('')||'<div class="stack-item"><p>Nenhuma movimentação registrada.</p></div>';
-
-    const months=[];for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push({key:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,label:d.toLocaleDateString('pt-BR',{month:'short'}),value:0})}
-    (tx||[]).forEach(t=>{const m=months.find(x=>t.transaction_date?.startsWith(x.key));if(m)m.value+=t.direction==='income'?Number(t.amount):-Number(t.amount)});
-    const max=Math.max(1,...months.map(x=>Math.abs(x.value)));
-    qs('#chart').innerHTML=months.map(m=>`<div class="bar-col"><div class="bar" data-value="${brl.format(m.value)}" style="height:${Math.max(12,Math.round(Math.abs(m.value)/max*170))}px"></div><span>${m.label}</span></div>`).join('');
+    qs('#homePaidTotal').textContent=brl.format(paidTotal);
+    qs('#homePaidBreakdown').textContent=`Cotas ${brl.format(contrib)} • Rifas ${brl.format(raffles)} • Passeios ${brl.format(trips)}`;
+    qs('#homeLoanNegative').textContent=debt>0?brl.format(-debt):brl.format(0);
+    qs('#homeLoanNote').textContent=debt>0?`${(loans||[]).length} contrato(s) em aberto`:'Sem empréstimos em aberto';
+    qs('#homeCashAvailable').textContent=brl.format(Number(summary?.cash_balance||0));
+    qs('#homeCashNote').textContent='Disponível para movimentação';
+    qs('#homePendingRequests').textContent=String(pendingReq||0);
+    qs('#homePendingReceipts').textContent=String(pendingReceipts||0);
+    qs('#homeActiveMembers').textContent=String(members||0);
+    return;
   }
 
-  qs('#myMonthlyShare').textContent=brl.format(Number(state.settings?.monthly_share_amount||100)*(Number(state.profile?.share_count)||1));
-  qs('#myContributionState').textContent=myContribution?.status==='confirmed'?'Paga neste mês':'Pendente neste mês';
-  qs('#myStatusBadge').className=`badge ${myContribution?.status==='confirmed'?'success':'warning'}`;
-  qs('#myStatusBadge').textContent=myContribution?.status==='confirmed'?'Em dia':'Pendente';
+  const [{data:home,error:homeError},{data:annual,error:annualError}] = await Promise.all([
+    db.rpc('get_my_home_summary',{p_year:now.getFullYear()}),
+    db.rpc('get_my_annual_balance',{p_year:now.getFullYear()})
+  ]);
+  const h=Array.isArray(home)?home[0]:home;
+  if(!homeError&&h){
+    qs('#homePaidTotal').textContent=brl.format(Number(h.paid_total||0));
+    qs('#homePaidBreakdown').textContent=`Cotas ${brl.format(Number(h.paid_contributions||0))} • Rifas ${brl.format(Number(h.paid_raffles||0))} • Passeios ${brl.format(Number(h.paid_trips||0))}`;
+    const debt=Number(h.loan_balance||0);
+    qs('#homeLoanNegative').textContent=debt>0?brl.format(-debt):brl.format(0);
+    qs('#homeLoanNote').textContent=debt>0?'Valor ainda em aberto':'Sem empréstimos em aberto';
+    qs('#homeCashAvailable').textContent=brl.format(Number(h.cash_available||0));
+    qs('#homeCashNote').textContent='Disponível na caixinha para movimentação';
+  }
 
-  const myDebt=(loans||[]).reduce((s,l)=>s+Number(l.outstanding_amount||0),0);
-  qs('#myLoanBalance').textContent=brl.format(myDebt);
-  qs('#myLoanState').textContent=(loans||[]).length?`${loans.length} contrato(s)`:'Sem empréstimos ativos';
-
-  const {data:nextInst}=await db.from('loan_installments').select('due_date,total_amount,amount_paid,status,loan_id').eq('status','pending').order('due_date',{ascending:true}).limit(1).maybeSingle();
-  qs('#myNextDue').textContent=nextInst?formatDate(nextInst.due_date):'—';
-  qs('#myNextAmount').textContent=nextInst?brl.format(Math.max(0,Number(nextInst.total_amount)-Number(nextInst.amount_paid||0))):'Sem parcela pendente';
-
-  if(!isAdmin()){
-    const {data:annual,error:annualError}=await db.rpc('get_my_annual_balance',{p_year:now.getFullYear()});
-    const a=Array.isArray(annual)?annual[0]:annual;
-    if(!annualError&&a){
-      qs('#annualBalanceYear').textContent=String(a.year);
-      qs('#annualBalanceTotal').textContent=brl.format(Number(a.estimated_year_end_total||0));
-      qs('#annualContributions').textContent=brl.format(Number(a.contributions_paid||0));
-      qs('#annualOwnInterestBonus').textContent=brl.format(Number(a.own_interest_bonus||0));
-      qs('#annualCollectiveShare').textContent=brl.format(Number(a.collective_interest_share||0));
-      qs('#annualCollectivePercent').textContent=`${Number(a.collective_share_percent||0).toLocaleString('pt-BR',{maximumFractionDigits:2})}% da divisão por cota`;
-      qs('#annualTripsPaid').textContent=brl.format(Number(a.trips_paid||0));
-      const tripReturn=Number(a.trip_return||0);
-      qs('#annualTripReturnNote').textContent=tripReturn>0?`Retorno calculado: ${brl.format(tripReturn)}`:'Retorno do passeio aguardando percentual definido';
-    }
+  const a=Array.isArray(annual)?annual[0]:annual;
+  if(!annualError&&a){
+    qs('#annualBalanceYear').textContent=String(a.year);
+    qs('#annualBalanceTotal').textContent=brl.format(Number(a.estimated_year_end_total||0));
+    qs('#annualContributions').textContent=brl.format(Number(a.contributions_paid||0));
+    qs('#annualOwnInterestBonus').textContent=brl.format(Number(a.own_interest_bonus||0));
+    qs('#annualCollectiveShare').textContent=brl.format(Number(a.collective_interest_share||0));
+    qs('#annualCollectivePercent').textContent=`${Number(a.collective_share_percent||0).toLocaleString('pt-BR',{maximumFractionDigits:2})}% da divisão por cota`;
+    qs('#annualTripsPaid').textContent=brl.format(Number(a.trips_paid||0));
+    const tripReturn=Number(a.trip_return||0);
+    qs('#annualTripReturnNote').textContent=tripReturn>0?`Retorno calculado: ${brl.format(tripReturn)}`:'Retorno do passeio ainda não definido';
   }
 }
 
@@ -432,12 +435,51 @@ async function renderMembers(){
   ]);
   window.__membersById=Object.fromEntries((members||[]).map(m=>[m.id,m]));
   const annualMap=Object.fromEntries((annual||[]).map(a=>[a.member_id,a]));
-  qs('#membersTable').innerHTML=`<table class="data-table member-admin-table"><thead><tr><th>#</th><th>Cotista</th><th>Cotas pagas ${now.getFullYear()}</th><th>Total em cotas</th><th>Previsão fim do ano</th><th>Empréstimos no ano</th><th>Juros registrados</th><th>${currentMonthLabel}</th><th>Empréstimo aberto</th><th>Acesso</th><th>Ações</th></tr></thead><tbody>${(members||[]).map(m=>{const mc=(contrib||[]).find(x=>x.member_id===m.id),debt=(loans||[]).filter(x=>x.member_id===m.id).reduce((s,x)=>s+Number(x.outstanding_amount),0),snap=(snapshots||[]).find(x=>x.member_id===m.id),yr=annualMap[m.id];return `<tr><td>${m.cotista_number?String(m.cotista_number).padStart(2,'0'):'ADM'}</td><td><b>${safe(m.full_name)}</b><br><small>${safe(m.email||'')}</small></td><td>${snap?.paid_share_units??'—'}</td><td>${snap?brl.format(Number(snap.contributions_paid||0)):'—'}</td><td>${m.cotista_number&&yr?brl.format(Number(yr.estimated_year_end_total||0)):'—'}</td><td>${snap?brl.format(Number(snap.loan_principal_year||0)):'—'}</td><td>${snap?brl.format(Number(snap.interest_recorded||0)):'—'}</td><td>${mc?.status==='confirmed'?brl.format(Number(mc.amount_paid||0)):'Pendente'}</td><td>${brl.format(debt)}</td><td>${m.active?statusBadge('active'):statusBadge('cancelled')}</td><td>${m.cotista_number?`<div class="row-actions"><button class="outline-btn tiny" onclick="toggleMemberAccess('${m.id}',${m.active?'false':'true'})">${m.active?'Desativar':'Ativar'}</button><button class="outline-btn tiny" onclick="resetMemberPassword('${m.id}')">Senha</button></div>`:'—'}</td></tr>`}).join('')}</tbody></table>`;
+  const rows=(members||[]).map(m=>{
+    const mc=(contrib||[]).find(x=>x.member_id===m.id);
+    const debt=(loans||[]).filter(x=>x.member_id===m.id).reduce((s,x)=>s+Number(x.outstanding_amount||0),0);
+    const snap=(snapshots||[]).find(x=>x.member_id===m.id);
+    const yr=annualMap[m.id];
+    return {m,mc,debt,snap,yr};
+  });
+  window.__memberAdminData=Object.fromEntries(rows.map(r=>[r.m.id,r]));
+
+  qs('#membersTable').innerHTML=`<table class="data-table member-admin-table compact-members"><thead><tr><th>#</th><th>Cotista</th><th>Pago no ano</th><th>Empréstimo aberto</th><th>Previsão anual</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(({m,mc,debt,snap,yr})=>`<tr>
+    <td>${m.cotista_number?String(m.cotista_number).padStart(2,'0'):'ADM'}</td>
+    <td><b>${safe(m.full_name)}</b><small>${m.cotista_number?'Cotista':'Administrador'}</small></td>
+    <td>${m.cotista_number?(snap?brl.format(Number(snap.contributions_paid||0)):'—'):'—'}</td>
+    <td class="${debt>0?'amount out':''}">${m.cotista_number&&debt>0?brl.format(-debt):brl.format(0)}</td>
+    <td>${m.cotista_number&&yr?brl.format(Number(yr.estimated_year_end_total||0)):'—'}</td>
+    <td>${m.active?statusBadge('active'):statusBadge('cancelled')}</td>
+    <td>${m.cotista_number?`<button class="outline-btn tiny" onclick="openMemberAdminDetails('${m.id}')">Ver</button>`:'—'}</td>
+  </tr>`).join('')}</tbody></table>`;
   window.__membersCsv=members||[];
 }
 
+window.openMemberAdminDetails=id=>{
+  const row=window.__memberAdminData?.[id];
+  if(!row)return;
+  const {m,mc,debt,snap,yr}=row;
+  openModal(`<div class="member-detail-modal">
+    <div class="panel-head"><div><span class="eyebrow">COTISTA ${String(m.cotista_number||'').padStart(2,'0')}</span><h3>${safe(m.full_name)}</h3><p>${safe(m.email||'Sem e-mail')}</p></div>${m.active?statusBadge('active'):statusBadge('cancelled')}</div>
+    <div class="member-detail-grid">
+      <div><span>Cotas pagas ${now.getFullYear()}</span><b>${snap?.paid_share_units??'—'}</b></div>
+      <div><span>Total em cotas</span><b>${snap?brl.format(Number(snap.contributions_paid||0)):'—'}</b></div>
+      <div><span>Mês atual</span><b>${mc?.status==='confirmed'?brl.format(Number(mc.amount_paid||0)):'Pendente'}</b></div>
+      <div><span>Empréstimo aberto</span><b>${debt>0?brl.format(debt):brl.format(0)}</b></div>
+      <div><span>Empréstimos no ano</span><b>${snap?brl.format(Number(snap.loan_principal_year||0)):'—'}</b></div>
+      <div><span>Juros registrados</span><b>${snap?brl.format(Number(snap.interest_recorded||0)):'—'}</b></div>
+      <div class="wide"><span>Previsão fim do ano</span><b>${yr?brl.format(Number(yr.estimated_year_end_total||0)):'—'}</b></div>
+    </div>
+    <div class="member-detail-actions">
+      <button class="outline-btn" onclick="toggleMemberAccess('${m.id}',${m.active?'false':'true'});closeModal()">${m.active?'Desativar acesso':'Ativar acesso'}</button>
+      <button class="outline-btn" onclick="resetMemberPassword('${m.id}')">Redefinir senha</button>
+    </div>
+  </div>`);
+};
+
 qs('#exportMembersBtn').addEventListener('click',()=>{const rows=window.__membersCsv||[];const txt='numero,nome,email,cotas,ativo\n'+rows.map(m=>`${m.cotista_number||''},"${String(m.full_name).replaceAll('"','""')}",${m.email||''},${m.share_count},${m.active?'sim':'nao'}`).join('\n');const blob=new Blob([txt],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cotistas-oliver-caixinha.csv';a.click();URL.revokeObjectURL(a.href)});
-qs('#newMemberBtn').addEventListener('click',()=>{if(!isAdmin())return;openModal(`<div class="panel-head"><div><h3>Novo cotista</h3><p>Crie o acesso inicial. A senha será obrigatoriamente trocada no primeiro login.</p></div></div><form id="newMemberForm" class="form-grid"><label>Número do cotista<input id="newMemberNumber" type="number" min="1" max="20" required></label><label>Cotas mensais<input id="newMemberShares" type="number" min="1" max="20" value="1" required></label><label class="full-span">Nome completo<input id="newMemberName" required></label><label class="full-span">E-mail de acesso<input id="newMemberEmail" type="email" required></label><label class="full-span">Senha provisória<input id="newMemberPassword" type="text" minlength="8" value="Oliver@2026" required></label><button class="primary-btn full-span" type="submit">Criar cotista</button></form>`);setTimeout(()=>qs('#newMemberForm')?.addEventListener('submit',async e=>{e.preventDefault();const btn=e.submitter;try{if(btn){btn.disabled=true;btn.textContent='Criando...'}await callAdminUsers({action:'create_member',cotista_number:Number(qs('#newMemberNumber').value),share_count:Number(qs('#newMemberShares').value),full_name:qs('#newMemberName').value.trim(),email:qs('#newMemberEmail').value.trim().toLowerCase(),password:qs('#newMemberPassword').value});closeModal();await renderMembers();toast('Cotista criado com sucesso.')}catch(err){toast(err.message)}finally{if(btn){btn.disabled=false;btn.textContent='Criar cotista'}}}),0)});
+qs('#newMemberBtn').addEventListener('click',()=>{if(!isAdmin())return;openModal(`<div class="panel-head"><div><h3>Novo cotista</h3><p>Crie o acesso inicial do cotista. A senha poderá ser alterada pelo próprio usuário em Meu cadastro.</p></div></div><form id="newMemberForm" class="form-grid"><label>Número do cotista<input id="newMemberNumber" type="number" min="1" max="20" required></label><label>Cotas mensais<input id="newMemberShares" type="number" min="1" max="20" value="1" required></label><label class="full-span">Nome completo<input id="newMemberName" required></label><label class="full-span">E-mail de acesso<input id="newMemberEmail" type="email" required></label><label class="full-span">Senha provisória<input id="newMemberPassword" type="text" minlength="8" value="Oliver@2026" required></label><button class="primary-btn full-span" type="submit">Criar cotista</button></form>`);setTimeout(()=>qs('#newMemberForm')?.addEventListener('submit',async e=>{e.preventDefault();const btn=e.submitter;try{if(btn){btn.disabled=true;btn.textContent='Criando...'}await callAdminUsers({action:'create_member',cotista_number:Number(qs('#newMemberNumber').value),share_count:Number(qs('#newMemberShares').value),full_name:qs('#newMemberName').value.trim(),email:qs('#newMemberEmail').value.trim().toLowerCase(),password:qs('#newMemberPassword').value});closeModal();await renderMembers();toast('Cotista criado com sucesso.')}catch(err){toast(err.message)}finally{if(btn){btn.disabled=false;btn.textContent='Criar cotista'}}}),0)});
 function generateTemporaryPassword(n){const a=new Uint32Array(1);crypto.getRandomValues(a);return `Olv${String(n).padStart(2,'0')}@${a[0].toString(36).toUpperCase().slice(-6)}`}
 qs('#import2026Btn').addEventListener('click',async()=>{
   if(!isAdmin())return;
@@ -468,11 +510,11 @@ qs('#import2026Btn').addEventListener('click',async()=>{
   }catch(err){toast(err.message||'Falha na importação.')}finally{btn.disabled=false;btn.textContent=original}
 });
 window.toggleMemberAccess=async(id,active)=>{try{await callAdminUsers({action:'set_active',user_id:id,active});await renderMembers();toast(active?'Acesso ativado.':'Acesso desativado.')}catch(err){toast(err.message)}};
-window.resetMemberPassword=async(id)=>{const name=window.__membersById?.[id]?.full_name||'cotista';const password=prompt(`Nova senha provisória para ${name} (mínimo 8 caracteres):`,'Oliver@2026');if(!password)return;if(password.length<8){toast('Use ao menos 8 caracteres.');return}try{await callAdminUsers({action:'reset_password',user_id:id,password});await renderMembers();toast('Senha provisória redefinida. O cotista deverá trocá-la no próximo login.')}catch(err){toast(err.message)}};
+window.resetMemberPassword=async(id)=>{const name=window.__membersById?.[id]?.full_name||'cotista';const password=prompt(`Nova senha provisória para ${name} (mínimo 8 caracteres):`,'Oliver@2026');if(!password)return;if(password.length<8){toast('Use ao menos 8 caracteres.');return}try{await callAdminUsers({action:'reset_password',user_id:id,password});await renderMembers();toast('Senha redefinida com sucesso.')}catch(err){toast(err.message)}};
 
 async function renderFinanceAgent(){
   if(!isAdmin())return;
-  const {data:events,error}=await db.from('finance_agent_events').select('id,created_at,event_date,reference_month,event_type,amount,status,description,member_id,profiles!finance_agent_events_member_id_fkey(full_name)').order('created_at',{ascending:false}).limit(40);
+  const {data:events,error}=await db.from('finance_agent_events').select('id,created_at,event_date,reference_month,event_type,amount,status,description,member_id,profiles!finance_agent_events_member_id_fkey(full_name)').order('created_at',{ascending:false}).limit(20);
   if(error){qs('#agentEventsTable').innerHTML='<div class="stack-item"><p>Não foi possível carregar o agente.</p></div>';return}
   const rows=events||[];
   qs('#agentProcessed').textContent=String(rows.filter(e=>e.status==='confirmed'||e.status==='recorded').length);
@@ -494,7 +536,7 @@ window.ignoreAgentEvent=async id=>{
   toast('Lançamento ignorado sem alterar o caixa.');
 };
 
-async function renderAdmin(){if(!isAdmin())return;qs('#settingShare').value=state.settings?.monthly_share_amount??100;qs('#settingRate').value=state.settings?.operation_interest_rate??20;qs('#settingPix').value=state.settings?.pix_key??'';qs('#settingName').value=state.settings?.fund_name??'OLIVER Caixinha';qs('#settingCreditBonus').value=state.settings?.credit_bonus_percent??25;qs('#settingMaxInstallments').value=state.settings?.max_installments??3;qs('#settingThirdPartyRate').value=state.settings?.third_party_interest_rate??30;qs('#settingOwnInterestReturn').value=state.settings?.own_interest_return_percent??10;qs('#settingTripReturn').value=state.settings?.trip_return_percent??'';const {data:reqs}=await db.from('loan_requests').select('*,profiles!loan_requests_member_id_fkey(full_name)').in('status',['pending','under_review']).order('requested_at');qs('#pendingCount').textContent=`${(reqs||[]).length} pendente${(reqs||[]).length===1?'':'s'}`;qs('#adminRequests').innerHTML=(reqs||[]).map(r=>`<div class="stack-item"><div><h4>${safe(r.profiles?.full_name||'Cotista')} • ${brl.format(Number(r.requested_amount))}</h4><p>${r.requested_installments} parcela(s) • ${safe(r.purpose)}${r.beneficiary_type==='third_party'?` • Terceiro: ${safe(r.third_party_name)}`:''}</p></div><div><button class="primary-btn small" onclick="approveRequest('${r.id}')">Aprovar</button> <button class="outline-btn" onclick="rejectRequest('${r.id}')">Recusar</button></div></div>`).join('')||'<div class="stack-item"><p>Nenhuma solicitação aguardando análise.</p></div>';const {data:tx}=await db.from('fund_transactions').select('*').order('transaction_date',{ascending:false}).limit(40);qs('#adminTransactions').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th>Valor</th></tr></thead><tbody>${(tx||[]).map(t=>`<tr><td>${formatDate(t.transaction_date)}</td><td>${t.direction==='income'?'Entrada':'Saída'}</td><td>${safe(t.category)}</td><td>${safe(t.description)}</td><td class="amount ${t.direction==='income'?'in':'out'}">${t.direction==='income'?'+':'−'} ${brl.format(Number(t.amount))}</td></tr>`).join('')}</tbody></table>`}
+async function renderAdmin(){if(!isAdmin())return;qs('#settingShare').value=state.settings?.monthly_share_amount??100;qs('#settingRate').value=state.settings?.operation_interest_rate??20;qs('#settingPix').value=state.settings?.pix_key??'';qs('#settingName').value=state.settings?.fund_name??'OLIVER Caixinha';qs('#settingCreditBonus').value=state.settings?.credit_bonus_percent??25;qs('#settingMaxInstallments').value=state.settings?.max_installments??3;qs('#settingThirdPartyRate').value=state.settings?.third_party_interest_rate??30;qs('#settingOwnInterestReturn').value=state.settings?.own_interest_return_percent??10;qs('#settingTripReturn').value=state.settings?.trip_return_percent??'';const {data:reqs}=await db.from('loan_requests').select('*,profiles!loan_requests_member_id_fkey(full_name)').in('status',['pending','under_review']).order('requested_at');qs('#pendingCount').textContent=`${(reqs||[]).length} pendente${(reqs||[]).length===1?'':'s'}`;qs('#adminRequests').innerHTML=(reqs||[]).map(r=>`<div class="stack-item"><div><h4>${safe(r.profiles?.full_name||'Cotista')} • ${brl.format(Number(r.requested_amount))}</h4><p>${r.requested_installments} parcela(s) • ${safe(r.purpose)}${r.beneficiary_type==='third_party'?` • Terceiro: ${safe(r.third_party_name)}`:''}</p></div><div><button class="primary-btn small" onclick="approveRequest('${r.id}')">Aprovar</button> <button class="outline-btn" onclick="rejectRequest('${r.id}')">Recusar</button></div></div>`).join('')||'<div class="stack-item"><p>Nenhuma solicitação aguardando análise.</p></div>';const {data:tx}=await db.from('fund_transactions').select('*').order('transaction_date',{ascending:false}).limit(20);qs('#adminTransactions').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th>Valor</th></tr></thead><tbody>${(tx||[]).map(t=>`<tr><td>${formatDate(t.transaction_date)}</td><td>${t.direction==='income'?'Entrada':'Saída'}</td><td>${safe(t.category)}</td><td>${safe(t.description)}</td><td class="amount ${t.direction==='income'?'in':'out'}">${t.direction==='income'?'+':'−'} ${brl.format(Number(t.amount))}</td></tr>`).join('')}</tbody></table>`}
 window.approveRequest=async id=>{const def=new Date();def.setMonth(def.getMonth()+1);const due=prompt('Primeiro vencimento (AAAA-MM-DD):',def.toISOString().slice(0,10));if(!due)return;const {error}=await db.rpc('admin_approve_loan_request',{p_request_id:id,p_first_due_date:due});if(error){toast(error.message);return}await renderAll();toast('Empréstimo aprovado e parcelas criadas.')};
 window.rejectRequest=async id=>{const reason=prompt('Motivo da recusa:')||'';const {error}=await db.rpc('admin_reject_loan_request',{p_request_id:id,p_reason:reason});if(error){toast(error.message);return}await renderAll();toast('Solicitação recusada.')};
 qs('#settingsForm').addEventListener('submit',async e=>{e.preventDefault();const tripReturnRaw=qs('#settingTripReturn').value;const patch={monthly_share_amount:Number(qs('#settingShare').value),operation_interest_rate:Number(qs('#settingRate').value),pix_key:qs('#settingPix').value.trim()||null,fund_name:qs('#settingName').value.trim()||'OLIVER Caixinha',credit_bonus_percent:Number(qs('#settingCreditBonus').value)||25,max_installments:Math.min(3,Math.max(1,Number(qs('#settingMaxInstallments').value)||3)),third_party_interest_rate:Number(qs('#settingThirdPartyRate').value)||30,own_interest_return_percent:Number(qs('#settingOwnInterestReturn').value)||10,trip_return_percent:tripReturnRaw===''?null:Number(tripReturnRaw),updated_by:state.user.id};const {data,error}=await db.from('fund_settings').update(patch).eq('id',1).select().single();if(error){toast(error.message);return}state.settings=data;await renderAll();toast('Configurações atualizadas.')});
@@ -508,3 +550,4 @@ async function renderAll(){await Promise.all([renderDashboard(),renderRequests()
 
 db.auth.onAuthStateChange((_event,session)=>{if(!session&&state.session){state.session=null;state.user=null;state.profile=null;showLogin()}});
 loadCore();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js').catch(()=>{})})}

@@ -3,11 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#0e172a" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="OLIVER Caixinha" />
   <title>OLIVER Caixinha • Gestão dos Cotistas</title>
   <meta name="description" content="Sistema interno de gestão financeira para 20 cotistas." />
-  <link rel="stylesheet" href="/style.css?v=20260926-client-v2" />
-  <link rel="stylesheet" href="/feature-overrides.css?v=20260926-client-v2" />
+  <link rel="manifest" href="/manifest.webmanifest?v=20260926-ui-v3" />
+  <link rel="icon" type="image/svg+xml" href="/assets/oliver-logo.svg?v=20260926-ui-v3" />
+  <link rel="apple-touch-icon" href="/assets/oliver-app-icon.svg?v=20260926-ui-v3" />
+  <link rel="stylesheet" href="/style.css?v=20260926-ui-v3" />
+  <link rel="stylesheet" href="/feature-overrides.css?v=20260926-ui-v3" />
 
 </head>
 <body>
@@ -15,7 +22,7 @@
 
   <section id="loginView" class="login-shell">
     <div class="login-brand">
-      <img class="brand-logo login-logo" src="/assets/oliver-logo.svg?v=20260926-client-v2" alt="OLIVER Caixinha" />
+      <img class="brand-logo login-logo" src="/assets/oliver-logo.svg?v=20260926-ui-v3" alt="OLIVER Caixinha" />
       <div>
         <strong>OLIVER Caixinha</strong>
         <span>Gestão financeira dos cotistas</span>
@@ -44,7 +51,7 @@
 
   <section id="firstAccessView" class="login-shell hidden">
     <div class="login-brand">
-      <img class="brand-logo login-logo" src="/assets/oliver-logo.svg?v=20260926-client-v2" alt="OLIVER Caixinha" />
+      <img class="brand-logo login-logo" src="/assets/oliver-logo.svg?v=20260926-ui-v3" alt="OLIVER Caixinha" />
       <div><b>OLIVER Caixinha</b><small>Atualização obrigatória de cadastro</small></div>
     </div>
     <div class="login-card first-access-card">
@@ -113,7 +120,7 @@
   <div id="appView" class="app-shell hidden">
     <aside class="sidebar">
       <div class="sidebar-brand">
-        <img class="brand-logo sidebar-logo" src="/assets/oliver-logo.svg?v=20260926-client-v2" alt="OLIVER Caixinha" />
+        <img class="brand-logo sidebar-logo" src="/assets/oliver-logo.svg?v=20260926-ui-v3" alt="OLIVER Caixinha" />
         <div><strong>OLIVER Caixinha</strong><span>Área dos cotistas</span></div>
       </div>
       <nav id="mainNav">
@@ -146,58 +153,66 @@
       </header>
 
       <section id="dashboard" class="page active-page">
-        <div class="hero-card">
-          <div>
-            <div class="eyebrow light">MINHA ÁREA</div>
-            <h3>Sua situação na OLIVER Caixinha.</h3>
-            <p>O cotista acompanha apenas seus próprios pagamentos, empréstimos, rifas, passeios e solicitações. Os totais gerais da caixinha ficam restritos à administração.</p>
+        <article class="home-profile-card">
+          <div class="home-profile-copy">
+            <span id="homeGreeting" class="home-greeting">Bom dia</span>
+            <h2 id="homeName">Cotista</h2>
+            <p id="homeRole">Resumo da sua OLIVER Caixinha</p>
           </div>
-          <div class="hero-balance admin-finance-only"><span>Saldo atual</span><strong id="fundBalance">R$ 0,00</strong><small id="balanceUpdated">Atualizado agora</small></div>
-        </div>
-
-        <div class="kpi-grid admin-finance-only">
-          <article class="kpi"><div class="kpi-label">Cotistas ativos</div><strong id="kpiMembers">20/20</strong><span>Base mensal de R$ 100</span></article>
-          <article class="kpi"><div class="kpi-label">Cotas recebidas no mês</div><strong id="kpiContributions">R$ 0,00</strong><span id="kpiContributionStatus">0 de 20 pagos</span></article>
-          <article class="kpi"><div class="kpi-label">Juros gerados</div><strong id="kpiInterest">R$ 0,00</strong><span>Retorno para a caixinha</span></article>
-          <article class="kpi"><div class="kpi-label">Empréstimos em aberto</div><strong id="kpiLoans">R$ 0,00</strong><span id="kpiLoanCount">0 contratos ativos</span></article>
-        </div>
-
-        <div class="two-col">
-          <article class="panel">
-            <div class="panel-head"><div><h3>Minha situação</h3><p>Resumo individual do mês.</p></div><span class="badge success" id="myStatusBadge">Em dia</span></div>
-            <div class="personal-summary">
-              <div><span>Cota mensal</span><b id="myMonthlyShare">R$ 100,00</b><small id="myContributionState">Paga</small></div>
-              <div><span>Empréstimo atual</span><b id="myLoanBalance">R$ 0,00</b><small id="myLoanState">Sem contrato ativo</small></div>
-              <div><span>Próximo vencimento</span><b id="myNextDue">—</b><small id="myNextAmount">Nenhuma parcela</small></div>
-            </div>
-            <button class="secondary-btn" data-page-jump="payments">Ver pagamentos</button>
-          </article>
-          <article class="panel admin-finance-only">
-            <div class="panel-head"><div><h3>Movimentações recentes</h3><p>Entradas e saídas gerais da caixinha.</p></div><button class="link-btn" data-page-jump="admin">Ver extrato</button></div>
-            <div id="recentTransactions" class="transaction-list"></div>
-          </article>
-        </div>
-
-        <article class="panel member-only" id="annualBalancePanel">
-          <div class="panel-head">
-            <div><h3>Meu saldo para o fim do ano</h3><p>Acumulado atualizado conforme seus pagamentos e rendimentos.</p></div>
-            <span class="badge neutral" id="annualBalanceYear">—</span>
-          </div>
-          <div class="annual-balance-total">
-            <span>Estimativa acumulada até agora</span>
-            <strong id="annualBalanceTotal">R$ 0,00</strong>
-          </div>
-          <div class="annual-balance-grid">
-            <div><span>Cotas pagas</span><b id="annualContributions">R$ 0,00</b></div>
-            <div><span>10% dos juros dos seus empréstimos</span><b id="annualOwnInterestBonus">R$ 0,00</b></div>
-            <div><span>Sua parte dos juros coletivos</span><b id="annualCollectiveShare">R$ 0,00</b><small id="annualCollectivePercent">—</small></div>
-            <div><span>Passeios pagos</span><b id="annualTripsPaid">R$ 0,00</b><small id="annualTripReturnNote">Percentual de retorno ainda não configurado</small></div>
-          </div>
+          <img src="/assets/oliver-logo.svg?v=20260926-ui-v3" class="home-profile-logo" alt="OLIVER Caixinha" />
         </article>
 
-        <article class="panel admin-finance-only">
-          <div class="panel-head"><div><h3>Evolução da caixinha</h3><p>Saldo consolidado dos últimos 6 meses.</p></div><span class="badge neutral">Demonstrativo</span></div>
-          <div id="chart" class="bar-chart"></div>
+        <div class="home-money-grid">
+          <article class="home-money-card paid">
+            <span>Pagamentos realizados</span>
+            <strong id="homePaidTotal">R$ 0,00</strong>
+            <small id="homePaidBreakdown">Cotas + rifas + passeios</small>
+          </article>
+          <article class="home-money-card negative">
+            <span>Saldo emprestado</span>
+            <strong id="homeLoanNegative">− R$ 0,00</strong>
+            <small id="homeLoanNote">Sem empréstimos em aberto</small>
+          </article>
+          <article class="home-money-card cash">
+            <span>Saldo em caixa</span>
+            <strong id="homeCashAvailable">R$ 0,00</strong>
+            <small id="homeCashNote">Disponível para movimentação</small>
+          </article>
+        </div>
+
+        <div class="home-operational admin-only">
+          <button class="home-status-pill" data-page-jump="admin"><span>Solicitações</span><b id="homePendingRequests">0</b></button>
+          <button class="home-status-pill" data-page-jump="payments"><span>Comprovantes</span><b id="homePendingReceipts">0</b></button>
+          <button class="home-status-pill" data-page-jump="members"><span>Cotistas ativos</span><b id="homeActiveMembers">0</b></button>
+        </div>
+
+        <article class="annual-compact-card member-only" id="annualBalancePanel">
+          <div>
+            <span>Previsão para o fim do ano</span>
+            <strong id="annualBalanceTotal">R$ 0,00</strong>
+            <small id="annualBalanceYear">—</small>
+          </div>
+          <details class="annual-mini-details">
+            <summary>Ver composição</summary>
+            <div class="annual-mini-grid">
+              <div><span>Cotas pagas</span><b id="annualContributions">R$ 0,00</b></div>
+              <div><span>Retorno dos seus juros</span><b id="annualOwnInterestBonus">R$ 0,00</b></div>
+              <div><span>Parte dos juros coletivos</span><b id="annualCollectiveShare">R$ 0,00</b><small id="annualCollectivePercent">—</small></div>
+              <div><span>Passeios pagos</span><b id="annualTripsPaid">R$ 0,00</b><small id="annualTripReturnNote">—</small></div>
+            </div>
+          </details>
+        </article>
+
+        <article class="home-quick-card">
+          <div class="panel-head"><div><h3>Acesso rápido</h3><p>Abra apenas o que precisa agora.</p></div></div>
+          <div class="home-quick-grid">
+            <button data-page-jump="payments"><span>✓</span><b>Pagamentos</b><small>Pix e comprovantes</small></button>
+            <button data-page-jump="loans"><span>↗</span><b>Empréstimos</b><small>Saldo e parcelas</small></button>
+            <button data-page-jump="activities"><span>★</span><b>Rifas e passeios</b><small>Números e poltronas</small></button>
+            <button data-page-jump="account"><span>◉</span><b>Meu cadastro</b><small>Dados e segurança</small></button>
+            <button class="admin-only" data-page-jump="members"><span>◎</span><b>Cotistas</b><small>Gestão individual</small></button>
+            <button class="admin-only" data-page-jump="admin"><span>⚙</span><b>Administração</b><small>Pendências e ajustes</small></button>
+          </div>
         </article>
       </section>
 
@@ -243,14 +258,14 @@
             <div class="panel-head"><div><h3>Pagamento via Pix</h3><p>Conta oficial da OLIVER Caixinha.</p></div><span class="badge success">Inter • 077</span></div>
             <div class="official-pix-layout">
               <div class="qr-wrap official">
-                <img src="/assets/pix-qr.svg?v=20260926-client-v2" alt="QR Code Pix oficial da OLIVER Caixinha" />
+                <img src="/assets/pix-qr.svg?v=20260926-ui-v3" alt="QR Code Pix oficial da OLIVER Caixinha" />
                 <div class="qr-instruction">
                   <b>Escaneie o QR Code</b>
                   <span>Informe o valor exato do pagamento no seu banco.</span>
                 </div>
               </div>
               <div class="payment-account">
-                <div class="payment-account-logo"><img src="/assets/oliver-logo.svg?v=20260926-client-v2" alt="" /><div><b>OLIVER Caixinha</b><span>Dados oficiais para pagamento</span></div></div>
+                <div class="payment-account-logo"><img src="/assets/oliver-logo.svg?v=20260926-ui-v3" alt="" /><div><b>OLIVER Caixinha</b><span>Dados oficiais para pagamento</span></div></div>
                 <div class="payment-data-grid">
                   <div><span>Banco</span><b id="pixBank">Inter</b></div>
                   <div><span>Código</span><b id="pixBankCode">077</b></div>
@@ -328,79 +343,90 @@
       </section>
 
       <section id="members" class="page admin-only">
-        <div class="panel-head standalone"><div><h3>20 cotistas</h3><p>Visão administrativa de contribuições, histórico e situação de acesso.</p></div><div class="panel-actions"><button id="import2026Btn" class="outline-btn">Importar 8 cotistas 2026</button><button id="newMemberBtn" class="primary-btn small">Novo cotista</button><button id="exportMembersBtn" class="outline-btn">Exportar CSV</button></div></div>
-        <article class="panel"><div id="membersTable" class="table-wrap"></div></article>
+        <div class="admin-page-title">
+          <div><span class="eyebrow">GESTÃO</span><h3>Cotistas</h3><p>Resumo rápido. Os detalhes ficam dentro de cada cadastro.</p></div>
+          <div class="panel-actions">
+            <button id="import2026Btn" class="hidden" type="button">Importar histórico</button>
+            <button id="newMemberBtn" class="primary-btn small">Novo cotista</button>
+            <button id="exportMembersBtn" class="outline-btn">Exportar CSV</button>
+          </div>
+        </div>
+        <article class="panel admin-clean-panel"><div id="membersTable" class="table-wrap"></div></article>
       </section>
 
       <section id="admin" class="page admin-only">
-        <div class="page-grid">
-          <article class="panel">
-            <div class="panel-head"><div><h3>Configurações da caixinha</h3><p>Parâmetros usados nos cálculos e cobranças.</p></div></div>
-            <form id="settingsForm" class="form-grid">
+        <div class="admin-page-title">
+          <div><span class="eyebrow">ADMINISTRAÇÃO</span><h3>Central de controle</h3><p>O essencial primeiro. Abra os detalhes somente quando precisar.</p></div>
+        </div>
+
+        <details class="admin-fold" open>
+          <summary><div><b>Pendências</b><small>Solicitações de empréstimo aguardando decisão</small></div><span class="badge warning" id="pendingCount">0 pendentes</span></summary>
+          <div class="admin-fold-body"><div id="adminRequests" class="stack-list"></div></div>
+        </details>
+
+        <details class="admin-fold">
+          <summary><div><b>Novo lançamento</b><small>Entrada, saída ou ajuste manual</small></div><span>＋</span></summary>
+          <div class="admin-fold-body">
+            <form id="transactionForm" class="inline-form admin-inline-clean">
+              <select id="transactionType"><option value="income">Entrada</option><option value="expense">Saída</option></select>
+              <select id="transactionCategory"><option value="contribution">Cotas</option><option value="interest">Juros</option><option value="draw">Sorteio</option><option value="trip">Passeio</option><option value="loan_release">Liberação de empréstimo</option><option value="loan_payment">Pagamento de empréstimo</option><option value="expense">Despesa</option><option value="adjustment">Ajuste</option><option value="other">Outros</option></select>
+              <input id="transactionDescription" type="text" placeholder="Descrição" required />
+              <input id="transactionAmount" type="number" min="0.01" step="0.01" placeholder="Valor" required />
+              <button class="primary-btn small" type="submit">Lançar</button>
+            </form>
+            <div id="adminTransactions" class="table-wrap compact-admin-table"></div>
+          </div>
+        </details>
+
+        <details class="admin-fold">
+          <summary><div><b>Regras e configurações</b><small>Cota, juros, limite e Pix</small></div><span>⚙</span></summary>
+          <div class="admin-fold-body">
+            <form id="settingsForm" class="form-grid compact-settings">
               <label>Valor da cota mensal<input id="settingShare" type="number" min="1" step="0.01" /></label>
-              <label>Taxa de juros por operação<input id="settingRate" type="number" min="0" step="0.01" /></label>
-              <label>Chave Pix<input id="settingPix" type="text" placeholder="CPF, telefone, e-mail ou aleatória" /></label>
-              <div class="full-span payment-settings-preview">
-                <span>Conta oficial</span>
-                <b>Inter 077 • Ag. 0001 • Conta 41655540-3</b>
-                <small>Gabriela Lima Duarte • CNPJ 58.119.805/0001-39</small>
-              </div>
-              <label>Nome da caixinha<input id="settingName" type="text" /></label><label>Limite adicional (%)<input id="settingCreditBonus" type="number" min="0" step="1" /></label><label>Máximo de parcelas<input id="settingMaxInstallments" type="number" min="1" max="3" step="1" /></label>
+              <label>Taxa de juros próprio (%)<input id="settingRate" type="number" min="0" step="0.01" /></label>
               <label>Juros para terceiro (%)<input id="settingThirdPartyRate" type="number" min="0" step="0.01" /></label>
+              <label>Limite adicional (%)<input id="settingCreditBonus" type="number" min="0" step="1" /></label>
+              <label>Máximo de parcelas<input id="settingMaxInstallments" type="number" min="1" max="3" step="1" /></label>
               <label>Retorno dos juros próprios (%)<input id="settingOwnInterestReturn" type="number" min="0" max="100" step="0.01" /></label>
-              <label>Retorno do passeio (%)<input id="settingTripReturn" type="number" min="0" max="100" step="0.01" placeholder="Definir com a cliente" /></label>
+              <label>Retorno do passeio (%)<input id="settingTripReturn" type="number" min="0" max="100" step="0.01" placeholder="Definir" /></label>
+              <label>Nome da caixinha<input id="settingName" type="text" /></label>
+              <label class="full-span">Chave Pix<input id="settingPix" type="text" placeholder="Chave oficial" /></label>
+              <div class="full-span payment-settings-preview"><span>Conta oficial</span><b>Inter 077 • Ag. 0001 • Conta 41655540-3</b><small>Gabriela Lima Duarte • CNPJ 58.119.805/0001-39</small></div>
               <button class="primary-btn full-span" type="submit">Salvar configurações</button>
             </form>
-          </article>
-          <article class="panel">
-            <div class="panel-head"><div><h3>Solicitações pendentes</h3><p>Aprovar ou recusar empréstimos.</p></div><span class="badge warning" id="pendingCount">0 pendentes</span></div>
-            <div id="adminRequests" class="stack-list"></div>
-          </article>
-        </div>
-        <article class="panel">
-          <div class="panel-head"><div><h3>Lançamentos da caixinha</h3><p>Registre entradas, saídas e ajustes administrativos.</p></div></div>
-          <form id="transactionForm" class="inline-form">
-            <select id="transactionType"><option value="income">Entrada</option><option value="expense">Saída</option></select>
-            <select id="transactionCategory"><option value="contribution">Cotas</option><option value="interest">Juros</option><option value="draw">Sorteio</option><option value="trip">Passeio</option><option value="loan_release">Liberação de empréstimo</option><option value="loan_payment">Pagamento de empréstimo</option><option value="expense">Despesa</option><option value="adjustment">Ajuste</option><option value="other">Outros</option></select>
-            <input id="transactionDescription" type="text" placeholder="Descrição" required />
-            <input id="transactionAmount" type="number" min="0.01" step="0.01" placeholder="Valor" required />
-            <button class="primary-btn small" type="submit">Lançar</button>
-          </form>
-          <div id="adminTransactions" class="table-wrap"></div>
-        </article>
+          </div>
+        </details>
 
-        <div class="page-grid">
-          <article class="panel">
-            <div class="panel-head"><div><h3>Avisos aos cotistas</h3><p>Envie uma notificação para todos os cotistas ativos.</p></div></div>
-            <form id="broadcastForm" class="form-grid">
+        <details class="admin-fold">
+          <summary><div><b>Comunicação</b><small>Enviar aviso aos cotistas</small></div><span>✉</span></summary>
+          <div class="admin-fold-body">
+            <form id="broadcastForm" class="form-grid compact-settings">
               <label class="full-span">Título<input id="broadcastTitle" required placeholder="Ex.: Aviso importante"></label>
-              <label class="full-span">Mensagem<textarea id="broadcastMessage" rows="4" required></textarea></label>
+              <label class="full-span">Mensagem<textarea id="broadcastMessage" rows="3" required></textarea></label>
               <label>Tipo<select id="broadcastType"><option value="info">Informativo</option><option value="warning">Atenção</option><option value="success">Confirmação</option><option value="raffle">Rifa</option><option value="loan">Empréstimo</option></select></label>
               <label>Levar para<select id="broadcastPage"><option value="">Nenhuma página</option><option value="payments">Pagamentos</option><option value="activities">Rifas e passeios</option><option value="requests">Solicitações</option><option value="loans">Empréstimos</option></select></label>
               <button class="primary-btn full-span" type="submit">Enviar aviso</button>
             </form>
-          </article>
-          <article class="panel">
-            <div class="panel-head"><div><h3>Histórico do chatbot</h3><p>Últimas dúvidas enviadas pelos cotistas.</p></div></div>
-            <div id="chatbotAdminHistory" class="stack-list"></div>
-          </article>
-        </div>
+          </div>
+        </details>
 
-        <article class="panel">
-          <div class="panel-head">
-            <div>
-              <h3>Agente Financeiro Oliver</h3>
-              <p>Recebe os lançamentos enviados no chat, registra o histórico e só movimenta o caixa automaticamente quando o pagamento, entrada ou saída estiver confirmado.</p>
+        <details class="admin-fold">
+          <summary><div><b>Auditoria e histórico</b><small>Chatbot e agente financeiro</small></div><span>▾</span></summary>
+          <div class="admin-fold-body">
+            <div class="admin-audit-grid">
+              <article class="admin-subpanel"><h4>Chatbot</h4><div id="chatbotAdminHistory" class="stack-list compact-list"></div></article>
+              <article class="admin-subpanel">
+                <div class="admin-subpanel-head"><h4>Agente Financeiro Oliver</h4><span class="badge success">Ativo</span></div>
+                <div class="agent-stats compact-agent">
+                  <div><small>Processados</small><b id="agentProcessed">0</b></div>
+                  <div><small>Em revisão</small><b id="agentReview">0</b></div>
+                  <div><small>Pendentes</small><b id="agentUnpaid">0</b></div>
+                </div>
+                <div id="agentEventsTable" class="table-wrap compact-admin-table"></div>
+              </article>
             </div>
-            <span class="badge success">Ativo</span>
           </div>
-          <div class="agent-stats">
-            <div><small>Processados</small><b id="agentProcessed">0</b></div>
-            <div><small>Em revisão</small><b id="agentReview">0</b></div>
-            <div><small>Pendentes / não pagos</small><b id="agentUnpaid">0</b></div>
-          </div>
-          <div id="agentEventsTable" class="table-wrap"></div>
-        </article>
+        </details>
       </section>
     </main>
   </div>
@@ -432,8 +458,8 @@
 
   <div id="modal" class="modal hidden"><div class="modal-card"><button id="closeModal" class="modal-close">×</button><div id="modalContent"></div></div></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
-  <script src="/config.js?v=20260926-client-v2"></script>
-  <script src="/app.js?v=20260926-client-v2"></script>
-  <script src="/features.js?v=20260926-client-v2"></script>
+  <script src="/config.js?v=20260926-ui-v3"></script>
+  <script src="/app.js?v=20260926-ui-v3"></script>
+  <script src="/features.js?v=20260926-ui-v3"></script>
 </body>
 </html>
