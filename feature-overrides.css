@@ -48,3 +48,16 @@
 @media(max-width:480px){.topbar{padding:13px 2px}.topbar h2{font-size:18px}.home-profile-card{border-radius:20px}.home-profile-copy h2{font-size:23px}.home-profile-logo{width:64px;height:64px}.home-money-grid{gap:8px}.home-quick-card{padding:14px}.home-quick-grid{gap:7px}.home-quick-grid button{padding:11px}.annual-mini-grid{grid-template-columns:1fr}.admin-inline-clean{display:grid;grid-template-columns:1fr}.compact-members td,.compact-members th{padding:10px 9px}.compact-members th:nth-child(4),.compact-members td:nth-child(4){display:none}}
 
 .home-quick-grid .admin-only{display:none!important}.is-admin .home-quick-grid .admin-only{display:block!important}
+
+/* ADM mobile: cinco atalhos essenciais */
+@media(max-width:560px){
+  .is-admin .sidebar nav{justify-content:space-around;overflow:hidden}
+  .is-admin .sidebar .nav-item[data-page="requests"],
+  .is-admin .sidebar .nav-item[data-page="loans"],
+  .is-admin .sidebar .nav-item[data-page="account"]{display:none!important}
+  .is-admin .sidebar .nav-item[data-page="dashboard"],
+  .is-admin .sidebar .nav-item[data-page="payments"],
+  .is-admin .sidebar .nav-item[data-page="activities"],
+  .is-admin .sidebar .nav-item[data-page="members"],
+  .is-admin .sidebar .nav-item[data-page="admin"]{display:flex!important;flex:1 1 20%;max-width:20%}
+}
