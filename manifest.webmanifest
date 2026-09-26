@@ -11,13 +11,13 @@
   "categories": ["finance", "business"],
   "icons": [
     {
-      "src": "/assets/oliver-logo.svg",
+      "src": "/assets/oliver-app-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/assets/oliver-logo.svg",
+      "src": "/assets/oliver-app-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "maskable"
