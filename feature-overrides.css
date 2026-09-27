@@ -102,3 +102,27 @@
   .app-shell:not(.is-admin) .member-summary-grid{grid-template-columns:1fr}
   .rule-stage-card{grid-template-columns:1fr}
 }
+
+
+/* ===== Chat fechado por comandos ===== */
+.chatbot-quick{
+  flex-wrap:wrap;
+  overflow-x:hidden;
+  overflow-y:auto;
+  max-height:190px;
+  align-content:flex-start;
+}
+.chatbot-quick button{
+  white-space:normal;
+  text-align:left;
+}
+.chatbot-fixed-note{
+  margin:0 12px 10px;
+  padding:9px 11px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#faf8f2;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.4;
+}
