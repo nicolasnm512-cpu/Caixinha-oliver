@@ -61,3 +61,44 @@
   .is-admin .sidebar .nav-item[data-page="members"],
   .is-admin .sidebar .nav-item[data-page="admin"]{display:flex!important;flex:1 1 20%;max-width:20%}
 }
+
+
+/* ===== Caixinha v4 • isolamento + fluidez ===== */
+.app-shell:not(.is-admin) .member-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.home-money-card.interest{border-color:#d7c37c;background:linear-gradient(145deg,#fffdf8,#fff8e7)}
+.home-money-card.interest strong{color:#7b5a16}
+.app-shell:not(.is-admin) .home-money-card.admin-only{display:none!important}
+.app-shell.is-admin .home-money-card.member-only{display:none!important}
+
+.ui-collapsible{overflow:hidden}
+.ui-collapsible>.panel-head{cursor:pointer;position:relative;padding-right:42px;user-select:none}
+.ui-collapsible>.panel-head:after{content:"−";position:absolute;right:14px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:999px;border:1px solid var(--line);display:grid;place-items:center;background:#faf8f2;color:#8a6518;font-weight:900}
+.ui-collapsible.is-collapsed>.panel-head:after{content:"＋"}
+.ui-collapsible.is-collapsed>:not(.panel-head){display:none!important}
+
+.activity-card{overflow:hidden}
+.activity-collapse-toggle{width:100%;border:0;border-bottom:1px solid var(--line);background:#fffdf8;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:left;cursor:pointer;color:var(--ink)}
+.activity-collapse-toggle span:first-child{min-width:0}
+.activity-collapse-toggle b,.activity-collapse-toggle small{display:block}
+.activity-collapse-toggle b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.activity-collapse-toggle small{font-size:9px;color:var(--muted);margin-top:3px}
+.activity-toggle-icon{width:28px;height:28px;display:grid;place-items:center;border-radius:999px;border:1px solid #ddcf9f;background:#fff;color:#7b5a16;font-weight:900;flex:0 0 auto}
+.activity-card.is-collapsed>:not(.activity-collapse-toggle){display:none!important}
+
+.rule-stage-card{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:12px}
+.rule-stage-card>div{border:1px solid var(--line);border-radius:12px;padding:12px;background:#faf8f2}
+.rule-stage-card span,.rule-stage-card small{display:block;color:var(--muted);font-size:9px}
+.rule-stage-card b{display:block;margin:4px 0;font-size:13px}
+.admin-audit-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+
+@media(max-width:980px){
+  .admin-audit-grid{grid-template-columns:1fr}
+  .rule-stage-card{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:700px){
+  .app-shell:not(.is-admin) .member-summary-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:520px){
+  .app-shell:not(.is-admin) .member-summary-grid{grid-template-columns:1fr}
+  .rule-stage-card{grid-template-columns:1fr}
+}
