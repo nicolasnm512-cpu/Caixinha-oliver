@@ -496,34 +496,6 @@ window.openMemberAdminDetails=id=>{
 qs('#exportMembersBtn').addEventListener('click',()=>{const rows=window.__membersCsv||[];const txt='numero,nome,email,cotas,ativo\n'+rows.map(m=>`${m.cotista_number||''},"${String(m.full_name).replaceAll('"','""')}",${m.email||''},${m.share_count},${m.active?'sim':'nao'}`).join('\n');const blob=new Blob([txt],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cotistas-oliver-caixinha.csv';a.click();URL.revokeObjectURL(a.href)});
 qs('#newMemberBtn').addEventListener('click',()=>{if(!isAdmin())return;openModal(`<div class="panel-head"><div><h3>Novo cotista</h3><p>Crie o acesso inicial do cotista. A senha poderá ser alterada pelo próprio usuário em Meu cadastro.</p></div></div><form id="newMemberForm" class="form-grid"><label>Número do cotista<input id="newMemberNumber" type="number" min="1" max="20" required></label><label>Cotas mensais<input id="newMemberShares" type="number" min="1" max="20" value="1" required></label><label class="full-span">Nome completo<input id="newMemberName" required></label><label class="full-span">E-mail de acesso<input id="newMemberEmail" type="email" required></label><label class="full-span">Senha provisória<input id="newMemberPassword" type="text" minlength="8" value="Oliver@2026" required></label><button class="primary-btn full-span" type="submit">Criar cotista</button></form>`);setTimeout(()=>qs('#newMemberForm')?.addEventListener('submit',async e=>{e.preventDefault();const btn=e.submitter;try{if(btn){btn.disabled=true;btn.textContent='Criando...'}await callAdminUsers({action:'create_member',cotista_number:Number(qs('#newMemberNumber').value),share_count:Number(qs('#newMemberShares').value),full_name:qs('#newMemberName').value.trim(),email:qs('#newMemberEmail').value.trim().toLowerCase(),password:qs('#newMemberPassword').value});closeModal();await renderMembers();toast('Cotista criado com sucesso.')}catch(err){toast(err.message)}finally{if(btn){btn.disabled=false;btn.textContent='Criar cotista'}}}),0)});
 function generateTemporaryPassword(n){const a=new Uint32Array(1);crypto.getRandomValues(a);return `Olv${String(n).padStart(2,'0')}@${a[0].toString(36).toUpperCase().slice(-6)}`}
-qs('#import2026Btn').addEventListener('click',async()=>{
-  if(!isAdmin())return;
-  if(!confirm('Importar os 8 cotistas e o resumo financeiro de 2026 informado?'))return;
-  const seed=[
-    {n:1,name:'Sica',email:'sica@cotista.olivercaixinha.example',paid:9,contribution:900,loans:325,interest:106.25},
-    {n:2,name:'Gisele',email:'gisele@cotista.olivercaixinha.example',paid:8,contribution:800,loans:600,interest:145},
-    {n:3,name:'Anderson',email:'anderson@cotista.olivercaixinha.example',paid:9,contribution:900,loans:500,interest:120},
-    {n:4,name:'Tayna',email:'tayna@cotista.olivercaixinha.example',paid:8,contribution:800,loans:938.75,interest:319.36},
-    {n:5,name:'Day',email:'day@cotista.olivercaixinha.example',paid:7,contribution:700,loans:128,interest:41.90},
-    {n:6,name:'Jamaica',email:'jamaica@cotista.olivercaixinha.example',paid:30,contribution:3000,loans:0,interest:0},
-    {n:7,name:'Regiane',email:'regiane@cotista.olivercaixinha.example',paid:10,contribution:1000,loans:0,interest:0},
-    {n:8,name:'Ivan',email:'ivan@cotista.olivercaixinha.example',paid:10,contribution:1000,loans:0,interest:0}
-  ];
-  const btn=qs('#import2026Btn');const original=btn.textContent;btn.disabled=true;btn.textContent='Importando...';
-  const credentials=[];
-  try{
-    for(const m of seed){
-      const password=generateTemporaryPassword(m.n);let created=false;
-      try{await callAdminUsers({action:'create_member',cotista_number:m.n,share_count:1,full_name:m.name,email:m.email,password});created=true}catch(createErr){const {data:existing}=await db.from('profiles').select('id').eq('email',m.email).maybeSingle();if(!existing)throw createErr}
-      const {data:profile,error:profileError}=await db.from('profiles').select('id').eq('email',m.email).single();if(profileError||!profile)throw new Error(`Perfil de ${m.name} não encontrado.`);
-      const {error:snapshotError}=await db.from('member_year_snapshots').upsert({year:2026,member_id:profile.id,paid_share_units:m.paid,contributions_paid:m.contribution,loan_principal_year:m.loans,interest_recorded:m.interest,source_note:'Importado do relatório financeiro janeiro-setembro enviado em 24/09/2026.'},{onConflict:'year,member_id'});if(snapshotError)throw snapshotError;
-      credentials.push({name:m.name,email:m.email,password:created?password:'Já cadastrado'});
-    }
-    await renderMembers();
-    openModal(`<div class="panel-head"><div><h3>Importação concluída</h3><p>Guarde as senhas provisórias dos novos acessos. Elas não ficam salvas em texto no banco.</p></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Cotista</th><th>Login</th><th>Senha provisória</th></tr></thead><tbody>${credentials.map(c=>`<tr><td>${safe(c.name)}</td><td>${safe(c.email)}</td><td><b>${safe(c.password)}</b></td></tr>`).join('')}</tbody></table></div><p class="muted-note">No primeiro login, cada cotista será obrigado a criar uma nova senha.</p>`);
-    toast('8 cotistas e histórico 2026 processados.');
-  }catch(err){toast(err.message||'Falha na importação.')}finally{btn.disabled=false;btn.textContent=original}
-});
 window.toggleMemberAccess=async(id,active)=>{try{await callAdminUsers({action:'set_active',user_id:id,active});await renderMembers();toast(active?'Acesso ativado.':'Acesso desativado.')}catch(err){toast(err.message)}};
 window.resetMemberPassword=async(id)=>{const name=window.__membersById?.[id]?.full_name||'cotista';const password=prompt(`Nova senha provisória para ${name} (mínimo 8 caracteres):`,'Oliver@2026');if(!password)return;if(password.length<8){toast('Use ao menos 8 caracteres.');return}try{await callAdminUsers({action:'reset_password',user_id:id,password});await renderMembers();toast('Senha redefinida com sucesso.')}catch(err){toast(err.message)}};
 
