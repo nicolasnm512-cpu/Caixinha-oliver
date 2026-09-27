@@ -3,7 +3,7 @@
   const $ = s => document.querySelector(s);
 
   /* ================= CHATBOT ================= */
-  const fab=$('#chatbotFab'), panel=$('#chatbotPanel'), messages=$('#chatbotMessages'), input=$('#chatbotInput'), unread=$('#chatbotUnread');
+  const fab=$('#chatbotFab'), panel=$('#chatbotPanel'), messages=$('#chatbotMessages'), unread=$('#chatbotUnread');
 
   function addChat(text,who='bot'){
     if(!messages)return;
@@ -37,7 +37,6 @@
     const text=String(question||'').trim();
     if(!text)return;
     addChat(text,'user');
-    input.value='';
     addChat('Consultando seus dados...','bot typing');
     const typing=messages.lastElementChild;
     try{
@@ -56,7 +55,7 @@
       }
     }catch(err){
       typing?.remove();
-      addChat(err.message||'Não foi possível responder agora.','bot error');
+      addChat('Não foi possível consultar agora. Em caso de dúvidas, fale com o administrativo.','bot error');
     }
   }
 
@@ -71,11 +70,31 @@
   if(fab){
     fab.addEventListener('click',async()=>{panel.classList.toggle('hidden');if(!panel.classList.contains('hidden'))await showNotifications()});
     $('#chatbotClose').addEventListener('click',()=>panel.classList.add('hidden'));
-    $('#chatbotForm').addEventListener('submit',e=>{e.preventDefault();askChat(input.value)});
     $('#chatbotQuick').addEventListener('click',e=>{const b=e.target.closest('button');if(b)askChat(b.textContent)});
     $('#chatbotEscalate').addEventListener('click',async()=>{
-      const {error}=await db.from('service_requests').insert({member_id:state.user.id,request_type:'other',subject:'Atendimento solicitado pelo chatbot',details:'Cotista solicitou contato da administração pelo Oliver Assistente.',status:'pending'});
-      addChat(error?'Não consegui abrir a solicitação: '+error.message:'Pronto. Sua solicitação foi enviada para a administração.',error?'bot error':'bot');
+      const subject='Atendimento solicitado pelo chatbot';
+      const {data:existing}=await db.from('service_requests')
+        .select('id')
+        .eq('member_id',state.user.id)
+        .eq('subject',subject)
+        .eq('status','pending')
+        .limit(1)
+        .maybeSingle();
+      if(existing){
+        addChat('Já existe uma solicitação de atendimento pendente para o administrativo.');
+        return;
+      }
+      const {error}=await db.from('service_requests').insert({
+        member_id:state.user.id,
+        request_type:'other',
+        subject,
+        details:'Cotista solicitou contato da administração pelo Oliver Assistente.',
+        status:'pending'
+      });
+      addChat(
+        error?'Não foi possível abrir a solicitação. Em caso de dúvidas, fale com o administrativo.':'Solicitação enviada ao administrativo.',
+        error?'bot error':'bot'
+      );
     });
     new MutationObserver(syncChatVisibility).observe($('#appView'),{attributes:true,attributeFilter:['class']});
     setTimeout(syncChatVisibility,100);
