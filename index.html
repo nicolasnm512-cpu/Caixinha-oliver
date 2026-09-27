@@ -10,11 +10,11 @@
   <meta name="apple-mobile-web-app-title" content="OLIVER Caixinha" />
   <title>OLIVER Caixinha • Gestão dos Cotistas</title>
   <meta name="description" content="Sistema interno de gestão financeira para 20 cotistas." />
-  <link rel="manifest" href="/manifest.webmanifest?v=20260926-ui-v3" />
-  <link rel="icon" type="image/svg+xml" href="/assets/oliver-logo.svg?v=20260926-ui-v3" />
-  <link rel="apple-touch-icon" href="/assets/oliver-app-icon.svg?v=20260926-ui-v3" />
-  <link rel="stylesheet" href="/style.css?v=20260926-ui-v3" />
-  <link rel="stylesheet" href="/feature-overrides.css?v=20260926-ui-v3" />
+  <link rel="manifest" href="/manifest.webmanifest?v=20260927-ui-v4" />
+  <link rel="icon" type="image/svg+xml" href="/assets/oliver-logo.svg?v=20260927-ui-v4" />
+  <link rel="apple-touch-icon" href="/assets/oliver-app-icon.svg?v=20260927-ui-v4" />
+  <link rel="stylesheet" href="/style.css?v=20260927-ui-v4" />
+  <link rel="stylesheet" href="/feature-overrides.css?v=20260927-ui-v4" />
 
 </head>
 <body>
@@ -22,7 +22,7 @@
 
   <section id="loginView" class="login-shell">
     <div class="login-brand">
-      <img class="brand-logo login-logo" src="/assets/oliver-logo.svg?v=20260926-ui-v3" alt="OLIVER Caixinha" />
+      <img class="brand-logo login-logo" src="/assets/oliver-logo.svg?v=20260927-ui-v4" alt="OLIVER Caixinha" />
       <div>
         <strong>OLIVER Caixinha</strong>
         <span>Gestão financeira dos cotistas</span>
@@ -51,7 +51,7 @@
 
   <section id="firstAccessView" class="login-shell hidden">
     <div class="login-brand">
-      <img class="brand-logo login-logo" src="/assets/oliver-logo.svg?v=20260926-ui-v3" alt="OLIVER Caixinha" />
+      <img class="brand-logo login-logo" src="/assets/oliver-logo.svg?v=20260927-ui-v4" alt="OLIVER Caixinha" />
       <div><b>OLIVER Caixinha</b><small>Atualização obrigatória de cadastro</small></div>
     </div>
     <div class="login-card first-access-card">
@@ -120,7 +120,7 @@
   <div id="appView" class="app-shell hidden">
     <aside class="sidebar">
       <div class="sidebar-brand">
-        <img class="brand-logo sidebar-logo" src="/assets/oliver-logo.svg?v=20260926-ui-v3" alt="OLIVER Caixinha" />
+        <img class="brand-logo sidebar-logo" src="/assets/oliver-logo.svg?v=20260927-ui-v4" alt="OLIVER Caixinha" />
         <div><strong>OLIVER Caixinha</strong><span>Área dos cotistas</span></div>
       </div>
       <nav id="mainNav">
@@ -159,24 +159,35 @@
             <h2 id="homeName">Cotista</h2>
             <p id="homeRole">Resumo da sua OLIVER Caixinha</p>
           </div>
-          <img src="/assets/oliver-logo.svg?v=20260926-ui-v3" class="home-profile-logo" alt="OLIVER Caixinha" />
+          <img src="/assets/oliver-logo.svg?v=20260927-ui-v4" class="home-profile-logo" alt="OLIVER Caixinha" />
         </article>
 
-        <div class="home-money-grid">
-          <article class="home-money-card paid">
-            <span>Pagamentos realizados</span>
+        <div class="home-money-grid member-summary-grid">
+          <article class="home-money-card paid member-only">
+            <span>Cotas pagas</span>
+            <strong id="memberPaidContributions">R$ 0,00</strong>
+            <small>Somente valores de cotas confirmados no seu cadastro</small>
+          </article>
+          <article class="home-money-card interest member-only">
+            <span>Rendimento de juros</span>
+            <strong id="memberInterestYield">R$ 0,00</strong>
+            <small>Juros recebidos pela caixinha e distribuídos para você</small>
+          </article>
+
+          <article class="home-money-card paid admin-only">
+            <span>Entradas confirmadas</span>
             <strong id="homePaidTotal">R$ 0,00</strong>
             <small id="homePaidBreakdown">Cotas + rifas + passeios</small>
           </article>
-          <article class="home-money-card negative">
+          <article class="home-money-card negative admin-only">
             <span>Saldo emprestado</span>
             <strong id="homeLoanNegative">− R$ 0,00</strong>
             <small id="homeLoanNote">Sem empréstimos em aberto</small>
           </article>
-          <article class="home-money-card cash">
-            <span>Saldo em caixa</span>
+          <article class="home-money-card cash admin-only">
+            <span>Saldo geral da caixinha</span>
             <strong id="homeCashAvailable">R$ 0,00</strong>
-            <small id="homeCashNote">Disponível para movimentação</small>
+            <small id="homeCashNote">Visível somente para a administração</small>
           </article>
         </div>
 
@@ -185,23 +196,6 @@
           <button class="home-status-pill" data-page-jump="payments"><span>Comprovantes</span><b id="homePendingReceipts">0</b></button>
           <button class="home-status-pill" data-page-jump="members"><span>Cotistas ativos</span><b id="homeActiveMembers">0</b></button>
         </div>
-
-        <article class="annual-compact-card member-only" id="annualBalancePanel">
-          <div>
-            <span>Previsão para o fim do ano</span>
-            <strong id="annualBalanceTotal">R$ 0,00</strong>
-            <small id="annualBalanceYear">—</small>
-          </div>
-          <details class="annual-mini-details">
-            <summary>Ver composição</summary>
-            <div class="annual-mini-grid">
-              <div><span>Cotas pagas</span><b id="annualContributions">R$ 0,00</b></div>
-              <div><span>Retorno dos seus juros</span><b id="annualOwnInterestBonus">R$ 0,00</b></div>
-              <div><span>Parte dos juros coletivos</span><b id="annualCollectiveShare">R$ 0,00</b><small id="annualCollectivePercent">—</small></div>
-              <div><span>Passeios pagos</span><b id="annualTripsPaid">R$ 0,00</b><small id="annualTripReturnNote">—</small></div>
-            </div>
-          </details>
-        </article>
 
         <article class="home-quick-card">
           <div class="panel-head"><div><h3>Acesso rápido</h3><p>Abra apenas o que precisa agora.</p></div></div>
@@ -258,14 +252,14 @@
             <div class="panel-head"><div><h3>Pagamento via Pix</h3><p>Conta oficial da OLIVER Caixinha.</p></div><span class="badge success">Inter • 077</span></div>
             <div class="official-pix-layout">
               <div class="qr-wrap official">
-                <img src="/assets/pix-qr.svg?v=20260926-ui-v3" alt="QR Code Pix oficial da OLIVER Caixinha" />
+                <img src="/assets/pix-qr.svg?v=20260927-ui-v4" alt="QR Code Pix oficial da OLIVER Caixinha" />
                 <div class="qr-instruction">
                   <b>Escaneie o QR Code</b>
                   <span>Informe o valor exato do pagamento no seu banco.</span>
                 </div>
               </div>
               <div class="payment-account">
-                <div class="payment-account-logo"><img src="/assets/oliver-logo.svg?v=20260926-ui-v3" alt="" /><div><b>OLIVER Caixinha</b><span>Dados oficiais para pagamento</span></div></div>
+                <div class="payment-account-logo"><img src="/assets/oliver-logo.svg?v=20260927-ui-v4" alt="" /><div><b>OLIVER Caixinha</b><span>Dados oficiais para pagamento</span></div></div>
                 <div class="payment-data-grid">
                   <div><span>Banco</span><b id="pixBank">Inter</b></div>
                   <div><span>Código</span><b id="pixBankCode">077</b></div>
@@ -397,6 +391,14 @@
           </div>
         </details>
 
+        <details class="admin-fold" id="loanRuleFold">
+          <summary><div><b>Régua de empréstimos 2027</b><small>Código preparado agora e ativação controlada a partir de 08/01/2027</small></div><span id="loanRuleBadge" class="badge warning">Preparada</span></summary>
+          <div class="admin-fold-body">
+            <div id="loanRuleStatus" class="rule-stage-card">Carregando versão das regras...</div>
+            <button id="activate2027RuleBtn" class="primary-btn small" type="button" disabled>Ativar régua 2027</button>
+          </div>
+        </details>
+
         <details class="admin-fold">
           <summary><div><b>Comunicação</b><small>Enviar aviso aos cotistas</small></div><span>✉</span></summary>
           <div class="admin-fold-body">
@@ -423,6 +425,10 @@
                   <div><small>Pendentes</small><b id="agentUnpaid">0</b></div>
                 </div>
                 <div id="agentEventsTable" class="table-wrap compact-admin-table"></div>
+              </article>
+              <article class="admin-subpanel">
+                <div class="admin-subpanel-head"><h4>Distribuição de juros</h4><span class="badge success">Automática</span></div>
+                <div id="interestDistributionAudit" class="table-wrap compact-admin-table"></div>
               </article>
             </div>
           </div>
@@ -458,8 +464,8 @@
 
   <div id="modal" class="modal hidden"><div class="modal-card"><button id="closeModal" class="modal-close">×</button><div id="modalContent"></div></div></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
-  <script src="/config.js?v=20260926-ui-v3"></script>
-  <script src="/app.js?v=20260926-ui-v3"></script>
-  <script src="/features.js?v=20260926-ui-v3"></script>
+  <script src="/config.js?v=20260927-ui-v4"></script>
+  <script src="/app.js?v=20260927-ui-v4"></script>
+  <script src="/features.js?v=20260927-ui-v4"></script>
 </body>
 </html>
