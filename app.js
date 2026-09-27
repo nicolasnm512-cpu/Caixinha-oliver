@@ -530,7 +530,7 @@ async function renderInterestDistributionAudit(){
     .order('created_at',{ascending:false})
     .limit(12);
   if(error){qs('#interestDistributionAudit').innerHTML='<div class="stack-item"><p>Não foi possível carregar a distribuição.</p></div>';return}
-  qs('#interestDistributionAudit').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Entrada</th><th>Cotistas</th><th>Distribuído</th></tr></thead><tbody>${(data||[]).map(b=>`<tr><td>${formatDate(b.transaction_date)}</td><td>${brl.format(Number(b.gross_amount||0))}</td><td>${Number(b.participant_count||0)}</td><td><b>${brl.format(Number(b.distributed_amount||0))}</b></td></tr>`).join('')}</tbody></table>`;
+  qs('#interestDistributionAudit').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Entrada</th><th>Cotas</th><th>Distribuído</th></tr></thead><tbody>${(data||[]).map(b=>`<tr><td>${formatDate(b.transaction_date)}</td><td>${brl.format(Number(b.gross_amount||0))}</td><td>${Number(b.participant_count||0)}</td><td><b>${brl.format(Number(b.distributed_amount||0))}</b></td></tr>`).join('')}</tbody></table>`;
 }
 
 async function renderLoanRuleStatus(){
