@@ -400,3 +400,13 @@ body{min-width:320px}
     flex-basis:100%;
   }
 }
+
+
+@supports(padding:max(0px)){
+  @media(max-width:560px){
+    .main{padding-bottom:calc(88px + env(safe-area-inset-bottom))}
+    .sidebar{height:calc(72px + env(safe-area-inset-bottom));padding-bottom:calc(6px + env(safe-area-inset-bottom))}
+    .chatbot-panel{bottom:calc(82px + env(safe-area-inset-bottom))}
+    .toast{bottom:calc(84px + env(safe-area-inset-bottom))}
+  }
+}
