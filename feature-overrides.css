@@ -126,3 +126,277 @@
   font-size:10px;
   line-height:1.4;
 }
+
+
+/* ===== Mobile-first v5 • valores íntegros e app responsivo ===== */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{min-width:320px}
+.home-money-card strong,
+.hero-balance strong,
+.kpi strong,
+.annual-balance-total strong,
+.annual-compact-card>div:first-child strong,
+.annual-mini-grid b,
+.member-detail-grid b,
+.personal-summary b,
+.loan-card .big,
+.loan-meta b,
+.activity-stats b,
+.credit-grid b,
+.rule-stage-card b{
+  max-width:100%;
+  font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1;
+  letter-spacing:-.02em;
+  overflow:visible;
+  text-overflow:clip;
+}
+
+.home-money-card strong{
+  white-space:nowrap;
+  font-size:clamp(22px,4.6vw,30px);
+}
+.hero-balance strong{
+  white-space:nowrap;
+  font-size:clamp(27px,5vw,36px);
+}
+.kpi strong{
+  white-space:nowrap;
+  font-size:clamp(20px,3.5vw,25px);
+}
+.annual-balance-total strong{
+  white-space:nowrap;
+  font-size:clamp(25px,5vw,32px);
+}
+
+.home-money-card,
+.kpi,
+.personal-summary>div,
+.loan-meta>div,
+.member-detail-grid>div,
+.annual-mini-grid>div,
+.rule-stage-card>div{
+  overflow:hidden;
+}
+
+.table-wrap{
+  overscroll-behavior-x:contain;
+  scrollbar-width:thin;
+}
+.data-table{
+  width:max-content;
+  min-width:100%;
+}
+.data-table th,.data-table td{
+  max-width:260px;
+}
+.data-table td{
+  vertical-align:top;
+}
+.data-table td:not(:has(.badge)):not(:has(button)){
+  overflow-wrap:anywhere;
+}
+
+@media(max-width:760px){
+  .home-money-grid,
+  .app-shell:not(.is-admin) .member-summary-grid,
+  .app-shell.is-admin .home-money-grid{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  .home-money-card{
+    min-height:112px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+  }
+  .home-money-card strong{
+    font-size:clamp(24px,7.4vw,32px);
+    line-height:1.08;
+  }
+  .home-operational{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  .home-operational .home-status-pill:last-child{
+    grid-column:auto;
+  }
+  .home-status-pill{
+    min-height:52px;
+  }
+  .annual-compact-card>div:first-child{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:5px;
+  }
+  .annual-compact-card>div:first-child strong{
+    font-size:clamp(22px,6.2vw,28px);
+    white-space:nowrap;
+  }
+  .annual-mini-grid{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  .annual-mini-grid b,
+  .member-detail-grid b,
+  .personal-summary b{
+    font-size:clamp(14px,4.3vw,18px);
+  }
+  .loan-card{
+    padding:15px;
+  }
+  .loan-card-head{
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .loan-card .big{
+    font-size:clamp(22px,7vw,30px);
+    white-space:nowrap;
+  }
+  .loan-meta{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  .loan-meta b{
+    font-size:15px;
+    overflow-wrap:anywhere;
+  }
+  .activity-stats{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  .activity-stats b{
+    font-size:14px;
+  }
+  .simulation{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+  }
+  .transaction{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:start;
+    gap:8px;
+  }
+  .transaction-meta{
+    min-width:0;
+  }
+  .amount{
+    white-space:nowrap;
+    font-variant-numeric:tabular-nums;
+  }
+  .stack-item{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+  }
+  .stack-item>div:last-child{
+    width:100%;
+  }
+  .panel-actions,.row-actions{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    width:100%;
+  }
+  .panel-actions>*,
+  .row-actions>*{
+    width:100%;
+  }
+  .data-table{
+    min-width:620px;
+  }
+  .compact-members{
+    min-width:520px;
+  }
+  .chatbot-panel{
+    left:10px;
+    right:10px;
+    bottom:82px;
+    width:auto;
+    height:min(72vh,620px);
+    border-radius:18px;
+  }
+}
+
+@media(max-width:480px){
+  .main{
+    padding-left:10px;
+    padding-right:10px;
+  }
+  .home-profile-card{
+    gap:10px;
+    padding:18px 16px;
+  }
+  .home-profile-copy{
+    min-width:0;
+  }
+  .home-profile-copy h2{
+    font-size:clamp(20px,6.2vw,24px);
+    overflow-wrap:anywhere;
+  }
+  .home-profile-logo{
+    flex:0 0 56px;
+    width:56px;
+    height:56px;
+  }
+  .home-money-card{
+    min-height:106px;
+    padding:15px;
+  }
+  .home-money-card strong{
+    font-size:clamp(24px,8.2vw,31px);
+  }
+  .hero-balance strong{
+    font-size:clamp(25px,8vw,31px);
+  }
+  .kpi strong{
+    font-size:clamp(20px,6.4vw,25px);
+  }
+  .panel{
+    padding:14px;
+  }
+  .home-quick-grid{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  .home-quick-grid button{
+    min-height:72px;
+  }
+  .rule-stage-card{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  .qr-wrap{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  .qr-wrap img{
+    width:min(150px,100%);
+    height:auto;
+    aspect-ratio:1;
+  }
+  .pix-copy{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  .pix-copy code{
+    white-space:normal;
+    overflow-wrap:anywhere;
+    text-overflow:clip;
+  }
+  .chatbot-panel{
+    left:8px;
+    right:8px;
+    bottom:78px;
+    height:min(76vh,640px);
+  }
+  .chatbot-quick{
+    max-height:240px;
+  }
+  .chatbot-quick button{
+    flex:1 1 calc(50% - 6px);
+    min-width:0;
+  }
+}
+
+@media(max-width:360px){
+  .home-money-card strong,
+  .hero-balance strong,
+  .annual-balance-total strong,
+  .loan-card .big{
+    font-size:23px;
+  }
+  .chatbot-quick button{
+    flex-basis:100%;
+  }
+}
