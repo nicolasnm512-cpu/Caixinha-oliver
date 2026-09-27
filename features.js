@@ -206,6 +206,28 @@
     return all;
   }
 
+  function makeActivityCardsCollapsible(){
+    document.querySelectorAll('#activityCards > .activity-card').forEach(card=>{
+      if(card.dataset.foldReady==='1')return;
+      card.dataset.foldReady='1';
+      const title=card.querySelector('.activity-body h4')?.textContent?.trim()||'Atividade';
+      const toggle=document.createElement('button');
+      toggle.type='button';
+      toggle.className='activity-collapse-toggle';
+      toggle.setAttribute('aria-expanded','false');
+      toggle.innerHTML='<span><b></b><small>Clique para abrir os detalhes</small></span><span class="activity-toggle-icon">＋</span>';
+      toggle.querySelector('b').textContent=title;
+      const icon=toggle.querySelector('.activity-toggle-icon');
+      card.prepend(toggle);
+      card.classList.add('is-collapsed');
+      toggle.addEventListener('click',()=>{
+        const collapsed=card.classList.toggle('is-collapsed');
+        toggle.setAttribute('aria-expanded',String(!collapsed));
+        icon.textContent=collapsed?'＋':'−';
+      });
+    });
+  }
+
   window.renderActivities=async function(){
     const {data:acts,error}=await db.from('activities')
       .select('*,raffle_configs(*),raffle_prizes(*),trip_configs(*),trip_prizes(*)')
@@ -279,7 +301,7 @@
               :'<div class="activity-stats"><div><span>Suas poltronas</span><b>'+mySeats.length+'</b></div><div><span>Total</span><b>'+brl.format(due)+'</b></div><div><span>Situação</span><b>'+(paidStatus?'Pago':'Pendente')+'</b></div></div>')+
             seatChips+
             (!isAdmin()&&!paidStatus&&mySeats.length
-              ?'<div class="mandatory-trip-note">'+(a.payment_due_date?'Pagamento até '+safe(dueText)+'. Após o vencimento, no dia seguinte o saldo não pago vira empréstimo com juros de 1% ao dia.':'A administração ainda não definiu a data limite de pagamento.')+'</div>'
+              ?'<div class="mandatory-trip-note">'+(a.payment_due_date?'Pagamento até '+safe(dueText)+'. Em caso de atraso, será aplicada somente a regra vigente do exercício.':'A administração ainda não definiu a data limite de pagamento.')+'</div>'
               :'')+
             '<button class="'+(isAdmin()?'outline-btn':'primary-btn')+' raffle-open-btn" onclick="openBusTrip(\''+a.id+'\')">'+(isAdmin()?'Gerenciar poltronas':'Ver minhas poltronas')+'</button>'+
             (!isAdmin()&&!paidStatus&&remaining>0?'<button class="primary-btn raffle-open-btn" onclick="payActivity(\''+a.id+'\',\'trip\','+remaining+')">Pagar '+brl.format(remaining)+'</button>':'')+
@@ -288,6 +310,7 @@
 
       return '<article class="activity-card"><div class="activity-cover sorteio"><span>EVENTO</span>'+statusBadge(a.status)+'</div><div class="activity-body"><h4>'+safe(a.title)+'</h4><p>'+safe(a.description||'')+'</p><div class="activity-stats"><div><span>Valor</span><b>'+brl.format(Number(a.unit_price||0))+'</b></div><div><span>Meta</span><b>'+brl.format(Number(a.target_amount||0))+'</b></div><div><span>Status</span><b>'+safe(a.status)+'</b></div></div></div></article>';
     }).join('')||'<div class="stack-item"><p>Nenhuma atividade cadastrada.</p></div>';
+    makeActivityCardsCollapsible();
   };
 
   window.payActivity=async function(activityId,kind,amount){
@@ -328,7 +351,7 @@
           prizeHtml+
           '<div class="bus-admin-tools">'+
             '<div class="bus-assign-box"><h4>Atribuir poltronas exatas</h4><div class="form-grid two"><label>Cotista<select id="tripAssignMember">'+(members||[]).map(m=>'<option value="'+m.id+'">'+String(m.cotista_number).padStart(2,'0')+' • '+safe(m.full_name)+'</option>').join('')+'</select></label><label>Poltronas<input id="tripAssignSeats" placeholder="Ex.: 6, 7"></label></div><button id="tripAssignBtn" class="primary-btn" type="button">Atribuir poltronas</button><small>Disponíveis: '+(available.map(s=>s.seat_number).join(', ')||'nenhuma')+'</small></div>'+
-            '<div class="bus-due-box"><h4>Data limite de pagamento</h4><div class="form-grid two"><label>Vencimento<input id="tripManageDue" type="date" value="'+safe(activity.payment_due_date||'')+'"></label><div class="form-action-end"><button id="tripSaveDueBtn" class="outline-btn" type="button">Salvar vencimento</button></div></div><small>Se houver saldo após essa data, no dia seguinte ele vira empréstimo a 1% ao dia.</small></div>'+
+            '<div class="bus-due-box"><h4>Data limite de pagamento</h4><div class="form-grid two"><label>Vencimento<input id="tripManageDue" type="date" value="'+safe(activity.payment_due_date||'')+'"></label><div class="form-action-end"><button id="tripSaveDueBtn" class="outline-btn" type="button">Salvar vencimento</button></div></div><small>Em caso de saldo após essa data, será aplicada somente a regra vigente do exercício.</small></div>'+
           '</div>'+
           '<div class="table-wrap"><table class="data-table"><thead><tr><th>Cotista</th><th>Poltronas</th><th>Números vinculados</th><th>Total</th><th>Status</th><th>Ação</th></tr></thead><tbody>'+
             grouped.map(g=>'<tr><td><b>'+safe(g.m.full_name)+'</b></td><td><div class="number-chips">'+g.own.map(s=>'<span class="'+s.status+'">'+String(s.seat_number).padStart(2,'0')+'</span>').join('')+'</div></td><td><div class="raffle-seat-pairs">'+g.own.map(s=>(s.raffle_number_1||s.raffle_number_2)?'<span>P'+s.seat_number+': N'+String(s.raffle_number_1||'—').padStart(2,'0')+' / N'+String(s.raffle_number_2||'—').padStart(2,'0')+'</span>':'').join('')+'</div></td><td>'+brl.format(g.total)+'</td><td>'+statusBadge(g.paid?'confirmed':'pending')+'</td><td>'+(g.paid?'—':'<button class="primary-btn tiny" onclick="confirmTripMember(\''+activityId+'\',\''+g.m.id+'\')">Confirmar pagamento</button>')+'</td></tr>').join('')+
@@ -541,7 +564,7 @@
           '<label>Data e horário<input id="busTripEventAt" type="datetime-local" required></label>'+
           '<label>Local / ponto de saída<input id="busTripLocation" required></label>'+
           '<label class="full-span">Transporte<input id="busTripTransport" value="Ônibus • transporte incluso"></label>'+
-          '<div class="mandatory-rule full-span"><b>Fluxo:</b> após criar o passeio, a administração escolhe exatamente quais poltronas pertencem a cada cotista. Quando houver vencimento definido, saldo não pago passa para empréstimo no dia seguinte, com juros de 1% ao dia.</div>'+
+          '<div class="mandatory-rule full-span"><b>Fluxo:</b> após criar o passeio, a administração escolhe exatamente quais poltronas pertencem a cada cotista. Quando houver vencimento definido, qualquer atraso seguirá somente a regra vigente do exercício.</div>'+
           '<button class="primary-btn full-span" type="submit">Criar passeio e mapa de poltronas</button>'+
         '</form>');
       $('#busTripForm').addEventListener('submit',async ev=>{
