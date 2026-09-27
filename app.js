@@ -186,7 +186,7 @@ async function renderRequests(){
   qs('#requestList').innerHTML=(rows||[]).map(r=>{
     const rate=r.beneficiary_type==='third_party'
       ? Number(state.settings?.third_party_interest_rate??30)
-      : Number(state.settings?.operation_interest_rate??20);
+      : Number(state.settings?.operation_interest_rate??25);
     const canAccept=!isAdmin()&&r.status==='rejected'&&Number(r.available_credit_snapshot)>0&&Number(r.requested_amount)>Number(r.available_credit_snapshot);
     return `<div class="stack-item request-card">
       <div>
@@ -212,7 +212,7 @@ function updateSimulation(){
   const amount=Number(qs('#requestAmount').value||0);
   const n=Number(qs('#requestInstallments').value||1);
   const third=qs('#requestBeneficiary').value==='third_party';
-  const rate=third?Number(state.settings?.third_party_interest_rate??30):Number(state.settings?.operation_interest_rate??20);
+  const rate=third?Number(state.settings?.third_party_interest_rate??30):Number(state.settings?.operation_interest_rate??25);
   const total=amount*(1+rate/100);
   const available=Number(state.credit?.available_credit||0);
   const over=amount>available&&available>0;
@@ -288,7 +288,7 @@ async function renderLoans(){
   const active=(loans||[]).filter(l=>['active','late'].includes(l.status));
   const debt=active.reduce((s,l)=>s+Number(l.outstanding_amount||0),0);
   qs('#loanTotalDebt').textContent=brl.format(debt);
-  qs('#loanRate').textContent=`${Number(state.settings?.operation_interest_rate??20).toFixed(2)}% próprio • ${Number(state.settings?.third_party_interest_rate??30).toFixed(2)}% terceiro`;
+  qs('#loanRate').textContent=`${Number(state.settings?.operation_interest_rate??25).toFixed(2)}% próprio • ${Number(state.settings?.third_party_interest_rate??30).toFixed(2)}% terceiro`;
   const pending=installments.filter(i=>i.status==='pending');
   qs('#loanRemaining').textContent=pending.length;
   qs('#loanInterestEstimate').textContent=brl.format(active.reduce((s,l)=>s+Number(l.interest_amount||0),0));
@@ -298,13 +298,19 @@ async function renderLoans(){
     const paid=ins.filter(i=>i.status==='confirmed').length;
     const pct=l.installments?Math.round(paid/l.installments*100):0;
     const tripLoan=l.source_kind==='trip_overdue';
-    const rateLabel=tripLoan
-      ?`${Number(l.daily_interest_rate||1).toLocaleString('pt-BR')}% ao dia`
-      :`${Number(l.operation_rate).toFixed(2)}%`;
-    const origin=tripLoan?'Passeio obrigatório não pago':(l.beneficiary_type==='third_party'?`Terceiro: ${safe(l.third_party_name)}`:'Empréstimo próprio');
+    const historical=l.source_kind==='historical_2026';
+    const rateLabel=historical
+      ?`${Number(l.operation_rate).toFixed(2)}% por período • histórico 2026`
+      :(tripLoan?'Regra histórica do contrato':`${Number(l.operation_rate).toFixed(2)}%`);
+    const origin=historical?'Histórico real de 2026':(tripLoan?'Passeio convertido em empréstimo':(l.beneficiary_type==='third_party'?`Terceiro: ${safe(l.third_party_name)}`:'Empréstimo próprio'));
+    const startLabel=l.date_precision==='import_date'
+      ?'data exata não informada'
+      :(l.date_precision==='month'
+        ?new Date(l.released_at+'T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'})
+        :formatDate(l.released_at));
     return `<div class="loan-card ${tripLoan?'trip-overdue-loan':''}">
       <div class="loan-card-head">
-        <div><h4>${tripLoan?'PASSEIO • ':''}${l.id.slice(0,8).toUpperCase()}</h4><small>${origin} • início ${formatDate(l.released_at)}</small></div>
+        <div><h4>${tripLoan?'PASSEIO • ':''}${l.id.slice(0,8).toUpperCase()}</h4><small>${origin} • início ${safe(startLabel)}</small></div>
         ${statusBadge(l.status)}
       </div>
       <div class="big">${brl.format(Number(l.outstanding_amount||0))}</div><small>Saldo devedor</small>
@@ -314,7 +320,7 @@ async function renderLoans(){
         <div><span>Total acumulado</span><b>${brl.format(Number(l.total_contract_amount||0))}</b></div>
         <div><span>Juros</span><b>${rateLabel}</b></div>
       </div>
-      ${tripLoan?`<div class="trip-loan-note">Os juros são atualizados diariamente sobre o principal ainda em aberto.</div>`:''}
+      ${tripLoan?`<div class="trip-loan-note">Contrato legado. A nova régua fica desativada em 2026.</div>`:''}
     </div>`;
   }).join('')||'<div class="stack-item"><p>Nenhum empréstimo cadastrado.</p></div>';
 }
@@ -597,7 +603,7 @@ qs('#activate2027RuleBtn')?.addEventListener('click',async()=>{
   }
 });
 
-async function renderAdmin(){if(!isAdmin())return;qs('#settingShare').value=state.settings?.monthly_share_amount??100;qs('#settingRate').value=state.settings?.operation_interest_rate??20;qs('#settingPix').value=state.settings?.pix_key??'';qs('#settingName').value=state.settings?.fund_name??'OLIVER Caixinha';qs('#settingCreditBonus').value=state.settings?.credit_bonus_percent??25;qs('#settingMaxInstallments').value=state.settings?.max_installments??3;qs('#settingThirdPartyRate').value=state.settings?.third_party_interest_rate??30;qs('#settingTripReturn').value=state.settings?.trip_return_percent??'';const {data:reqs}=await db.from('loan_requests').select('*,profiles!loan_requests_member_id_fkey(full_name)').in('status',['pending','under_review']).order('requested_at');qs('#pendingCount').textContent=`${(reqs||[]).length} pendente${(reqs||[]).length===1?'':'s'}`;qs('#adminRequests').innerHTML=(reqs||[]).map(r=>`<div class="stack-item"><div><h4>${safe(r.profiles?.full_name||'Cotista')} • ${brl.format(Number(r.requested_amount))}</h4><p>${r.requested_installments} parcela(s) • ${safe(r.purpose)}${r.beneficiary_type==='third_party'?` • Terceiro: ${safe(r.third_party_name)}`:''}</p></div><div><button class="primary-btn small" onclick="approveRequest('${r.id}')">Aprovar</button> <button class="outline-btn" onclick="rejectRequest('${r.id}')">Recusar</button></div></div>`).join('')||'<div class="stack-item"><p>Nenhuma solicitação aguardando análise.</p></div>';const {data:tx}=await db.from('fund_transactions').select('*').order('transaction_date',{ascending:false}).limit(20);qs('#adminTransactions').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th>Valor</th></tr></thead><tbody>${(tx||[]).map(t=>`<tr><td>${formatDate(t.transaction_date)}</td><td>${t.direction==='income'?'Entrada':'Saída'}</td><td>${safe(t.category)}</td><td>${safe(t.description)}</td><td class="amount ${t.direction==='income'?'in':'out'}">${t.direction==='income'?'+':'−'} ${brl.format(Number(t.amount))}</td></tr>`).join('')}</tbody></table>`}
+async function renderAdmin(){if(!isAdmin())return;qs('#settingShare').value=state.settings?.monthly_share_amount??100;qs('#settingRate').value=state.settings?.operation_interest_rate??25;qs('#settingPix').value=state.settings?.pix_key??'';qs('#settingName').value=state.settings?.fund_name??'OLIVER Caixinha';qs('#settingCreditBonus').value=state.settings?.credit_bonus_percent??25;qs('#settingMaxInstallments').value=state.settings?.max_installments??3;qs('#settingThirdPartyRate').value=state.settings?.third_party_interest_rate??30;qs('#settingTripReturn').value=state.settings?.trip_return_percent??'';const {data:reqs}=await db.from('loan_requests').select('*,profiles!loan_requests_member_id_fkey(full_name)').in('status',['pending','under_review']).order('requested_at');qs('#pendingCount').textContent=`${(reqs||[]).length} pendente${(reqs||[]).length===1?'':'s'}`;qs('#adminRequests').innerHTML=(reqs||[]).map(r=>`<div class="stack-item"><div><h4>${safe(r.profiles?.full_name||'Cotista')} • ${brl.format(Number(r.requested_amount))}</h4><p>${r.requested_installments} parcela(s) • ${safe(r.purpose)}${r.beneficiary_type==='third_party'?` • Terceiro: ${safe(r.third_party_name)}`:''}</p></div><div><button class="primary-btn small" onclick="approveRequest('${r.id}')">Aprovar</button> <button class="outline-btn" onclick="rejectRequest('${r.id}')">Recusar</button></div></div>`).join('')||'<div class="stack-item"><p>Nenhuma solicitação aguardando análise.</p></div>';const {data:tx}=await db.from('fund_transactions').select('*').order('transaction_date',{ascending:false}).limit(20);qs('#adminTransactions').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th>Valor</th></tr></thead><tbody>${(tx||[]).map(t=>`<tr><td>${formatDate(t.transaction_date)}</td><td>${t.direction==='income'?'Entrada':'Saída'}</td><td>${safe(t.category)}</td><td>${safe(t.description)}</td><td class="amount ${t.direction==='income'?'in':'out'}">${t.direction==='income'?'+':'−'} ${brl.format(Number(t.amount))}</td></tr>`).join('')}</tbody></table>`}
 window.approveRequest=async id=>{const def=new Date();def.setMonth(def.getMonth()+1);const due=prompt('Primeiro vencimento (AAAA-MM-DD):',def.toISOString().slice(0,10));if(!due)return;const {error}=await db.rpc('admin_approve_loan_request',{p_request_id:id,p_first_due_date:due});if(error){toast(error.message);return}await renderAll();toast('Empréstimo aprovado e parcelas criadas.')};
 window.rejectRequest=async id=>{const reason=prompt('Motivo da recusa:')||'';const {error}=await db.rpc('admin_reject_loan_request',{p_request_id:id,p_reason:reason});if(error){toast(error.message);return}await renderAll();toast('Solicitação recusada.')};
 qs('#settingsForm').addEventListener('submit',async e=>{e.preventDefault();const tripReturnRaw=qs('#settingTripReturn').value;const patch={monthly_share_amount:Number(qs('#settingShare').value),operation_interest_rate:Number(qs('#settingRate').value),pix_key:qs('#settingPix').value.trim()||null,fund_name:qs('#settingName').value.trim()||'OLIVER Caixinha',credit_bonus_percent:Number(qs('#settingCreditBonus').value)||25,max_installments:Math.min(3,Math.max(1,Number(qs('#settingMaxInstallments').value)||3)),third_party_interest_rate:Number(qs('#settingThirdPartyRate').value)||30,trip_return_percent:tripReturnRaw===''?null:Number(tripReturnRaw),updated_by:state.user.id};const {data,error}=await db.from('fund_settings').update(patch).eq('id',1).select().single();if(error){toast(error.message);return}state.settings=data;await renderAll();e.target.closest('details')?.removeAttribute('open');toast('Configurações atualizadas.')});
