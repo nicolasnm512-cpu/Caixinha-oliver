@@ -1,4 +1,4 @@
-const VERSION='oliver-ui-v3';
+const VERSION='oliver-ui-v4';
 self.addEventListener('install',()=>self.skipWaiting());
 self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
 self.addEventListener('fetch',event=>{
