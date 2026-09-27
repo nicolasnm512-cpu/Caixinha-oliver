@@ -87,8 +87,35 @@ qs('#logoutBtn').addEventListener('click',async()=>{await db.auth.signOut();show
 qsa('.nav-item').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.page)));
 qsa('[data-page-jump]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.pageJump)));
 
-const pageMeta={dashboard:['Visão geral','Acompanhe sua situação, pagamentos, empréstimos e atividades.'],requests:['Central de solicitações','Solicite empréstimos e acompanhe a análise.'],loans:['Empréstimos','Contratos, parcelas, juros e saldo devedor.'],payments:['Pagamentos e comprovantes','Pague via Pix e envie seu comprovante.'],activities:['Rifas e passeios','Veja suas rifas, números, passeios e pagamentos.'],account:['Meu cadastro','Dados pessoais, segurança e documentos.'],members:['Cotistas','Situação dos participantes.'],admin:['Administração','Configurações, aprovações e lançamentos.']};
-function navigate(page){if((page==='members'||page==='admin')&&!isAdmin()){toast('Área exclusiva da administração.');return}qsa('.page').forEach(p=>p.classList.remove('active-page'));qs(`#${page}`)?.classList.add('active-page');qsa('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page===page));qs('#pageTitle').textContent=pageMeta[page]?.[0]||'OLIVER Caixinha';qs('#pageSubtitle').textContent=pageMeta[page]?.[1]||'';window.scrollTo({top:0,behavior:'smooth'})}
+const pageMeta={dashboard:['Visão geral','Acompanhe suas cotas pagas e seu rendimento de juros.'],requests:['Central de solicitações','Solicite empréstimos e acompanhe a análise.'],loans:['Empréstimos','Contratos, parcelas, juros e saldo devedor.'],payments:['Pagamentos e comprovantes','Pague via Pix e envie seu comprovante.'],activities:['Rifas e passeios','Veja suas rifas, números, passeios e pagamentos.'],account:['Meu cadastro','Dados pessoais, segurança e documentos.'],members:['Cotistas','Situação dos participantes.'],admin:['Administração','Configurações, aprovações e lançamentos.']};
+function applyCollapsiblePanels(){
+  qsa('.page article.panel').forEach(panel=>{
+    if(panel.dataset.collapsibleReady==='1'||panel.closest('#admin'))return;
+    const head=panel.querySelector(':scope > .panel-head');
+    if(!head)return;
+    panel.dataset.collapsibleReady='1';
+    panel.classList.add('ui-collapsible','is-collapsed');
+    head.setAttribute('role','button');
+    head.setAttribute('tabindex','0');
+    head.setAttribute('aria-expanded','false');
+    const toggle=()=>{
+      const collapsed=panel.classList.toggle('is-collapsed');
+      head.setAttribute('aria-expanded',String(!collapsed));
+    };
+    head.addEventListener('click',e=>{
+      if(e.target.closest('button,a,input,select,textarea,label'))return;
+      toggle();
+    });
+    head.addEventListener('keydown',e=>{
+      if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();}
+    });
+    panel.querySelectorAll('form').forEach(form=>form.addEventListener('reset',()=>{
+      panel.classList.add('is-collapsed');
+      head.setAttribute('aria-expanded','false');
+    }));
+  });
+}
+function navigate(page){if((page==='members'||page==='admin')&&!isAdmin()){toast('Área exclusiva da administração.');return}qsa('.page').forEach(p=>p.classList.remove('active-page'));qs(`#${page}`)?.classList.add('active-page');qsa('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page===page));qs('#pageTitle').textContent=pageMeta[page]?.[0]||'OLIVER Caixinha';qs('#pageSubtitle').textContent=pageMeta[page]?.[1]||'';applyCollapsiblePanels();window.scrollTo({top:0,behavior:'smooth'})}
 
 async function renderDashboard(){
   const hour=new Date().getHours();
@@ -129,33 +156,15 @@ async function renderDashboard(){
     return;
   }
 
-  const [{data:home,error:homeError},{data:annual,error:annualError}] = await Promise.all([
-    db.rpc('get_my_home_summary',{p_year:now.getFullYear()}),
-    db.rpc('get_my_annual_balance',{p_year:now.getFullYear()})
-  ]);
-  const h=Array.isArray(home)?home[0]:home;
-  if(!homeError&&h){
-    qs('#homePaidTotal').textContent=brl.format(Number(h.paid_total||0));
-    qs('#homePaidBreakdown').textContent=`Cotas ${brl.format(Number(h.paid_contributions||0))} • Rifas ${brl.format(Number(h.paid_raffles||0))} • Passeios ${brl.format(Number(h.paid_trips||0))}`;
-    const debt=Number(h.loan_balance||0);
-    qs('#homeLoanNegative').textContent=debt>0?brl.format(-debt):brl.format(0);
-    qs('#homeLoanNote').textContent=debt>0?'Valor ainda em aberto':'Sem empréstimos em aberto';
-    qs('#homeCashAvailable').textContent=brl.format(Number(h.cash_available||0));
-    qs('#homeCashNote').textContent='Disponível na caixinha para movimentação';
+  const {data:memberDashboard,error:memberDashboardError}=await db.rpc('get_my_member_dashboard',{p_year:now.getFullYear()});
+  const memberData=Array.isArray(memberDashboard)?memberDashboard[0]:memberDashboard;
+  if(memberDashboardError){
+    toast('Não foi possível carregar seu resumo financeiro.');
+  }else if(memberData){
+    qs('#memberPaidContributions').textContent=brl.format(Number(memberData.paid_contributions||0));
+    qs('#memberInterestYield').textContent=brl.format(Number(memberData.interest_yield||0));
   }
 
-  const a=Array.isArray(annual)?annual[0]:annual;
-  if(!annualError&&a){
-    qs('#annualBalanceYear').textContent=String(a.year);
-    qs('#annualBalanceTotal').textContent=brl.format(Number(a.estimated_year_end_total||0));
-    qs('#annualContributions').textContent=brl.format(Number(a.contributions_paid||0));
-    qs('#annualOwnInterestBonus').textContent=brl.format(Number(a.own_interest_bonus||0));
-    qs('#annualCollectiveShare').textContent=brl.format(Number(a.collective_interest_share||0));
-    qs('#annualCollectivePercent').textContent=`${Number(a.collective_share_percent||0).toLocaleString('pt-BR',{maximumFractionDigits:2})}% da divisão por cota`;
-    qs('#annualTripsPaid').textContent=brl.format(Number(a.trips_paid||0));
-    const tripReturn=Number(a.trip_return||0);
-    qs('#annualTripReturnNote').textContent=tripReturn>0?`Retorno calculado: ${brl.format(tripReturn)}`:'Retorno do passeio ainda não definido';
-  }
 }
 
 async function renderRequests(){
@@ -177,7 +186,7 @@ async function renderRequests(){
   qs('#requestList').innerHTML=(rows||[]).map(r=>{
     const rate=r.beneficiary_type==='third_party'
       ? Number(state.settings?.third_party_interest_rate??30)
-      : Number(state.settings?.operation_interest_rate??20);
+      : Number(state.settings?.operation_interest_rate??25);
     const canAccept=!isAdmin()&&r.status==='rejected'&&Number(r.available_credit_snapshot)>0&&Number(r.requested_amount)>Number(r.available_credit_snapshot);
     return `<div class="stack-item request-card">
       <div>
@@ -203,7 +212,7 @@ function updateSimulation(){
   const amount=Number(qs('#requestAmount').value||0);
   const n=Number(qs('#requestInstallments').value||1);
   const third=qs('#requestBeneficiary').value==='third_party';
-  const rate=third?Number(state.settings?.third_party_interest_rate??30):Number(state.settings?.operation_interest_rate??20);
+  const rate=third?Number(state.settings?.third_party_interest_rate??30):Number(state.settings?.operation_interest_rate??25);
   const total=amount*(1+rate/100);
   const available=Number(state.credit?.available_credit||0);
   const over=amount>available&&available>0;
@@ -279,7 +288,7 @@ async function renderLoans(){
   const active=(loans||[]).filter(l=>['active','late'].includes(l.status));
   const debt=active.reduce((s,l)=>s+Number(l.outstanding_amount||0),0);
   qs('#loanTotalDebt').textContent=brl.format(debt);
-  qs('#loanRate').textContent=`${Number(state.settings?.operation_interest_rate??20).toFixed(2)}% próprio • ${Number(state.settings?.third_party_interest_rate??30).toFixed(2)}% terceiro`;
+  qs('#loanRate').textContent=`${Number(state.settings?.operation_interest_rate??25).toFixed(2)}% próprio • ${Number(state.settings?.third_party_interest_rate??30).toFixed(2)}% terceiro`;
   const pending=installments.filter(i=>i.status==='pending');
   qs('#loanRemaining').textContent=pending.length;
   qs('#loanInterestEstimate').textContent=brl.format(active.reduce((s,l)=>s+Number(l.interest_amount||0),0));
@@ -289,13 +298,19 @@ async function renderLoans(){
     const paid=ins.filter(i=>i.status==='confirmed').length;
     const pct=l.installments?Math.round(paid/l.installments*100):0;
     const tripLoan=l.source_kind==='trip_overdue';
-    const rateLabel=tripLoan
-      ?`${Number(l.daily_interest_rate||1).toLocaleString('pt-BR')}% ao dia`
-      :`${Number(l.operation_rate).toFixed(2)}%`;
-    const origin=tripLoan?'Passeio obrigatório não pago':(l.beneficiary_type==='third_party'?`Terceiro: ${safe(l.third_party_name)}`:'Empréstimo próprio');
+    const historical=l.source_kind==='historical_2026';
+    const rateLabel=historical
+      ?`${Number(l.operation_rate).toFixed(2)}% por período • histórico 2026`
+      :(tripLoan?'Regra histórica do contrato':`${Number(l.operation_rate).toFixed(2)}%`);
+    const origin=historical?'Histórico real de 2026':(tripLoan?'Passeio convertido em empréstimo':(l.beneficiary_type==='third_party'?`Terceiro: ${safe(l.third_party_name)}`:'Empréstimo próprio'));
+    const startLabel=l.date_precision==='import_date'
+      ?'data exata não informada'
+      :(l.date_precision==='month'
+        ?new Date(l.released_at+'T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'})
+        :formatDate(l.released_at));
     return `<div class="loan-card ${tripLoan?'trip-overdue-loan':''}">
       <div class="loan-card-head">
-        <div><h4>${tripLoan?'PASSEIO • ':''}${l.id.slice(0,8).toUpperCase()}</h4><small>${origin} • início ${formatDate(l.released_at)}</small></div>
+        <div><h4>${tripLoan?'PASSEIO • ':''}${l.id.slice(0,8).toUpperCase()}</h4><small>${origin} • início ${safe(startLabel)}</small></div>
         ${statusBadge(l.status)}
       </div>
       <div class="big">${brl.format(Number(l.outstanding_amount||0))}</div><small>Saldo devedor</small>
@@ -305,7 +320,7 @@ async function renderLoans(){
         <div><span>Total acumulado</span><b>${brl.format(Number(l.total_contract_amount||0))}</b></div>
         <div><span>Juros</span><b>${rateLabel}</b></div>
       </div>
-      ${tripLoan?`<div class="trip-loan-note">Os juros são atualizados diariamente sobre o principal ainda em aberto.</div>`:''}
+      ${tripLoan?`<div class="trip-loan-note">Contrato legado. A nova régua fica desativada em 2026.</div>`:''}
     </div>`;
   }).join('')||'<div class="stack-item"><p>Nenhum empréstimo cadastrado.</p></div>';
 }
@@ -481,34 +496,6 @@ window.openMemberAdminDetails=id=>{
 qs('#exportMembersBtn').addEventListener('click',()=>{const rows=window.__membersCsv||[];const txt='numero,nome,email,cotas,ativo\n'+rows.map(m=>`${m.cotista_number||''},"${String(m.full_name).replaceAll('"','""')}",${m.email||''},${m.share_count},${m.active?'sim':'nao'}`).join('\n');const blob=new Blob([txt],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cotistas-oliver-caixinha.csv';a.click();URL.revokeObjectURL(a.href)});
 qs('#newMemberBtn').addEventListener('click',()=>{if(!isAdmin())return;openModal(`<div class="panel-head"><div><h3>Novo cotista</h3><p>Crie o acesso inicial do cotista. A senha poderá ser alterada pelo próprio usuário em Meu cadastro.</p></div></div><form id="newMemberForm" class="form-grid"><label>Número do cotista<input id="newMemberNumber" type="number" min="1" max="20" required></label><label>Cotas mensais<input id="newMemberShares" type="number" min="1" max="20" value="1" required></label><label class="full-span">Nome completo<input id="newMemberName" required></label><label class="full-span">E-mail de acesso<input id="newMemberEmail" type="email" required></label><label class="full-span">Senha provisória<input id="newMemberPassword" type="text" minlength="8" value="Oliver@2026" required></label><button class="primary-btn full-span" type="submit">Criar cotista</button></form>`);setTimeout(()=>qs('#newMemberForm')?.addEventListener('submit',async e=>{e.preventDefault();const btn=e.submitter;try{if(btn){btn.disabled=true;btn.textContent='Criando...'}await callAdminUsers({action:'create_member',cotista_number:Number(qs('#newMemberNumber').value),share_count:Number(qs('#newMemberShares').value),full_name:qs('#newMemberName').value.trim(),email:qs('#newMemberEmail').value.trim().toLowerCase(),password:qs('#newMemberPassword').value});closeModal();await renderMembers();toast('Cotista criado com sucesso.')}catch(err){toast(err.message)}finally{if(btn){btn.disabled=false;btn.textContent='Criar cotista'}}}),0)});
 function generateTemporaryPassword(n){const a=new Uint32Array(1);crypto.getRandomValues(a);return `Olv${String(n).padStart(2,'0')}@${a[0].toString(36).toUpperCase().slice(-6)}`}
-qs('#import2026Btn').addEventListener('click',async()=>{
-  if(!isAdmin())return;
-  if(!confirm('Importar os 8 cotistas e o resumo financeiro de 2026 informado?'))return;
-  const seed=[
-    {n:1,name:'Sica',email:'sica@cotista.olivercaixinha.example',paid:9,contribution:900,loans:325,interest:106.25},
-    {n:2,name:'Gisele',email:'gisele@cotista.olivercaixinha.example',paid:8,contribution:800,loans:600,interest:145},
-    {n:3,name:'Anderson',email:'anderson@cotista.olivercaixinha.example',paid:9,contribution:900,loans:500,interest:120},
-    {n:4,name:'Tayna',email:'tayna@cotista.olivercaixinha.example',paid:8,contribution:800,loans:938.75,interest:319.36},
-    {n:5,name:'Day',email:'day@cotista.olivercaixinha.example',paid:7,contribution:700,loans:128,interest:41.90},
-    {n:6,name:'Jamaica',email:'jamaica@cotista.olivercaixinha.example',paid:30,contribution:3000,loans:0,interest:0},
-    {n:7,name:'Regiane',email:'regiane@cotista.olivercaixinha.example',paid:10,contribution:1000,loans:0,interest:0},
-    {n:8,name:'Ivan',email:'ivan@cotista.olivercaixinha.example',paid:10,contribution:1000,loans:0,interest:0}
-  ];
-  const btn=qs('#import2026Btn');const original=btn.textContent;btn.disabled=true;btn.textContent='Importando...';
-  const credentials=[];
-  try{
-    for(const m of seed){
-      const password=generateTemporaryPassword(m.n);let created=false;
-      try{await callAdminUsers({action:'create_member',cotista_number:m.n,share_count:1,full_name:m.name,email:m.email,password});created=true}catch(createErr){const {data:existing}=await db.from('profiles').select('id').eq('email',m.email).maybeSingle();if(!existing)throw createErr}
-      const {data:profile,error:profileError}=await db.from('profiles').select('id').eq('email',m.email).single();if(profileError||!profile)throw new Error(`Perfil de ${m.name} não encontrado.`);
-      const {error:snapshotError}=await db.from('member_year_snapshots').upsert({year:2026,member_id:profile.id,paid_share_units:m.paid,contributions_paid:m.contribution,loan_principal_year:m.loans,interest_recorded:m.interest,source_note:'Importado do relatório financeiro janeiro-setembro enviado em 24/09/2026.'},{onConflict:'year,member_id'});if(snapshotError)throw snapshotError;
-      credentials.push({name:m.name,email:m.email,password:created?password:'Já cadastrado'});
-    }
-    await renderMembers();
-    openModal(`<div class="panel-head"><div><h3>Importação concluída</h3><p>Guarde as senhas provisórias dos novos acessos. Elas não ficam salvas em texto no banco.</p></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Cotista</th><th>Login</th><th>Senha provisória</th></tr></thead><tbody>${credentials.map(c=>`<tr><td>${safe(c.name)}</td><td>${safe(c.email)}</td><td><b>${safe(c.password)}</b></td></tr>`).join('')}</tbody></table></div><p class="muted-note">No primeiro login, cada cotista será obrigado a criar uma nova senha.</p>`);
-    toast('8 cotistas e histórico 2026 processados.');
-  }catch(err){toast(err.message||'Falha na importação.')}finally{btn.disabled=false;btn.textContent=original}
-});
 window.toggleMemberAccess=async(id,active)=>{try{await callAdminUsers({action:'set_active',user_id:id,active});await renderMembers();toast(active?'Acesso ativado.':'Acesso desativado.')}catch(err){toast(err.message)}};
 window.resetMemberPassword=async(id)=>{const name=window.__membersById?.[id]?.full_name||'cotista';const password=prompt(`Nova senha provisória para ${name} (mínimo 8 caracteres):`,'Oliver@2026');if(!password)return;if(password.length<8){toast('Use ao menos 8 caracteres.');return}try{await callAdminUsers({action:'reset_password',user_id:id,password});await renderMembers();toast('Senha redefinida com sucesso.')}catch(err){toast(err.message)}};
 
@@ -536,17 +523,69 @@ window.ignoreAgentEvent=async id=>{
   toast('Lançamento ignorado sem alterar o caixa.');
 };
 
-async function renderAdmin(){if(!isAdmin())return;qs('#settingShare').value=state.settings?.monthly_share_amount??100;qs('#settingRate').value=state.settings?.operation_interest_rate??20;qs('#settingPix').value=state.settings?.pix_key??'';qs('#settingName').value=state.settings?.fund_name??'OLIVER Caixinha';qs('#settingCreditBonus').value=state.settings?.credit_bonus_percent??25;qs('#settingMaxInstallments').value=state.settings?.max_installments??3;qs('#settingThirdPartyRate').value=state.settings?.third_party_interest_rate??30;qs('#settingOwnInterestReturn').value=state.settings?.own_interest_return_percent??10;qs('#settingTripReturn').value=state.settings?.trip_return_percent??'';const {data:reqs}=await db.from('loan_requests').select('*,profiles!loan_requests_member_id_fkey(full_name)').in('status',['pending','under_review']).order('requested_at');qs('#pendingCount').textContent=`${(reqs||[]).length} pendente${(reqs||[]).length===1?'':'s'}`;qs('#adminRequests').innerHTML=(reqs||[]).map(r=>`<div class="stack-item"><div><h4>${safe(r.profiles?.full_name||'Cotista')} • ${brl.format(Number(r.requested_amount))}</h4><p>${r.requested_installments} parcela(s) • ${safe(r.purpose)}${r.beneficiary_type==='third_party'?` • Terceiro: ${safe(r.third_party_name)}`:''}</p></div><div><button class="primary-btn small" onclick="approveRequest('${r.id}')">Aprovar</button> <button class="outline-btn" onclick="rejectRequest('${r.id}')">Recusar</button></div></div>`).join('')||'<div class="stack-item"><p>Nenhuma solicitação aguardando análise.</p></div>';const {data:tx}=await db.from('fund_transactions').select('*').order('transaction_date',{ascending:false}).limit(20);qs('#adminTransactions').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th>Valor</th></tr></thead><tbody>${(tx||[]).map(t=>`<tr><td>${formatDate(t.transaction_date)}</td><td>${t.direction==='income'?'Entrada':'Saída'}</td><td>${safe(t.category)}</td><td>${safe(t.description)}</td><td class="amount ${t.direction==='income'?'in':'out'}">${t.direction==='income'?'+':'−'} ${brl.format(Number(t.amount))}</td></tr>`).join('')}</tbody></table>`}
+async function renderInterestDistributionAudit(){
+  if(!isAdmin()||!qs('#interestDistributionAudit'))return;
+  const {data,error}=await db.from('interest_distribution_batches')
+    .select('id,transaction_date,gross_amount,participant_count,distributed_amount,distribution_mode')
+    .order('created_at',{ascending:false})
+    .limit(12);
+  if(error){qs('#interestDistributionAudit').innerHTML='<div class="stack-item"><p>Não foi possível carregar a distribuição.</p></div>';return}
+  qs('#interestDistributionAudit').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Entrada</th><th>Cotistas</th><th>Distribuído</th></tr></thead><tbody>${(data||[]).map(b=>`<tr><td>${formatDate(b.transaction_date)}</td><td>${brl.format(Number(b.gross_amount||0))}</td><td>${Number(b.participant_count||0)}</td><td><b>${brl.format(Number(b.distributed_amount||0))}</b></td></tr>`).join('')}</tbody></table>`;
+}
+
+async function renderLoanRuleStatus(){
+  if(!isAdmin()||!qs('#loanRuleStatus'))return;
+  const {data,error}=await db.from('loan_rule_versions').select('*').order('effective_from');
+  if(error){qs('#loanRuleStatus').textContent='Não foi possível carregar as versões da régua.';return}
+  const current=(data||[]).find(r=>r.enabled);
+  const staged=(data||[]).find(r=>r.code==='2027_v1');
+  const badge=qs('#loanRuleBadge');
+  const btn=qs('#activate2027RuleBtn');
+  if(current?.code==='2027_v1'){
+    badge.textContent='Ativa';
+    badge.className='badge success';
+    btn.disabled=true;
+    btn.textContent='Régua 2027 ativa';
+  }else{
+    badge.textContent='Preparada';
+    badge.className='badge warning';
+    const canActivate=staged&&new Date().toISOString().slice(0,10)>=staged.effective_from;
+    btn.disabled=!canActivate;
+    btn.textContent=canActivate?'Ativar régua 2027':'Disponível em 08/01/2027';
+  }
+  qs('#loanRuleStatus').innerHTML=`
+    <div><span>Regra ativa</span><b>${safe(current?.title||'Não definida')}</b><small>${current?('vigente desde '+formatDate(current.effective_from)):'—'}</small></div>
+    <div><span>Próxima versão</span><b>${safe(staged?.title||'—')}</b><small>Ativação permitida a partir de ${staged?formatDate(staged.effective_from):'—'}</small></div>
+    <div><span>Juros base</span><b>${Number(staged?.operation_interest_rate||0).toLocaleString('pt-BR',{maximumFractionDigits:2})}%</b><small>até ${Number(staged?.max_installments||3)} parcelas</small></div>
+    <div><span>Juro vencido</span><b>${Number(staged?.overdue_interest_days||30)} dias</b><small>acréscimo diário = juro vencido ÷ 30</small></div>`;
+}
+
+qs('#activate2027RuleBtn')?.addEventListener('click',async()=>{
+  if(!isAdmin())return;
+  const btn=qs('#activate2027RuleBtn');
+  btn.disabled=true;
+  try{
+    const {error}=await db.rpc('admin_activate_loan_rule',{p_code:'2027_v1'});
+    if(error)throw error;
+    await renderLoanRuleStatus();
+    toast('Régua 2027 ativada.');
+  }catch(err){
+    toast(err.message||'Não foi possível ativar a régua.');
+    await renderLoanRuleStatus();
+  }
+});
+
+async function renderAdmin(){if(!isAdmin())return;qs('#settingShare').value=state.settings?.monthly_share_amount??100;qs('#settingRate').value=state.settings?.operation_interest_rate??25;qs('#settingPix').value=state.settings?.pix_key??'';qs('#settingName').value=state.settings?.fund_name??'OLIVER Caixinha';qs('#settingCreditBonus').value=state.settings?.credit_bonus_percent??25;qs('#settingMaxInstallments').value=state.settings?.max_installments??3;qs('#settingThirdPartyRate').value=state.settings?.third_party_interest_rate??30;qs('#settingTripReturn').value=state.settings?.trip_return_percent??'';const {data:reqs}=await db.from('loan_requests').select('*,profiles!loan_requests_member_id_fkey(full_name)').in('status',['pending','under_review']).order('requested_at');qs('#pendingCount').textContent=`${(reqs||[]).length} pendente${(reqs||[]).length===1?'':'s'}`;qs('#adminRequests').innerHTML=(reqs||[]).map(r=>`<div class="stack-item"><div><h4>${safe(r.profiles?.full_name||'Cotista')} • ${brl.format(Number(r.requested_amount))}</h4><p>${r.requested_installments} parcela(s) • ${safe(r.purpose)}${r.beneficiary_type==='third_party'?` • Terceiro: ${safe(r.third_party_name)}`:''}</p></div><div><button class="primary-btn small" onclick="approveRequest('${r.id}')">Aprovar</button> <button class="outline-btn" onclick="rejectRequest('${r.id}')">Recusar</button></div></div>`).join('')||'<div class="stack-item"><p>Nenhuma solicitação aguardando análise.</p></div>';const {data:tx}=await db.from('fund_transactions').select('*').order('transaction_date',{ascending:false}).limit(20);qs('#adminTransactions').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th>Valor</th></tr></thead><tbody>${(tx||[]).map(t=>`<tr><td>${formatDate(t.transaction_date)}</td><td>${t.direction==='income'?'Entrada':'Saída'}</td><td>${safe(t.category)}</td><td>${safe(t.description)}</td><td class="amount ${t.direction==='income'?'in':'out'}">${t.direction==='income'?'+':'−'} ${brl.format(Number(t.amount))}</td></tr>`).join('')}</tbody></table>`}
 window.approveRequest=async id=>{const def=new Date();def.setMonth(def.getMonth()+1);const due=prompt('Primeiro vencimento (AAAA-MM-DD):',def.toISOString().slice(0,10));if(!due)return;const {error}=await db.rpc('admin_approve_loan_request',{p_request_id:id,p_first_due_date:due});if(error){toast(error.message);return}await renderAll();toast('Empréstimo aprovado e parcelas criadas.')};
 window.rejectRequest=async id=>{const reason=prompt('Motivo da recusa:')||'';const {error}=await db.rpc('admin_reject_loan_request',{p_request_id:id,p_reason:reason});if(error){toast(error.message);return}await renderAll();toast('Solicitação recusada.')};
-qs('#settingsForm').addEventListener('submit',async e=>{e.preventDefault();const tripReturnRaw=qs('#settingTripReturn').value;const patch={monthly_share_amount:Number(qs('#settingShare').value),operation_interest_rate:Number(qs('#settingRate').value),pix_key:qs('#settingPix').value.trim()||null,fund_name:qs('#settingName').value.trim()||'OLIVER Caixinha',credit_bonus_percent:Number(qs('#settingCreditBonus').value)||25,max_installments:Math.min(3,Math.max(1,Number(qs('#settingMaxInstallments').value)||3)),third_party_interest_rate:Number(qs('#settingThirdPartyRate').value)||30,own_interest_return_percent:Number(qs('#settingOwnInterestReturn').value)||10,trip_return_percent:tripReturnRaw===''?null:Number(tripReturnRaw),updated_by:state.user.id};const {data,error}=await db.from('fund_settings').update(patch).eq('id',1).select().single();if(error){toast(error.message);return}state.settings=data;await renderAll();toast('Configurações atualizadas.')});
-qs('#transactionForm').addEventListener('submit',async e=>{e.preventDefault();const {error}=await db.from('fund_transactions').insert({direction:qs('#transactionType').value,category:qs('#transactionCategory').value,description:qs('#transactionDescription').value.trim(),amount:Number(qs('#transactionAmount').value),visibility:'shared',created_by:state.user.id});if(error){toast(error.message);return}e.target.reset();await Promise.all([renderAdmin(),renderDashboard()]);toast('Lançamento registrado.')});
+qs('#settingsForm').addEventListener('submit',async e=>{e.preventDefault();const tripReturnRaw=qs('#settingTripReturn').value;const patch={monthly_share_amount:Number(qs('#settingShare').value),operation_interest_rate:Number(qs('#settingRate').value),pix_key:qs('#settingPix').value.trim()||null,fund_name:qs('#settingName').value.trim()||'OLIVER Caixinha',credit_bonus_percent:Number(qs('#settingCreditBonus').value)||25,max_installments:Math.min(3,Math.max(1,Number(qs('#settingMaxInstallments').value)||3)),third_party_interest_rate:Number(qs('#settingThirdPartyRate').value)||30,trip_return_percent:tripReturnRaw===''?null:Number(tripReturnRaw),updated_by:state.user.id};const {data,error}=await db.from('fund_settings').update(patch).eq('id',1).select().single();if(error){toast(error.message);return}state.settings=data;await renderAll();e.target.closest('details')?.removeAttribute('open');toast('Configurações atualizadas.')});
+qs('#transactionForm').addEventListener('submit',async e=>{e.preventDefault();const category=qs('#transactionCategory').value;const direction=qs('#transactionType').value;const {error}=await db.from('fund_transactions').insert({direction,category,description:qs('#transactionDescription').value.trim(),amount:Number(qs('#transactionAmount').value),visibility:'shared',created_by:state.user.id});if(error){toast(error.message);return}e.target.reset();e.target.closest('details')?.removeAttribute('open');await Promise.all([renderAdmin(),renderDashboard(),renderInterestDistributionAudit()]);toast(direction==='income'&&category==='interest'?'Juros lançados e distribuídos automaticamente.':'Lançamento registrado.')});
 
 qs('#newActivityBtn').addEventListener('click',()=>{if(!isAdmin()){toast('Somente a administração pode criar atividades.');return}openModal(`<div class="panel-head"><div><h3>Nova atividade</h3><p>Cadastre um sorteio, passeio ou outro evento.</p></div></div><form id="activityForm" class="form-grid"><label>Tipo<select id="actType"><option value="draw">Sorteio</option><option value="trip">Passeio</option><option value="other">Outro</option></select></label><label>Valor<input id="actPrice" type="number" min="0" step="0.01" required></label><label class="full-span">Título<input id="actTitle" required></label><label class="full-span">Descrição<textarea id="actDesc" rows="3"></textarea></label><label>Meta<input id="actGoal" type="number" min="0" step="0.01" value="0"></label><button class="primary-btn full-span" type="submit">Criar atividade</button></form>`)});
 function openModal(html){qs('#modalContent').innerHTML=html;qs('#modal').classList.remove('hidden');setTimeout(()=>{const f=qs('#activityForm');if(f)f.addEventListener('submit',async e=>{e.preventDefault();const {error}=await db.from('activities').insert({type:qs('#actType').value,title:qs('#actTitle').value.trim(),description:qs('#actDesc').value.trim()||null,unit_price:Number(qs('#actPrice').value),target_amount:Number(qs('#actGoal').value||0),status:'open',created_by:state.user.id});if(error){toast(error.message);return}closeModal();await renderActivities();toast('Atividade criada.')})},0)}
 function closeModal(){qs('#modal').classList.add('hidden')}qs('#closeModal').addEventListener('click',closeModal);qs('#modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
 
-async function renderAll(){await Promise.all([renderDashboard(),renderRequests(),renderLoans(),renderPayments(),renderActivities()]);if(isAdmin())await Promise.all([renderMembers(),renderAdmin(),renderFinanceAgent()]);if(window.renderAccount)await renderAccount();if(isAdmin()&&window.renderAdminExtras)await renderAdminExtras();updateSimulation()}
+async function renderAll(){await Promise.all([renderDashboard(),renderRequests(),renderLoans(),renderPayments(),renderActivities()]);if(isAdmin())await Promise.all([renderMembers(),renderAdmin(),renderFinanceAgent(),renderInterestDistributionAudit(),renderLoanRuleStatus()]);if(window.renderAccount)await renderAccount();if(isAdmin()&&window.renderAdminExtras)await renderAdminExtras();applyCollapsiblePanels();updateSimulation()}
 
 db.auth.onAuthStateChange((_event,session)=>{if(!session&&state.session){state.session=null;state.user=null;state.profile=null;showLogin()}});
 loadCore();
