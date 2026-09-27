@@ -444,20 +444,23 @@
       <button id="chatbotClose" class="chatbot-close" type="button">×</button>
     </div>
     <div id="chatbotMessages" class="chatbot-messages">
-      <div class="chat-msg bot">Olá! Posso ajudar com cota, Pix, empréstimo, limite, juros, parcelas, comprovantes e sorteios.</div>
+      <div class="chat-msg bot">Escolha uma das opções abaixo. O Oliver Assistente responde somente aos comandos disponíveis no menu.</div>
     </div>
     <div id="chatbotQuick" class="chatbot-quick">
       <button type="button">Minha cota</button>
+      <button type="button">Meu rendimento de juros</button>
       <button type="button">Meu limite</button>
+      <button type="button">Meu empréstimo</button>
       <button type="button">Próxima parcela</button>
-      <button type="button">Sorteios</button>
       <button type="button">Chave Pix</button>
+      <button type="button">Meus números da rifa</button>
+      <button type="button">Minhas poltronas</button>
+      <button type="button">Comprovantes</button>
+      <button type="button">Regulamento</button>
+      <button type="button">Avisos</button>
     </div>
-    <form id="chatbotForm" class="chatbot-form">
-      <input id="chatbotInput" maxlength="600" placeholder="Digite sua dúvida..." autocomplete="off" />
-      <button type="submit">Enviar</button>
-    </form>
-    <button id="chatbotEscalate" class="chatbot-escalate" type="button">Falar com a administração</button>
+    <div class="chatbot-fixed-note">Para qualquer dúvida fora dessas opções, fale com o administrativo.</div>
+    <button id="chatbotEscalate" class="chatbot-escalate" type="button">Solicitar atendimento administrativo</button>
   </section>
 
   <div id="modal" class="modal hidden"><div class="modal-card"><button id="closeModal" class="modal-close">×</button><div id="modalContent"></div></div></div>
