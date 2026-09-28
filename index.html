@@ -240,9 +240,18 @@
           <article class="kpi"><div class="kpi-label">Parcelas restantes</div><strong id="loanRemaining">0</strong><span>Do contrato ativo</span></article>
           <article class="kpi"><div class="kpi-label">Juros estimados</div><strong id="loanInterestEstimate">R$ 0,00</strong><span>Sobre a operação contratada</span></article>
         </div>
-        <article class="panel">
-          <div class="panel-head"><div><h3>Meus empréstimos</h3><p>Detalhamento por contrato.</p></div><button class="primary-btn small" data-page-jump="requests">Nova solicitação</button></div>
+        <article class="panel loan-contracts-panel">
+          <div class="panel-head"><div><h3>Meus empréstimos</h3><p>Contratos separados por situação.</p></div><button class="primary-btn small" data-page-jump="requests">Nova solicitação</button></div>
+          <div id="loanContractTabs" class="loan-tabs" role="tablist" aria-label="Situação dos contratos">
+            <button type="button" class="loan-tab active" data-loan-filter="active" role="tab" aria-selected="true">
+              <span>Contratos ativos</span><b id="activeLoanCount">0</b>
+            </button>
+            <button type="button" class="loan-tab" data-loan-filter="paid" role="tab" aria-selected="false">
+              <span>Contratos quitados</span><b id="paidLoanCount">0</b>
+            </button>
+          </div>
           <div id="loanCards" class="loan-cards"></div>
+          <div id="loanEmptyState" class="loan-empty-state hidden">Nenhum contrato nesta categoria.</div>
         </article>
       </section>
 
