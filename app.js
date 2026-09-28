@@ -88,6 +88,24 @@ qsa('.nav-item').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.pa
 qsa('[data-page-jump]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.pageJump)));
 
 const pageMeta={dashboard:['Visão geral','Acompanhe suas cotas pagas e seu rendimento de juros.'],requests:['Central de solicitações','Solicite empréstimos e acompanhe a análise.'],loans:['Empréstimos','Contratos, parcelas, juros e saldo devedor.'],payments:['Pagamentos e comprovantes','Pague via Pix e envie seu comprovante.'],activities:['Rifas e passeios','Veja suas rifas, números, passeios e pagamentos.'],account:['Meu cadastro','Dados pessoais, segurança e documentos.'],members:['Cotistas','Situação dos participantes.'],admin:['Administração','Configurações, aprovações e lançamentos.']};
+function enhanceResponsiveTables(root=document){
+  const tables=[];
+  if(root?.matches?.('table.data-table'))tables.push(root);
+  if(root?.querySelectorAll)tables.push(...root.querySelectorAll('table.data-table'));
+  tables.forEach(table=>{
+    if(table.dataset.mobileReady==='1')return;
+    const headers=[...table.querySelectorAll('thead th')].map(th=>th.textContent.trim());
+    if(!headers.length)return;
+    table.dataset.mobileReady='1';
+    table.classList.add('responsive-card-table');
+    table.querySelectorAll('tbody tr').forEach(tr=>{
+      [...tr.children].forEach((td,i)=>{
+        if(td.tagName==='TD')td.dataset.label=headers[i]||'';
+      });
+    });
+  });
+}
+
 function applyCollapsiblePanels(){
   qsa('.page article.panel').forEach(panel=>{
     if(panel.dataset.collapsibleReady==='1'||panel.closest('#admin'))return;
@@ -610,10 +628,10 @@ qs('#settingsForm').addEventListener('submit',async e=>{e.preventDefault();const
 qs('#transactionForm').addEventListener('submit',async e=>{e.preventDefault();const category=qs('#transactionCategory').value;const direction=qs('#transactionType').value;const {error}=await db.from('fund_transactions').insert({direction,category,description:qs('#transactionDescription').value.trim(),amount:Number(qs('#transactionAmount').value),visibility:'shared',created_by:state.user.id});if(error){toast(error.message);return}e.target.reset();e.target.closest('details')?.removeAttribute('open');await Promise.all([renderAdmin(),renderDashboard(),renderInterestDistributionAudit()]);toast(direction==='income'&&category==='interest'?'Juros lançados e distribuídos automaticamente.':'Lançamento registrado.')});
 
 qs('#newActivityBtn').addEventListener('click',()=>{if(!isAdmin()){toast('Somente a administração pode criar atividades.');return}openModal(`<div class="panel-head"><div><h3>Nova atividade</h3><p>Cadastre um sorteio, passeio ou outro evento.</p></div></div><form id="activityForm" class="form-grid"><label>Tipo<select id="actType"><option value="draw">Sorteio</option><option value="trip">Passeio</option><option value="other">Outro</option></select></label><label>Valor<input id="actPrice" type="number" min="0" step="0.01" required></label><label class="full-span">Título<input id="actTitle" required></label><label class="full-span">Descrição<textarea id="actDesc" rows="3"></textarea></label><label>Meta<input id="actGoal" type="number" min="0" step="0.01" value="0"></label><button class="primary-btn full-span" type="submit">Criar atividade</button></form>`)});
-function openModal(html){qs('#modalContent').innerHTML=html;qs('#modal').classList.remove('hidden');setTimeout(()=>{const f=qs('#activityForm');if(f)f.addEventListener('submit',async e=>{e.preventDefault();const {error}=await db.from('activities').insert({type:qs('#actType').value,title:qs('#actTitle').value.trim(),description:qs('#actDesc').value.trim()||null,unit_price:Number(qs('#actPrice').value),target_amount:Number(qs('#actGoal').value||0),status:'open',created_by:state.user.id});if(error){toast(error.message);return}closeModal();await renderActivities();toast('Atividade criada.')})},0)}
+function openModal(html){qs('#modalContent').innerHTML=html;qs('#modal').classList.remove('hidden');enhanceResponsiveTables(qs('#modalContent'));setTimeout(()=>{enhanceResponsiveTables(qs('#modalContent'));const f=qs('#activityForm');if(f)f.addEventListener('submit',async e=>{e.preventDefault();const {error}=await db.from('activities').insert({type:qs('#actType').value,title:qs('#actTitle').value.trim(),description:qs('#actDesc').value.trim()||null,unit_price:Number(qs('#actPrice').value),target_amount:Number(qs('#actGoal').value||0),status:'open',created_by:state.user.id});if(error){toast(error.message);return}closeModal();await renderActivities();toast('Atividade criada.')})},0)}
 function closeModal(){qs('#modal').classList.add('hidden')}qs('#closeModal').addEventListener('click',closeModal);qs('#modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
 
-async function renderAll(){await Promise.all([renderDashboard(),renderRequests(),renderLoans(),renderPayments(),renderActivities()]);if(isAdmin())await Promise.all([renderMembers(),renderAdmin(),renderFinanceAgent(),renderInterestDistributionAudit(),renderLoanRuleStatus()]);if(window.renderAccount)await renderAccount();if(isAdmin()&&window.renderAdminExtras)await renderAdminExtras();applyCollapsiblePanels();updateSimulation()}
+async function renderAll(){await Promise.all([renderDashboard(),renderRequests(),renderLoans(),renderPayments(),renderActivities()]);if(isAdmin())await Promise.all([renderMembers(),renderAdmin(),renderFinanceAgent(),renderInterestDistributionAudit(),renderLoanRuleStatus()]);if(window.renderAccount)await renderAccount();if(isAdmin()&&window.renderAdminExtras)await renderAdminExtras();applyCollapsiblePanels();enhanceResponsiveTables(document);updateSimulation()}
 
 db.auth.onAuthStateChange((_event,session)=>{if(!session&&state.session){state.session=null;state.user=null;state.profile=null;showLogin()}});
 loadCore();
