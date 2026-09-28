@@ -278,25 +278,38 @@ async function renderLoans(){
   const q=db.from('loans').select('*').order('created_at',{ascending:false});
   if(!isAdmin())q.eq('member_id',state.user.id);
   const {data:loans}=await q;
-  const ids=(loans||[]).map(x=>x.id);
+  const allLoans=loans||[];
+  const ids=allLoans.map(x=>x.id);
   let installments=[];
   if(ids.length){
     const {data}=await db.from('loan_installments').select('*').in('loan_id',ids).order('installment_number');
     installments=data||[];
   }
 
-  const active=(loans||[]).filter(l=>['active','late'].includes(l.status));
+  const active=allLoans.filter(l=>['active','late'].includes(l.status));
+  const paidLoans=allLoans.filter(l=>l.status==='paid');
   const debt=active.reduce((s,l)=>s+Number(l.outstanding_amount||0),0);
   qs('#loanTotalDebt').textContent=brl.format(debt);
   qs('#loanRate').textContent=`${Number(state.settings?.operation_interest_rate??25).toFixed(2)}% próprio • ${Number(state.settings?.third_party_interest_rate??30).toFixed(2)}% terceiro`;
-  const pending=installments.filter(i=>i.status==='pending');
+  const activeIds=new Set(active.map(l=>l.id));
+  const pending=installments.filter(i=>activeIds.has(i.loan_id)&&i.status==='pending');
   qs('#loanRemaining').textContent=pending.length;
   qs('#loanInterestEstimate').textContent=brl.format(active.reduce((s,l)=>s+Number(l.interest_amount||0),0));
+  if(qs('#activeLoanCount'))qs('#activeLoanCount').textContent=String(active.length);
+  if(qs('#paidLoanCount'))qs('#paidLoanCount').textContent=String(paidLoans.length);
 
-  qs('#loanCards').innerHTML=(loans||[]).map(l=>{
+  const filter=window.__loanContractFilter||'active';
+  qsa('#loanContractTabs .loan-tab').forEach(btn=>{
+    const selected=btn.dataset.loanFilter===filter;
+    btn.classList.toggle('active',selected);
+    btn.setAttribute('aria-selected',String(selected));
+  });
+  const visible=filter==='paid'?paidLoans:active;
+
+  qs('#loanCards').innerHTML=visible.map(l=>{
     const ins=installments.filter(i=>i.loan_id===l.id);
     const paid=ins.filter(i=>i.status==='confirmed').length;
-    const pct=l.installments?Math.round(paid/l.installments*100):0;
+    const pct=l.installments?Math.min(100,Math.round(paid/l.installments*100)):0;
     const tripLoan=l.source_kind==='trip_overdue';
     const historical=l.source_kind==='historical_2026';
     const rateLabel=historical
@@ -308,22 +321,37 @@ async function renderLoans(){
       :(l.date_precision==='month'
         ?new Date(l.released_at+'T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'})
         :formatDate(l.released_at));
-    return `<div class="loan-card ${tripLoan?'trip-overdue-loan':''}">
+    const isPaid=l.status==='paid';
+    const displayValue=isPaid?Number(l.total_contract_amount||0):Number(l.outstanding_amount||0);
+    return `<div class="loan-card ${tripLoan?'trip-overdue-loan':''} ${isPaid?'loan-card-paid':''}">
       <div class="loan-card-head">
         <div><h4>${tripLoan?'PASSEIO • ':''}${l.id.slice(0,8).toUpperCase()}</h4><small>${origin} • início ${safe(startLabel)}</small></div>
         ${statusBadge(l.status)}
       </div>
-      <div class="big">${brl.format(Number(l.outstanding_amount||0))}</div><small>Saldo devedor</small>
-      <div class="progress"><i style="width:${pct}%"></i></div>
+      <div class="big">${brl.format(displayValue)}</div><small>${isPaid?'Total do contrato quitado':'Saldo devedor'}</small>
+      <div class="progress"><i style="width:${isPaid?100:pct}%"></i></div>
       <div class="loan-meta">
-        <div><span>Progresso</span><b>${paid}/${l.installments} parcela(s)</b></div>
-        <div><span>Total acumulado</span><b>${brl.format(Number(l.total_contract_amount||0))}</b></div>
+        <div><span>Progresso</span><b>${isPaid?'Quitado':paid+'/'+l.installments+' parcela(s)'}</b></div>
+        <div><span>Total contratado</span><b>${brl.format(Number(l.total_contract_amount||0))}</b></div>
         <div><span>Juros</span><b>${rateLabel}</b></div>
       </div>
       ${tripLoan?`<div class="trip-loan-note">Contrato legado. A nova régua fica desativada em 2026.</div>`:''}
     </div>`;
-  }).join('')||'<div class="stack-item"><p>Nenhum empréstimo cadastrado.</p></div>';
+  }).join('');
+
+  const empty=qs('#loanEmptyState');
+  if(empty){
+    empty.textContent=filter==='paid'?'Nenhum contrato quitado.':'Nenhum contrato ativo.';
+    empty.classList.toggle('hidden',visible.length>0);
+  }
 }
+
+qs('#loanContractTabs')?.addEventListener('click',e=>{
+  const btn=e.target.closest('[data-loan-filter]');
+  if(!btn)return;
+  window.__loanContractFilter=btn.dataset.loanFilter;
+  renderLoans();
+});
 
 async function refreshReceiptReference(){
   const kind=qs('#receiptType').value;
