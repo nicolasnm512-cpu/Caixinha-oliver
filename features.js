@@ -296,7 +296,13 @@
         const available=seats.filter(s=>s.status==='available').length;
         const assigned=seats.filter(s=>s.member_id).length;
         const paidSeats=seats.filter(s=>s.status==='paid').length;
-        const due=isAdmin()?Number(tripCfg?.seat_price||a.unit_price||0):Number(myEntry?.amount_due||0);
+        const seatPrice=Number(tripCfg?.seat_price||a.unit_price||0);
+        const totalSeats=Number(tripCfg?.total_seats||seats.length||0);
+        const tripGrossTotal=totalSeats*seatPrice;
+        const tripReceived=adminEntries.reduce((s,e)=>s+Number(e.amount_paid||0),0);
+        const tripRemaining=Math.max(0,tripGrossTotal-tripReceived);
+        const tripProgress=tripGrossTotal>0?Math.min(100,Math.round((tripReceived/tripGrossTotal)*100)):0;
+        const due=isAdmin()?tripGrossTotal:Number(myEntry?.amount_due||0);
         const paidMine=Number(myEntry?.amount_paid||0);
         const remaining=Math.max(0,due-paidMine);
         const paidStatus=myEntry?.status==='confirmed';
@@ -316,7 +322,15 @@
               '<div><span>Valor por assento</span><b>'+brl.format(Number(tripCfg?.seat_price||a.unit_price||0))+'</b></div>'+
             '</div>'+
             (isAdmin()
-              ?'<div class="activity-stats"><div><span>Poltronas</span><b>'+Number(tripCfg?.total_seats||seats.length)+'</b></div><div><span>Atribuídas</span><b>'+assigned+'</b></div><div><span>Disponíveis</span><b>'+available+'</b></div></div>'
+              ?'<div class="trip-fund-progress">'+
+                '<div class="trip-progress-grid">'+
+                  '<div><span>Total das poltronas</span><b>'+brl.format(tripGrossTotal)+'</b><small>'+totalSeats+' × '+brl.format(seatPrice)+'</small></div>'+
+                  '<div><span>Recebido</span><b>'+brl.format(tripReceived)+'</b><small>'+tripProgress+'% arrecadado</small></div>'+
+                  '<div><span>A receber</span><b>'+brl.format(tripRemaining)+'</b><small>Atualiza conforme os pagamentos</small></div>'+
+                '</div>'+
+                '<div class="trip-progress-bar"><i style="width:'+tripProgress+'%"></i></div>'+
+                '<div class="trip-progress-caption"><span>'+tripProgress+'% arrecadado</span><span>'+assigned+' atribuída(s) • '+available+' disponível(is)</span></div>'+
+              '</div>'
               :'<div class="activity-stats"><div><span>Suas poltronas</span><b>'+mySeats.length+'</b></div><div><span>Total</span><b>'+brl.format(due)+'</b></div><div><span>Situação</span><b>'+(paidStatus?'Pago':'Pendente')+'</b></div></div>')+
             seatChips+
             (!isAdmin()&&!paidStatus&&mySeats.length
