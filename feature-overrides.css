@@ -683,3 +683,71 @@ body{min-width:320px}
     justify-content:space-between;
   }
 }
+
+
+/* ===== Progresso de arrecadação do passeio ===== */
+.trip-fund-progress{
+  margin:14px 0 10px;
+  padding:13px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#fbfaf6;
+}
+.trip-progress-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+}
+.trip-progress-grid>div{
+  min-width:0;
+  padding:10px;
+  border-radius:11px;
+  background:#fff;
+  border:1px solid #ece8de;
+}
+.trip-progress-grid span,
+.trip-progress-grid small{
+  display:block;
+  color:var(--muted);
+  font-size:9px;
+}
+.trip-progress-grid b{
+  display:block;
+  margin:4px 0 3px;
+  font-size:16px;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+.trip-progress-bar{
+  height:10px;
+  margin-top:11px;
+  border-radius:999px;
+  background:#ece8de;
+  overflow:hidden;
+}
+.trip-progress-bar i{
+  display:block;
+  height:100%;
+  border-radius:999px;
+  background:linear-gradient(90deg,#8f6a1d,#d0ad51);
+}
+.trip-progress-caption{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  margin-top:7px;
+  color:var(--muted);
+  font-size:9px;
+}
+@media(max-width:620px){
+  .trip-progress-grid{
+    grid-template-columns:minmax(0,1fr);
+  }
+  .trip-progress-grid b{
+    font-size:18px;
+  }
+  .trip-progress-caption{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+  }
+}
