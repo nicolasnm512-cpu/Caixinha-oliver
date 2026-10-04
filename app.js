@@ -666,11 +666,19 @@ window.ignoreAgentEvent=async id=>{
 async function renderInterestDistributionAudit(){
   if(!isAdmin()||!qs('#interestDistributionAudit'))return;
   const {data,error}=await db.from('interest_distribution_batches')
-    .select('id,transaction_date,gross_amount,participant_count,distributed_amount,distribution_mode')
+    .select('*')
     .order('created_at',{ascending:false})
     .limit(12);
   if(error){qs('#interestDistributionAudit').innerHTML='<div class="stack-item"><p>Não foi possível carregar a distribuição.</p></div>';return}
-  qs('#interestDistributionAudit').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Entrada</th><th>Cotas</th><th>Distribuído</th></tr></thead><tbody>${(data||[]).map(b=>`<tr><td>${formatDate(b.transaction_date)}</td><td>${brl.format(Number(b.gross_amount||0))}</td><td>${Number(b.participant_count||0)}</td><td><b>${brl.format(Number(b.distributed_amount||0))}</b></td></tr>`).join('')}</tbody></table>`;
+  qs('#interestDistributionAudit').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Juro bruto</th><th>Cotas reais</th><th>Taxa ADM</th><th>Cota virtual ADM</th><th>Cotistas</th><th>Total ADM</th></tr></thead><tbody>${(data||[]).map(b=>{
+    const realShares=Number(b.real_share_count??b.participant_count??0);
+    const adminFee=b.admin_fee_amount==null?null:Number(b.admin_fee_amount);
+    const virtual=b.virtual_share_amount==null?null:Number(b.virtual_share_amount);
+    const adminTotal=b.admin_total_amount==null?null:Number(b.admin_total_amount);
+    const memberPool=b.real_share_pool==null?Number(b.distributed_amount||0):Number(b.real_share_pool);
+    return `<tr><td>${formatDate(b.transaction_date)}</td><td>${brl.format(Number(b.gross_amount||0))}</td><td>${realShares}</td><td>${adminFee==null?'—':brl.format(adminFee)}</td><td>${virtual==null?'—':brl.format(virtual)}</td><td><b>${brl.format(memberPool)}</b></td><td><b>${adminTotal==null?'—':brl.format(adminTotal)}</b></td></tr>`;
+  }).join('')}</tbody></table>`;
+  enhanceResponsiveTables(qs('#interestDistributionAudit'));
 }
 
 async function renderLoanRuleStatus(){
