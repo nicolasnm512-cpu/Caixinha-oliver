@@ -827,3 +827,32 @@ body{min-width:320px}
     max-width:none!important;
   }
 }
+
+
+/* ===== Central individual do cotista ===== */
+.member-detail-grid small{display:block;margin-top:3px;color:var(--muted);font-size:9px}
+.member-mini-chart{
+  margin-top:14px;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#faf9f5;
+}
+.member-mini-chart h4{margin:0 0 11px}
+.member-mini-chart>div{
+  display:grid;
+  grid-template-columns:minmax(95px,.8fr) minmax(100px,1.4fr) minmax(86px,.8fr);
+  gap:10px;
+  align-items:center;
+  margin-top:8px;
+}
+.member-mini-chart span{font-size:9px;color:var(--muted);font-weight:700}
+.member-mini-chart i{height:8px;border-radius:999px;background:#e8e4da;overflow:hidden}
+.member-mini-chart i b{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#111,#c49a39)}
+.member-mini-chart strong{text-align:right;font-size:10px;font-variant-numeric:tabular-nums}
+@media(max-width:520px){
+  .member-mini-chart>div{
+    grid-template-columns:minmax(88px,.9fr) minmax(0,1.1fr);
+  }
+  .member-mini-chart strong{grid-column:2;text-align:left;margin-top:-5px}
+}
