@@ -278,12 +278,16 @@
       .order('created_at',{ascending:false});
     if(error){$('#activityCards').innerHTML='<div class="stack-item"><p>Não foi possível carregar as atividades.</p></div>';return}
 
-    let entries=[],tripSeats=[];
+    let entries=[],tripSeats=[],activityExpenses=[];
     const ids=(acts||[]).map(a=>a.id);
     const tripIds=(acts||[]).filter(a=>a.type==='trip').map(a=>a.id);
     if(ids.length){
-      const {data}=await db.from('activity_entries').select('*').in('activity_id',ids);
-      entries=data||[];
+      const [{data:entryData},{data:expenseData,error:expenseError}]=await Promise.all([
+        db.from('activity_entries').select('*').in('activity_id',ids),
+        db.from('activity_expenses').select('*').in('activity_id',ids).order('occurred_at')
+      ]);
+      entries=entryData||[];
+      activityExpenses=expenseError?[]:(expenseData||[]);
     }
     if(tripIds.length){
       const {data}=await db.from('trip_seats').select('*').in('activity_id',tripIds).order('seat_number');
@@ -304,6 +308,14 @@
       const myEntry=entries.find(e=>e.activity_id===a.id&&e.member_id===state.user.id);
       const adminEntries=entries.filter(e=>e.activity_id===a.id);
       const paid=adminEntries.reduce((s,e)=>s+Number(e.amount_paid||0),0);
+      const eventExpenses=activityExpenses.filter(x=>x.activity_id===a.id);
+      const eventExpenseTotal=eventExpenses.reduce((s,x)=>s+Number(x.amount||0),0);
+      const eventExpenseHtml=isAdmin()?'<div class="event-expense-summary">'+
+        '<div><span>Saídas registradas</span><b>'+brl.format(eventExpenseTotal)+'</b></div>'+
+        '<div><span>Saldo realizado</span><b>'+brl.format(paid-eventExpenseTotal)+'</b></div>'+
+        '<button type="button" class="outline-btn tiny" onclick="openActivityExpense(\''+a.id+'\',\''+String(a.title||'Evento').replaceAll("'","&#39;")+'\')">Registrar saída</button>'+
+        (eventExpenses.length?'<details><summary>Ver saídas</summary><div class="event-expense-list">'+eventExpenses.map(x=>'<p><b>'+safe(x.description)+'</b><span>'+brl.format(Number(x.amount))+(x.inventory_status==='available'?' • disponível para próximo evento':'')+'</span></p>').join('')+'</div></details>':'')+
+      '</div>':'';
       const prizesHtml=rafflePrizes.length?'<div class="prize-strip">'+rafflePrizes.map(p=>'<div><span>'+p.prize_position+'º prêmio</span><b>'+safe(p.prize_label)+'</b>'+(p.prize_value!=null?'<small>'+brl.format(Number(p.prize_value))+'</small>':'')+'</div>').join('')+'</div>':'';
 
       if(a.type==='draw'&&raffleCfg?.allocation_mode==='quota_equal'){
@@ -331,6 +343,7 @@
               '<div><span>Seu total</span><b>'+brl.format(Number(myEntry?.amount_due||0))+'</b></div>'+
               '<div><span>Distribuição</span><b>Aleatória por cota</b></div>'+
             '</div>')+
+          eventExpenseHtml+
           '<button class="primary-btn raffle-open-btn" onclick="openQuotaRaffle(\''+a.id+'\')">'+(isAdmin()?'Gerenciar rifa':'Ver meus números e pagar')+'</button>'+
           '</div></article>';
       }
@@ -379,6 +392,7 @@
                 '<div class="trip-progress-caption"><span>'+tripProgress+'% arrecadado</span><span>'+assigned+' atribuída(s) • '+available+' disponível(is)</span></div>'+
               '</div>'
               :'<div class="activity-stats"><div><span>Suas poltronas</span><b>'+mySeats.length+'</b></div><div><span>Total</span><b>'+brl.format(due)+'</b></div><div><span>Situação</span><b>'+(paidStatus?'Pago':'Pendente')+'</b></div></div>')+
+            (isAdmin()?eventExpenseHtml:'')+
             seatChips+
             (!isAdmin()&&!paidStatus&&mySeats.length
               ?'<div class="mandatory-trip-note">'+(a.payment_due_date?'Pagamento até '+safe(dueText)+'. Em caso de atraso, será aplicada somente a regra vigente do exercício.':'A administração ainda não definiu a data limite de pagamento.')+'</div>'
@@ -392,6 +406,40 @@
     }).join('')||'<div class="stack-item"><p>Nenhuma atividade cadastrada.</p></div>';
     makeActivityCardsCollapsible();
     applyActivityFilter();
+  };
+
+  window.openActivityExpense=function(activityId,title){
+    if(!isAdmin()){toast('Somente a administração pode registrar saídas.');return}
+    openModal('<div class="panel-head"><div><span class="eyebrow">SAÍDA DO EVENTO</span><h3>'+safe(title)+'</h3><p>Registre premiações e despesas sem misturar com a arrecadação.</p></div></div>'+
+      '<form id="activityExpenseForm" class="form-grid">'+
+        '<label>Tipo<select id="activityExpenseType"><option value="prize">Premiação</option><option value="transport">Transporte / ônibus</option><option value="purchase">Compra</option><option value="cash_prize">Prêmio em dinheiro</option><option value="other">Outra saída</option></select></label>'+
+        '<label>Valor<input id="activityExpenseAmount" type="number" min="0.01" step="0.01" required></label>'+
+        '<label class="full-span">Descrição<input id="activityExpenseDescription" required placeholder="Ex.: Máquina de lavar"></label>'+
+        '<label>Ganhador / destino<input id="activityExpenseWinner" placeholder="Opcional"></label>'+
+        '<label>Situação do item<select id="activityExpenseInventory"><option value="delivered">Entregue / consumido</option><option value="available">Comprado e disponível</option><option value="not_applicable">Não se aplica</option></select></label>'+
+        '<label class="full-span">Observação<input id="activityExpenseNote" placeholder="Ex.: prêmio fica para o próximo sorteio"></label>'+
+        '<button class="primary-btn full-span" type="submit">Registrar saída</button>'+
+      '</form>');
+    setTimeout(()=>document.querySelector('#activityExpenseForm')?.addEventListener('submit',async e=>{
+      e.preventDefault();
+      const btn=e.submitter;if(btn){btn.disabled=true;btn.textContent='Registrando...'}
+      try{
+        const {error}=await db.from('activity_expenses').insert({
+          activity_id:activityId,
+          expense_type:document.querySelector('#activityExpenseType').value,
+          description:document.querySelector('#activityExpenseDescription').value.trim(),
+          amount:Number(document.querySelector('#activityExpenseAmount').value),
+          winner_name:document.querySelector('#activityExpenseWinner').value.trim()||null,
+          inventory_status:document.querySelector('#activityExpenseInventory').value,
+          notes:document.querySelector('#activityExpenseNote').value.trim()||null,
+          occurred_at:new Date().toISOString().slice(0,10),
+          created_by:state.user.id
+        });
+        if(error)throw error;
+        closeModal();await renderActivities();toast('Saída registrada no evento.');
+      }catch(err){toast(err.message||'Não foi possível registrar a saída.')}
+      finally{if(btn){btn.disabled=false;btn.textContent='Registrar saída'}}
+    }),0);
   };
 
   window.payActivity=async function(activityId,kind,amount){
