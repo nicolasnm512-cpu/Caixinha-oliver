@@ -856,3 +856,25 @@ body{min-width:320px}
   }
   .member-mini-chart strong{grid-column:2;text-align:left;margin-top:-5px}
 }
+
+
+/* ===== Política de juros da administração ===== */
+.interest-policy-note{
+  border:1px solid #dec986;
+  border-radius:14px;
+  padding:13px 14px;
+  background:#fffaf0;
+}
+.interest-policy-note>b,
+.interest-policy-note>span{display:block}
+.interest-policy-note>b{font-size:12px;color:#6f5316}
+.interest-policy-note>span{margin-top:4px;color:#776b52;font-size:10px;line-height:1.45}
+.interest-policy-preview{
+  margin-top:10px;
+  padding-top:9px;
+  border-top:1px solid #ead9a8;
+  font-size:10px;
+  color:#66501b;
+  line-height:1.45;
+}
+.interest-policy-preview b{color:#17130b}
