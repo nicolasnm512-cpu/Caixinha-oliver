@@ -24,6 +24,8 @@ function showFirstAccess(){
   qs('#firstAccessName').value=state.profile?.full_name||'';qs('#firstAccessEmail').value=state.profile?.email||state.user?.email||'';qs('#firstAccessPhone').value=state.profile?.phone||'';qs('#firstAccessPassword').value='';qs('#firstAccessPasswordConfirm').value='';
 }
 function applyRoleExperience(){
+  const brandContext=qs('.sidebar-brand span');
+  if(brandContext)brandContext.textContent=isAdmin()?'Administração':'Área dos cotistas';
   qsa('.nav-item[data-admin-label]').forEach(btn=>{
     const label=btn.querySelector('.nav-label');
     if(label)label.textContent=isAdmin()?btn.dataset.adminLabel:btn.dataset.memberLabel;
