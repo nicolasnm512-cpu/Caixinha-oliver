@@ -552,7 +552,7 @@ async function renderMembers(){
   ]);
   window.__membersById=Object.fromEntries((members||[]).map(m=>[m.id,m]));
   const annualMap=Object.fromEntries((annual||[]).map(a=>[a.member_id,a]));
-  const rows=(members||[]).map(m=>{
+  const rows=(members||[]).filter(m=>m.cotista_number!=null).map(m=>{
     const mc=(contrib||[]).find(x=>x.member_id===m.id);
     const debt=(loans||[]).filter(x=>x.member_id===m.id).reduce((s,x)=>s+Number(x.outstanding_amount||0),0);
     const snap=(snapshots||[]).find(x=>x.member_id===m.id);
@@ -571,7 +571,7 @@ async function renderMembers(){
     <td>${m.active?statusBadge('active'):statusBadge('cancelled')}</td>
     <td>${m.cotista_number?`<button class="outline-btn tiny" onclick="openMemberAdminDetails('${m.id}')">Ver</button>`:'—'}</td>
   </tr>`).join('')}</tbody></table>`;
-  window.__membersCsv=members||[];
+  window.__membersCsv=rows.map(r=>r.m);
 }
 
 window.openMemberAdminDetails=id=>{
