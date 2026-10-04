@@ -23,7 +23,18 @@ function showFirstAccess(){
   qs('#loginView').classList.add('hidden');qs('#termsView').classList.add('hidden');qs('#appView').classList.add('hidden');qs('#firstAccessView').classList.remove('hidden');
   qs('#firstAccessName').value=state.profile?.full_name||'';qs('#firstAccessEmail').value=state.profile?.email||state.user?.email||'';qs('#firstAccessPhone').value=state.profile?.phone||'';qs('#firstAccessPassword').value='';qs('#firstAccessPasswordConfirm').value='';
 }
-function showApp(){qs('#termsView').classList.add('hidden');qs('#firstAccessView').classList.add('hidden');qs('#loginView').classList.add('hidden');qs('#appView').classList.remove('hidden');qs('#appView').classList.toggle('is-admin',isAdmin());qs('#sidebarName').textContent=state.profile?.full_name||state.user?.email||'Usuário';qs('#sidebarRole').textContent=isAdmin()?'Administrador':'Cotista';qs('#sidebarAvatar').textContent=isAdmin()?'AD':`C${state.profile?.cotista_number||'–'}`;navigate('dashboard');renderAll()}
+function applyRoleExperience(){
+  qsa('.nav-item[data-admin-label]').forEach(btn=>{
+    const label=btn.querySelector('.nav-label');
+    if(label)label.textContent=isAdmin()?btn.dataset.adminLabel:btn.dataset.memberLabel;
+  });
+  const loanTitle=qs('#loanSectionTitle');
+  const loanSubtitle=qs('#loanSectionSubtitle');
+  if(loanTitle)loanTitle.textContent=isAdmin()?'Contratos de empréstimo':'Meus empréstimos';
+  if(loanSubtitle)loanSubtitle.textContent=isAdmin()?'Acompanhe todos os contratos por situação.':'Seus contratos separados por situação.';
+}
+
+function showApp(){qs('#termsView').classList.add('hidden');qs('#firstAccessView').classList.add('hidden');qs('#loginView').classList.add('hidden');qs('#appView').classList.remove('hidden');qs('#appView').classList.toggle('is-admin',isAdmin());qs('#sidebarName').textContent=state.profile?.full_name||state.user?.email||'Usuário';qs('#sidebarRole').textContent=isAdmin()?'Administrador':'Cotista';qs('#sidebarAvatar').textContent=isAdmin()?'AD':`C${state.profile?.cotista_number||'–'}`;applyRoleExperience();navigate('dashboard');renderAll()}
 
 async function loadCore(){
   const {data:{session}}=await db.auth.getSession();
@@ -87,7 +98,16 @@ qs('#logoutBtn').addEventListener('click',async()=>{await db.auth.signOut();show
 qsa('.nav-item').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.page)));
 qsa('[data-page-jump]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.pageJump)));
 
-const pageMeta={dashboard:['Visão geral','Acompanhe suas cotas pagas e seu rendimento de juros.'],requests:['Central de solicitações','Solicite empréstimos e acompanhe a análise.'],loans:['Empréstimos','Contratos, parcelas, juros e saldo devedor.'],payments:['Pagamentos e comprovantes','Pague via Pix e envie seu comprovante.'],activities:['Rifas e passeios','Veja suas rifas, números, passeios e pagamentos.'],account:['Meu cadastro','Dados pessoais, segurança e documentos.'],members:['Cotistas','Situação dos participantes.'],admin:['Administração','Configurações, aprovações e lançamentos.']};
+const pageMeta={
+  dashboard:['Início','Seu resumo financeiro e os próximos passos.'],
+  requests:['Solicitar empréstimo','Simule, envie e acompanhe sua solicitação.'],
+  loans:['Empréstimos','Contratos, parcelas, juros e saldo devedor.'],
+  payments:['Pagamentos','Pix, comprovantes e confirmações.'],
+  activities:['Rifas e passeios','Arrecadação, números, prêmios e poltronas.'],
+  account:['Meu cadastro','Dados pessoais, segurança e documentos.'],
+  members:['Cotistas','Cadastro, situação financeira, limite e acesso.'],
+  admin:['Administração','Pendências, regras, lançamentos e auditoria.']
+};
 function enhanceResponsiveTables(root=document){
   const tables=[];
   if(root?.matches?.('table.data-table'))tables.push(root);
@@ -112,10 +132,10 @@ function applyCollapsiblePanels(){
     const head=panel.querySelector(':scope > .panel-head');
     if(!head)return;
     panel.dataset.collapsibleReady='1';
-    panel.classList.add('ui-collapsible','is-collapsed');
+    panel.classList.add('ui-collapsible');
     head.setAttribute('role','button');
     head.setAttribute('tabindex','0');
-    head.setAttribute('aria-expanded','false');
+    head.setAttribute('aria-expanded','true');
     const toggle=()=>{
       const collapsed=panel.classList.toggle('is-collapsed');
       head.setAttribute('aria-expanded',String(!collapsed));
@@ -128,12 +148,25 @@ function applyCollapsiblePanels(){
       if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();}
     });
     panel.querySelectorAll('form').forEach(form=>form.addEventListener('reset',()=>{
-      panel.classList.add('is-collapsed');
-      head.setAttribute('aria-expanded','false');
+      head.setAttribute('aria-expanded',String(!panel.classList.contains('is-collapsed')));
     }));
   });
 }
-function navigate(page){if((page==='members'||page==='admin')&&!isAdmin()){toast('Área exclusiva da administração.');return}qsa('.page').forEach(p=>p.classList.remove('active-page'));qs(`#${page}`)?.classList.add('active-page');qsa('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page===page));qs('#pageTitle').textContent=pageMeta[page]?.[0]||'OLIVER Caixinha';qs('#pageSubtitle').textContent=pageMeta[page]?.[1]||'';applyCollapsiblePanels();window.scrollTo({top:0,behavior:'smooth'})}
+function navigate(page){
+  if((page==='members'||page==='admin')&&!isAdmin()){toast('Área exclusiva da administração.');return}
+  if(page==='requests'&&isAdmin()){toast('Solicitações de cotistas ficam em Administração.');page='admin'}
+  qsa('.page').forEach(p=>p.classList.remove('active-page'));
+  qs(`#${page}`)?.classList.add('active-page');
+  qsa('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page===page));
+  let title=pageMeta[page]?.[0]||'OLIVER Caixinha';
+  let subtitle=pageMeta[page]?.[1]||'';
+  if(isAdmin()&&page==='loans'){title='Contratos';subtitle='Empréstimos ativos, atrasados e quitados.'}
+  if(isAdmin()&&page==='payments'){title='Comprovantes';subtitle='Confira e confirme os pagamentos enviados pelos cotistas.'}
+  qs('#pageTitle').textContent=title;
+  qs('#pageSubtitle').textContent=subtitle;
+  applyCollapsiblePanels();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
 
 async function renderDashboard(){
   const hour=new Date().getHours();
@@ -171,6 +204,20 @@ async function renderDashboard(){
     qs('#homePendingRequests').textContent=String(pendingReq||0);
     qs('#homePendingReceipts').textContent=String(pendingReceipts||0);
     qs('#homeActiveMembers').textContent=String(members||0);
+
+    const expenses=(yearTx||[]).filter(t=>t.direction==='expense').reduce((s,t)=>s+Number(t.amount||0),0);
+    const cash=Math.max(0,Number(summary?.cash_balance||0));
+    const chartValues=[paidTotal,expenses,debt,cash];
+    const chartMax=Math.max(1,...chartValues);
+    const setBar=(labelId,barId,value)=>{
+      const label=qs(labelId),bar=qs(barId);
+      if(label)label.textContent=brl.format(value);
+      if(bar)bar.style.width=`${Math.max(value>0?4:0,Math.round(value/chartMax*100))}%`;
+    };
+    setBar('#chartIncomeLabel','#chartIncomeBar',paidTotal);
+    setBar('#chartExpenseLabel','#chartExpenseBar',expenses);
+    setBar('#chartLoanLabel','#chartLoanBar',debt);
+    setBar('#chartCashLabel','#chartCashBar',cash);
     return;
   }
 
