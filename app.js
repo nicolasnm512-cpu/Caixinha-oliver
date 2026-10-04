@@ -180,13 +180,14 @@ async function renderDashboard(){
   if(isAdmin()){
     const yearStart=`${now.getFullYear()}-01-01`;
     const yearEnd=`${now.getFullYear()}-12-31`;
-    const [{data:summary},{data:yearTx},{data:loans},{count:pendingReq},{count:pendingReceipts},{count:members}] = await Promise.all([
+    const [{data:summary},{data:yearTx},{data:loans},{count:pendingReq},{count:pendingReceipts},{count:members},{data:interestBatches}] = await Promise.all([
       db.from('shared_fund_summary').select('*').maybeSingle(),
       db.from('fund_transactions').select('direction,category,amount,transaction_date').gte('transaction_date',yearStart).lte('transaction_date',yearEnd),
       db.from('loans').select('id,outstanding_amount,status').in('status',['active','late']),
       db.from('loan_requests').select('id',{count:'exact',head:true}).in('status',['pending','under_review']),
       db.from('payment_receipts').select('id',{count:'exact',head:true}).eq('status','pending'),
-      db.from('profiles').select('id',{count:'exact',head:true}).eq('active',true).not('cotista_number','is',null)
+      db.from('profiles').select('id',{count:'exact',head:true}).eq('active',true).not('cotista_number','is',null),
+      db.from('interest_distribution_batches').select('*').gte('transaction_date',yearStart).lte('transaction_date',yearEnd)
     ]);
     const paid=(yearTx||[]).filter(t=>t.direction==='income'&&['contribution','draw','trip'].includes(t.category));
     const paidTotal=paid.reduce((s,t)=>s+Number(t.amount||0),0);
@@ -204,6 +205,13 @@ async function renderDashboard(){
     qs('#homePendingRequests').textContent=String(pendingReq||0);
     qs('#homePendingReceipts').textContent=String(pendingReceipts||0);
     qs('#homeActiveMembers').textContent=String(members||0);
+    const adminInterest=(interestBatches||[]).reduce((s,b)=>s+Number(b.admin_total_amount||0),0);
+    if(qs('#homeAdminInterest'))qs('#homeAdminInterest').textContent=brl.format(adminInterest);
+    if(qs('#homeAdminInterestNote')){
+      const fee=Number(state.settings?.interest_admin_fee_percent??10);
+      const virtual=Number(state.settings?.admin_virtual_interest_shares??1);
+      qs('#homeAdminInterestNote').textContent=`${fee.toLocaleString('pt-BR')}% de taxa + ${virtual} cota(s) virtual(is) de juros`;
+    }
 
     const expenses=(yearTx||[]).filter(t=>t.direction==='expense').reduce((s,t)=>s+Number(t.amount||0),0);
     const cash=Math.max(0,Number(summary?.cash_balance||0));
