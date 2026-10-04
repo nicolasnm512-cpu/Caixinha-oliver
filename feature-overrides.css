@@ -878,3 +878,64 @@ body{min-width:320px}
   line-height:1.45;
 }
 .interest-policy-preview b{color:#17130b}
+
+
+/* ===== Rifas e passeios por abas ===== */
+.activity-tabs{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  padding:5px;
+  margin:0 0 14px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#f7f5ef;
+}
+.activity-tab{
+  border:0;
+  border-radius:10px;
+  background:transparent;
+  color:var(--muted);
+  padding:10px 12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  font-weight:800;
+  cursor:pointer;
+}
+.activity-tab b{
+  min-width:24px;
+  height:24px;
+  padding:0 7px;
+  border-radius:999px;
+  display:grid;
+  place-items:center;
+  background:#ece8dd;
+  color:#6f644c;
+  font-size:11px;
+}
+.activity-tab.active{background:#111;color:#f2d27f}
+.activity-tab.active b{background:#3b311d;color:#f2d27f}
+.activity-filter-hidden{display:none!important}
+.event-fund-progress{
+  margin:12px 0;
+  padding:13px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#fbfaf6;
+}
+@media(max-width:520px){
+  .activity-tabs{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    position:sticky;
+    top:0;
+    z-index:4;
+  }
+  .activity-tab{
+    padding:9px 5px;
+    font-size:10px;
+    flex-direction:column;
+    gap:4px;
+  }
+}
