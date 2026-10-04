@@ -247,6 +247,30 @@
     });
   }
 
+  function applyActivityFilter(){
+    const filter=window.__activityFilter||'all';
+    let visible=0;
+    document.querySelectorAll('#activityCards > .activity-card').forEach(card=>{
+      const show=filter==='all'||card.dataset.activityType===filter;
+      card.classList.toggle('activity-filter-hidden',!show);
+      if(show)visible++;
+    });
+    document.querySelectorAll('#activityTabs .activity-tab').forEach(btn=>{
+      const active=btn.dataset.activityFilter===filter;
+      btn.classList.toggle('active',active);
+      btn.setAttribute('aria-selected',String(active));
+    });
+    const empty=document.querySelector('#activityEmptyFilter');
+    if(empty)empty.classList.toggle('hidden',visible>0);
+  }
+
+  document.querySelector('#activityTabs')?.addEventListener('click',e=>{
+    const btn=e.target.closest('[data-activity-filter]');
+    if(!btn)return;
+    window.__activityFilter=btn.dataset.activityFilter;
+    applyActivityFilter();
+  });
+
   window.renderActivities=async function(){
     const {data:acts,error}=await db.from('activities')
       .select('*,raffle_configs(*),raffle_prizes(*),trip_configs(*),trip_prizes(*)')
@@ -266,6 +290,14 @@
       tripSeats=data||[];
     }
 
+    const allActs=acts||[];
+    const allCount=document.querySelector('#allActivityCount');
+    const drawCount=document.querySelector('#drawActivityCount');
+    const tripCount=document.querySelector('#tripActivityCount');
+    if(allCount)allCount.textContent=String(allActs.length);
+    if(drawCount)drawCount.textContent=String(allActs.filter(a=>a.type==='draw').length);
+    if(tripCount)tripCount.textContent=String(allActs.filter(a=>a.type==='trip').length);
+
     $('#activityCards').innerHTML=(acts||[]).map(a=>{
       const raffleCfg=Array.isArray(a.raffle_configs)?a.raffle_configs[0]:a.raffle_configs;
       const rafflePrizes=(a.raffle_prizes||[]).sort((x,y)=>x.prize_position-y.prize_position);
@@ -275,15 +307,30 @@
       const prizesHtml=rafflePrizes.length?'<div class="prize-strip">'+rafflePrizes.map(p=>'<div><span>'+p.prize_position+'º prêmio</span><b>'+safe(p.prize_label)+'</b>'+(p.prize_value!=null?'<small>'+brl.format(Number(p.prize_value))+'</small>':'')+'</div>').join('')+'</div>':'';
 
       if(a.type==='draw'&&raffleCfg?.allocation_mode==='quota_equal'){
-        return '<article class="activity-card raffle-card-v2">'+
+        const raffleTotalNumbers=Number(raffleCfg.total_numbers||100);
+        const rafflePrice=Number(raffleCfg.number_price||0);
+        const raffleGross=raffleTotalNumbers*rafflePrice;
+        const raffleRemaining=Math.max(0,raffleGross-paid);
+        const raffleProgress=raffleGross>0?Math.min(100,Math.round(paid/raffleGross*100)):0;
+        return '<article class="activity-card raffle-card-v2" data-activity-type="draw">'+
           '<div class="activity-cover sorteio"><span>RIFA • 100 NÚMEROS</span>'+statusBadge(a.status)+'</div>'+
           '<div class="activity-body"><h4>'+safe(a.title)+'</h4><p>'+safe(a.description||'')+'</p>'+
           prizesHtml+
-          '<div class="activity-stats">'+
-            '<div><span>Valor por número</span><b>'+brl.format(Number(raffleCfg.number_price))+'</b></div>'+
-            '<div><span>'+(isAdmin()?'Arrecadado':'Seu total')+'</span><b>'+brl.format(isAdmin()?paid:Number(myEntry?.amount_due||0))+'</b></div>'+
-            '<div><span>Distribuição</span><b>Aleatória por cota</b></div>'+
-          '</div>'+
+          (isAdmin()
+            ?'<div class="event-fund-progress">'+
+              '<div class="trip-progress-grid">'+
+                '<div><span>Total da rifa</span><b>'+brl.format(raffleGross)+'</b><small>'+raffleTotalNumbers+' × '+brl.format(rafflePrice)+'</small></div>'+
+                '<div><span>Recebido</span><b>'+brl.format(paid)+'</b><small>'+raffleProgress+'% arrecadado</small></div>'+
+                '<div><span>A receber</span><b>'+brl.format(raffleRemaining)+'</b><small>Atualiza com os pagamentos</small></div>'+
+              '</div>'+
+              '<div class="trip-progress-bar"><i style="width:'+raffleProgress+'%"></i></div>'+
+              '<div class="trip-progress-caption"><span>'+raffleProgress+'% arrecadado</span><span>Distribuição automática por cota</span></div>'+
+            '</div>'
+            :'<div class="activity-stats">'+
+              '<div><span>Valor por número</span><b>'+brl.format(rafflePrice)+'</b></div>'+
+              '<div><span>Seu total</span><b>'+brl.format(Number(myEntry?.amount_due||0))+'</b></div>'+
+              '<div><span>Distribuição</span><b>Aleatória por cota</b></div>'+
+            '</div>')+
           '<button class="primary-btn raffle-open-btn" onclick="openQuotaRaffle(\''+a.id+'\')">'+(isAdmin()?'Gerenciar rifa':'Ver meus números e pagar')+'</button>'+
           '</div></article>';
       }
@@ -311,7 +358,7 @@
         const seatChips=!isAdmin()&&mySeats.length?'<div class="my-seat-preview">'+mySeats.map(s=>'<span>'+String(s.seat_number).padStart(2,'0')+'</span>').join('')+'</div>':'';
         const tripPrizeHtml=tripPrizes.length?'<div class="trip-prize-mini">'+tripPrizes.map(p=>'<span><b>'+p.prize_position+'º</b> '+safe(p.prize_label)+(p.prize_value!=null?' • '+brl.format(Number(p.prize_value)):'')+'</span>').join('')+'</div>':'';
 
-        return '<article class="activity-card trip-card bus-trip-card">'+
+        return '<article class="activity-card trip-card bus-trip-card" data-activity-type="trip">'+
           '<div class="activity-cover passeio"><span>ÔNIBUS • PASSEIO</span>'+statusBadge(a.status)+'</div>'+
           '<div class="activity-body">'+
             '<h4>'+safe(a.title)+'</h4><p>'+safe(a.description||'')+'</p>'+
@@ -341,9 +388,10 @@
           '</div></article>';
       }
 
-      return '<article class="activity-card"><div class="activity-cover sorteio"><span>EVENTO</span>'+statusBadge(a.status)+'</div><div class="activity-body"><h4>'+safe(a.title)+'</h4><p>'+safe(a.description||'')+'</p><div class="activity-stats"><div><span>Valor</span><b>'+brl.format(Number(a.unit_price||0))+'</b></div><div><span>Meta</span><b>'+brl.format(Number(a.target_amount||0))+'</b></div><div><span>Status</span><b>'+safe(a.status)+'</b></div></div></div></article>';
+      return '<article class="activity-card" data-activity-type="'+safe(a.type||'other')+'"><div class="activity-cover sorteio"><span>EVENTO</span>'+statusBadge(a.status)+'</div><div class="activity-body"><h4>'+safe(a.title)+'</h4><p>'+safe(a.description||'')+'</p><div class="activity-stats"><div><span>Valor</span><b>'+brl.format(Number(a.unit_price||0))+'</b></div><div><span>Meta</span><b>'+brl.format(Number(a.target_amount||0))+'</b></div><div><span>Status</span><b>'+safe(a.status)+'</b></div></div></div></article>';
     }).join('')||'<div class="stack-item"><p>Nenhuma atividade cadastrada.</p></div>';
     makeActivityCardsCollapsible();
+    applyActivityFilter();
   };
 
   window.payActivity=async function(activityId,kind,amount){
