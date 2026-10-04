@@ -124,12 +124,12 @@
         <div><strong>OLIVER Caixinha</strong><span>Área dos cotistas</span></div>
       </div>
       <nav id="mainNav">
-        <button class="nav-item active" data-page="dashboard"><span>◫</span>Visão geral</button>
-        <button class="nav-item" data-page="requests"><span>✦</span>Central de solicitações</button>
-        <button class="nav-item" data-page="loans"><span>↗</span>Empréstimos</button>
-        <button class="nav-item" data-page="payments"><span>✓</span>Pagamentos e comprovantes</button>
-        <button class="nav-item" data-page="activities"><span>★</span>Rifas e passeios</button>
-        <button class="nav-item" data-page="account"><span>◉</span>Meu cadastro</button>
+        <button class="nav-item active" data-page="dashboard"><span>◫</span><b class="nav-label">Início</b></button>
+        <button class="nav-item member-only" data-page="requests"><span>✦</span><b class="nav-label">Solicitar empréstimo</b></button>
+        <button class="nav-item" data-page="loans" data-member-label="Meus empréstimos" data-admin-label="Contratos"><span>↗</span><b class="nav-label">Meus empréstimos</b></button>
+        <button class="nav-item" data-page="payments" data-member-label="Pagamentos" data-admin-label="Comprovantes"><span>✓</span><b class="nav-label">Pagamentos</b></button>
+        <button class="nav-item" data-page="activities"><span>★</span><b class="nav-label">Rifas e passeios</b></button>
+        <button class="nav-item member-only" data-page="account"><span>◉</span><b class="nav-label">Meu cadastro</b></button>
         <button class="nav-item admin-only" data-page="members"><span>◎</span>Cotistas</button>
         <button class="nav-item admin-only" data-page="admin"><span>⚙</span>Administração</button>
       </nav>
@@ -148,7 +148,7 @@
         </div>
         <div class="top-actions">
           <span class="status-dot"><i></i> Dados atualizados</span>
-          <button class="outline-btn" data-page-jump="payments">Pagar agora</button>
+          <button class="outline-btn member-only" data-page-jump="payments">Pagar agora</button>
         </div>
       </header>
 
@@ -191,6 +191,28 @@
           </article>
         </div>
 
+        <article class="admin-flow-guide admin-only">
+          <div class="admin-flow-head">
+            <div><span class="eyebrow">COMECE POR AQUI</span><h3>O que você quer administrar?</h3><p>Cada etapa leva direto para a função certa.</p></div>
+          </div>
+          <div class="admin-flow-grid">
+            <button data-page-jump="members"><span>1</span><b>Cotistas</b><small>Cadastrar, consultar, limite e acesso</small></button>
+            <button data-page-jump="payments"><span>2</span><b>Comprovantes</b><small>Confirmar pagamentos recebidos</small></button>
+            <button data-page-jump="loans"><span>3</span><b>Contratos</b><small>Ver empréstimos ativos e quitados</small></button>
+            <button data-page-jump="activities"><span>4</span><b>Rifas e passeios</b><small>Arrecadação, prêmios e poltronas</small></button>
+          </div>
+        </article>
+
+        <article class="admin-finance-visual admin-only">
+          <div class="panel-head"><div><h3>Mapa financeiro</h3><p>Veja rapidamente o que entrou, saiu, está emprestado e está disponível.</p></div></div>
+          <div class="finance-visual-grid">
+            <div class="finance-visual-item"><div><span>Entradas confirmadas</span><b id="chartIncomeLabel">R$ 0,00</b></div><div class="finance-bar"><i id="chartIncomeBar"></i></div></div>
+            <div class="finance-visual-item"><div><span>Saídas registradas</span><b id="chartExpenseLabel">R$ 0,00</b></div><div class="finance-bar"><i id="chartExpenseBar"></i></div></div>
+            <div class="finance-visual-item"><div><span>Emprestado</span><b id="chartLoanLabel">R$ 0,00</b></div><div class="finance-bar"><i id="chartLoanBar"></i></div></div>
+            <div class="finance-visual-item"><div><span>Caixa disponível</span><b id="chartCashLabel">R$ 0,00</b></div><div class="finance-bar"><i id="chartCashBar"></i></div></div>
+          </div>
+        </article>
+
         <div class="home-operational admin-only">
           <button class="home-status-pill" data-page-jump="admin"><span>Solicitações</span><b id="homePendingRequests">0</b></button>
           <button class="home-status-pill" data-page-jump="payments"><span>Comprovantes</span><b id="homePendingReceipts">0</b></button>
@@ -210,7 +232,7 @@
         </article>
       </section>
 
-      <section id="requests" class="page">
+      <section id="requests" class="page member-only">
         <div class="page-grid">
           <article class="panel">
             <div class="panel-head"><div><h3>Solicitar empréstimo</h3><p>Envie para análise da administração.</p></div><span class="badge warning">Sujeito à aprovação</span></div>
@@ -241,7 +263,7 @@
           <article class="kpi"><div class="kpi-label">Juros estimados</div><strong id="loanInterestEstimate">R$ 0,00</strong><span>Sobre a operação contratada</span></article>
         </div>
         <article class="panel loan-contracts-panel">
-          <div class="panel-head"><div><h3>Meus empréstimos</h3><p>Contratos separados por situação.</p></div><button class="primary-btn small" data-page-jump="requests">Nova solicitação</button></div>
+          <div class="panel-head"><div><h3 id="loanSectionTitle">Meus empréstimos</h3><p id="loanSectionSubtitle">Contratos separados por situação.</p></div><button class="primary-btn small member-only" data-page-jump="requests">Nova solicitação</button></div>
           <div id="loanContractTabs" class="loan-tabs" role="tablist" aria-label="Situação dos contratos">
             <button type="button" class="loan-tab active" data-loan-filter="active" role="tab" aria-selected="true">
               <span>Contratos ativos</span><b id="activeLoanCount">0</b>
