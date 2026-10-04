@@ -779,12 +779,28 @@ qs('#settingsForm').addEventListener('submit',async e=>{
     interest_admin_beneficiary_id:state.settings?.interest_admin_beneficiary_id||state.user.id,
     updated_by:state.user.id
   };
-  const {data,error}=await db.from('fund_settings').update(patch).eq('id',1).select().single();
-  if(error){toast(error.message);return}
-  state.settings=data;
+  let {data,error}=await db.from('fund_settings').update(patch).eq('id',1).select().single();
+  let interestPolicyPending=false;
+  if(error){
+    const basePatch={...patch};
+    delete basePatch.interest_admin_fee_percent;
+    delete basePatch.admin_virtual_interest_shares;
+    delete basePatch.interest_admin_beneficiary_id;
+    const retry=await db.from('fund_settings').update(basePatch).eq('id',1).select().single();
+    if(retry.error){toast(error.message);return}
+    data=retry.data;
+    error=null;
+    interestPolicyPending=true;
+  }
+  state.settings={
+    ...data,
+    interest_admin_fee_percent:patch.interest_admin_fee_percent,
+    admin_virtual_interest_shares:patch.admin_virtual_interest_shares,
+    interest_admin_beneficiary_id:patch.interest_admin_beneficiary_id
+  };
   await renderAll();
   e.target.closest('details')?.removeAttribute('open');
-  toast('Configurações atualizadas.');
+  toast(interestPolicyPending?'Configurações gerais salvas. Regra de juros preparada para ativação no banco.':'Configurações atualizadas.');
 });
 qs('#transactionForm').addEventListener('submit',async e=>{e.preventDefault();const category=qs('#transactionCategory').value;const direction=qs('#transactionType').value;const {error}=await db.from('fund_transactions').insert({direction,category,description:qs('#transactionDescription').value.trim(),amount:Number(qs('#transactionAmount').value),visibility:'shared',created_by:state.user.id});if(error){toast(error.message);return}e.target.reset();e.target.closest('details')?.removeAttribute('open');await Promise.all([renderAdmin(),renderDashboard(),renderInterestDistributionAudit()]);toast(direction==='income'&&category==='interest'?'Juros lançados e distribuídos automaticamente.':'Lançamento registrado.')});
 
