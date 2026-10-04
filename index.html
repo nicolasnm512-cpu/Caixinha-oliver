@@ -326,8 +326,14 @@
       </section>
 
       <section id="activities" class="page">
-        <div class="panel-head standalone"><div><h3>Rifas e passeios</h3><p>O cotista vê somente as próprias rifas, números e situação dos passeios.</p></div><div class="panel-actions admin-only"><button class="primary-btn small" id="newActivityBtn">Nova rifa</button><button class="outline-btn" id="newTripBtn">Novo passeio</button></div></div>
+        <div class="panel-head standalone"><div><h3>Rifas e passeios</h3><p>Escolha o tipo de evento para ver arrecadação, prêmios, números ou poltronas.</p></div><div class="panel-actions admin-only"><button class="primary-btn small" id="newActivityBtn">Nova rifa</button><button class="outline-btn" id="newTripBtn">Novo passeio</button></div></div>
+        <div id="activityTabs" class="activity-tabs" role="tablist" aria-label="Filtrar eventos">
+          <button type="button" class="activity-tab active" data-activity-filter="all" aria-selected="true"><span>Todos</span><b id="allActivityCount">0</b></button>
+          <button type="button" class="activity-tab" data-activity-filter="draw" aria-selected="false"><span>Rifas</span><b id="drawActivityCount">0</b></button>
+          <button type="button" class="activity-tab" data-activity-filter="trip" aria-selected="false"><span>Passeios</span><b id="tripActivityCount">0</b></button>
+        </div>
         <div id="activityCards" class="activity-grid"></div>
+        <div id="activityEmptyFilter" class="loan-empty-state hidden">Nenhum evento nesta categoria.</div>
       </section>
 
       <section id="account" class="page">
