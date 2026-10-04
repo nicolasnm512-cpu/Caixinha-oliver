@@ -534,12 +534,13 @@ async function callAdminUsers(payload){
 
 async function renderMembers(){
   if(!isAdmin())return;
-  const [{data:members},{data:contrib},{data:loans},{data:snapshots},{data:annual}] = await Promise.all([
+  const [{data:members},{data:contrib},{data:loans},{data:snapshots},{data:annual},{data:credits}] = await Promise.all([
     db.from('profiles').select('*').order('cotista_number',{ascending:true}),
     db.from('monthly_contributions').select('*').eq('reference_month',currentMonthRef),
     db.from('loans').select('member_id,outstanding_amount,status').in('status',['active','late']),
     db.from('member_year_snapshots').select('*').eq('year',now.getFullYear()),
-    db.rpc('admin_get_annual_balances',{p_year:now.getFullYear()})
+    db.rpc('admin_get_annual_balances',{p_year:now.getFullYear()}),
+    db.from('member_credit_summary').select('*')
   ]);
   window.__membersById=Object.fromEntries((members||[]).map(m=>[m.id,m]));
   const annualMap=Object.fromEntries((annual||[]).map(a=>[a.member_id,a]));
@@ -548,11 +549,12 @@ async function renderMembers(){
     const debt=(loans||[]).filter(x=>x.member_id===m.id).reduce((s,x)=>s+Number(x.outstanding_amount||0),0);
     const snap=(snapshots||[]).find(x=>x.member_id===m.id);
     const yr=annualMap[m.id];
-    return {m,mc,debt,snap,yr};
+    const credit=(credits||[]).find(x=>x.member_id===m.id)||null;
+    return {m,mc,debt,snap,yr,credit};
   });
   window.__memberAdminData=Object.fromEntries(rows.map(r=>[r.m.id,r]));
 
-  qs('#membersTable').innerHTML=`<table class="data-table member-admin-table compact-members"><thead><tr><th>#</th><th>Cotista</th><th>Pago no ano</th><th>Empréstimo aberto</th><th>Previsão anual</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(({m,mc,debt,snap,yr})=>`<tr>
+  qs('#membersTable').innerHTML=`<table class="data-table member-admin-table compact-members"><thead><tr><th>#</th><th>Cotista</th><th>Pago no ano</th><th>Empréstimo aberto</th><th>Previsão anual</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(({m,mc,debt,snap,yr,credit})=>`<tr>
     <td>${m.cotista_number?String(m.cotista_number).padStart(2,'0'):'ADM'}</td>
     <td><b>${safe(m.full_name)}</b><small>${m.cotista_number?'Cotista':'Administrador'}</small></td>
     <td>${m.cotista_number?(snap?brl.format(Number(snap.contributions_paid||0)):'—'):'—'}</td>
@@ -567,7 +569,15 @@ async function renderMembers(){
 window.openMemberAdminDetails=id=>{
   const row=window.__memberAdminData?.[id];
   if(!row)return;
-  const {m,mc,debt,snap,yr}=row;
+  const {m,mc,debt,snap,yr,credit}=row;
+  const autoLimit=Number(credit?.automatic_credit_limit??credit?.credit_limit??0);
+  const effectiveLimit=Number(credit?.credit_limit??0);
+  const availableLimit=Number(credit?.available_credit??0);
+  const customLimit=credit?.loan_limit_override==null?null:Number(credit.loan_limit_override);
+  const annualPaid=Number(snap?.contributions_paid||0);
+  const interestRecorded=Number(snap?.interest_recorded||0);
+  const chartMax=Math.max(1,annualPaid,debt,interestRecorded,effectiveLimit);
+  const pct=v=>Math.max(v>0?4:0,Math.round(Number(v||0)/chartMax*100));
   openModal(`<div class="member-detail-modal">
     <div class="panel-head"><div><span class="eyebrow">COTISTA ${String(m.cotista_number||'').padStart(2,'0')}</span><h3>${safe(m.full_name)}</h3><p>${safe(m.email||'Sem e-mail')}</p></div>${m.active?statusBadge('active'):statusBadge('cancelled')}</div>
     <div class="member-detail-grid">
@@ -577,9 +587,20 @@ window.openMemberAdminDetails=id=>{
       <div><span>Empréstimo aberto</span><b>${debt>0?brl.format(debt):brl.format(0)}</b></div>
       <div><span>Empréstimos no ano</span><b>${snap?brl.format(Number(snap.loan_principal_year||0)):'—'}</b></div>
       <div><span>Juros registrados</span><b>${snap?brl.format(Number(snap.interest_recorded||0)):'—'}</b></div>
+      <div><span>Limite automático</span><b>${brl.format(autoLimit)}</b></div>
+      <div><span>Limite válido</span><b>${brl.format(effectiveLimit)}</b><small>${customLimit==null?'Automático':'Personalizado pelo ADM'}</small></div>
+      <div><span>Crédito disponível</span><b>${brl.format(availableLimit)}</b></div>
       <div class="wide"><span>Previsão fim do ano</span><b>${yr?brl.format(Number(yr.estimated_year_end_total||0)):'—'}</b></div>
     </div>
+    <div class="member-mini-chart">
+      <h4>Resumo visual</h4>
+      <div><span>Cotas pagas</span><i><b style="width:${pct(annualPaid)}%"></b></i><strong>${brl.format(annualPaid)}</strong></div>
+      <div><span>Empréstimo aberto</span><i><b style="width:${pct(debt)}%"></b></i><strong>${brl.format(debt)}</strong></div>
+      <div><span>Juros registrados</span><i><b style="width:${pct(interestRecorded)}%"></b></i><strong>${brl.format(interestRecorded)}</strong></div>
+      <div><span>Limite de crédito</span><i><b style="width:${pct(effectiveLimit)}%"></b></i><strong>${brl.format(effectiveLimit)}</strong></div>
+    </div>
     <div class="member-detail-actions">
+      <button class="primary-btn" onclick="editMemberCreditLimit('${m.id}')">Editar limite</button>
       <button class="outline-btn" onclick="toggleMemberAccess('${m.id}',${m.active?'false':'true'});closeModal()">${m.active?'Desativar acesso':'Ativar acesso'}</button>
       <button class="outline-btn" onclick="resetMemberPassword('${m.id}')">Redefinir senha</button>
     </div>
@@ -590,6 +611,24 @@ qs('#exportMembersBtn').addEventListener('click',()=>{const rows=window.__member
 qs('#newMemberBtn').addEventListener('click',()=>{if(!isAdmin())return;openModal(`<div class="panel-head"><div><h3>Novo cotista</h3><p>Crie o acesso inicial do cotista. A senha poderá ser alterada pelo próprio usuário em Meu cadastro.</p></div></div><form id="newMemberForm" class="form-grid"><label>Número do cotista<input id="newMemberNumber" type="number" min="1" max="20" required></label><label>Cotas mensais<input id="newMemberShares" type="number" min="1" max="20" value="1" required></label><label class="full-span">Nome completo<input id="newMemberName" required></label><label class="full-span">E-mail de acesso<input id="newMemberEmail" type="email" required></label><label class="full-span">Senha provisória<input id="newMemberPassword" type="text" minlength="8" value="Oliver@2026" required></label><button class="primary-btn full-span" type="submit">Criar cotista</button></form>`);setTimeout(()=>qs('#newMemberForm')?.addEventListener('submit',async e=>{e.preventDefault();const btn=e.submitter;try{if(btn){btn.disabled=true;btn.textContent='Criando...'}await callAdminUsers({action:'create_member',cotista_number:Number(qs('#newMemberNumber').value),share_count:Number(qs('#newMemberShares').value),full_name:qs('#newMemberName').value.trim(),email:qs('#newMemberEmail').value.trim().toLowerCase(),password:qs('#newMemberPassword').value});closeModal();await renderMembers();toast('Cotista criado com sucesso.')}catch(err){toast(err.message)}finally{if(btn){btn.disabled=false;btn.textContent='Criar cotista'}}}),0)});
 function generateTemporaryPassword(n){const a=new Uint32Array(1);crypto.getRandomValues(a);return `Olv${String(n).padStart(2,'0')}@${a[0].toString(36).toUpperCase().slice(-6)}`}
 window.toggleMemberAccess=async(id,active)=>{try{await callAdminUsers({action:'set_active',user_id:id,active});await renderMembers();toast(active?'Acesso ativado.':'Acesso desativado.')}catch(err){toast(err.message)}};
+window.editMemberCreditLimit=async id=>{
+  const row=window.__memberAdminData?.[id];
+  if(!row)return;
+  const credit=row.credit||{};
+  const current=credit.loan_limit_override==null?'':Number(credit.loan_limit_override).toFixed(2);
+  const automatic=Number(credit.automatic_credit_limit??credit.credit_limit??0);
+  const raw=prompt(`Limite personalizado para ${row.m.full_name}.\nLimite automático: ${brl.format(automatic)}\n\nDigite o novo limite ou deixe vazio para voltar ao automático:`,current);
+  if(raw===null)return;
+  const normalized=raw.trim().replace(',','.');
+  const value=normalized===''?null:Number(normalized);
+  if(value!==null&&(!Number.isFinite(value)||value<0)){toast('Informe um limite válido.');return}
+  const {error}=await db.rpc('admin_set_member_credit_limit',{p_member_id:id,p_limit:value});
+  if(error){toast(error.message);return}
+  closeModal();
+  await renderMembers();
+  toast(value===null?'Limite voltou ao cálculo automático.':'Limite personalizado atualizado.');
+};
+
 window.resetMemberPassword=async(id)=>{const name=window.__membersById?.[id]?.full_name||'cotista';const password=prompt(`Nova senha provisória para ${name} (mínimo 8 caracteres):`,'Oliver@2026');if(!password)return;if(password.length<8){toast('Use ao menos 8 caracteres.');return}try{await callAdminUsers({action:'reset_password',user_id:id,password});await renderMembers();toast('Senha redefinida com sucesso.')}catch(err){toast(err.message)}};
 
 async function renderFinanceAgent(){
