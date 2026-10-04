@@ -412,6 +412,13 @@
               <label>Limite adicional (%)<input id="settingCreditBonus" type="number" min="0" step="1" /></label>
               <label>Máximo de parcelas<input id="settingMaxInstallments" type="number" min="1" max="3" step="1" /></label>
               <label>Retorno do passeio (%)<input id="settingTripReturn" type="number" min="0" max="100" step="0.01" placeholder="Definir" /></label>
+              <label>Taxa administrativa dos juros (%)<input id="settingInterestAdminFee" type="number" min="0" max="100" step="0.01" value="10" /></label>
+              <label>Cotas virtuais de juros do ADM<input id="settingVirtualInterestShares" type="number" min="0" max="20" step="1" value="1" /></label>
+              <div class="interest-policy-note full-span">
+                <b>Regra da administradora</b>
+                <span>A cota virtual participa somente da divisão dos juros. Ela não gera mensalidade, aporte, limite de crédito, rifa ou passeio. A taxa administrativa é separada e configurável.</span>
+                <div id="interestPolicyPreview" class="interest-policy-preview"></div>
+              </div>
               <label>Nome da caixinha<input id="settingName" type="text" /></label>
               <label class="full-span">Chave Pix<input id="settingPix" type="text" placeholder="Chave oficial" /></label>
               <div class="full-span payment-settings-preview"><span>Conta oficial</span><b>Inter 077 • Ag. 0001 • Conta 41655540-3</b><small>Gabriela Lima Duarte • CNPJ 58.119.805/0001-39</small></div>
