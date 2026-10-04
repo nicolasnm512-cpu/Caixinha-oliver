@@ -939,3 +939,37 @@ body{min-width:320px}
     gap:4px;
   }
 }
+
+
+/* ===== Saídas e premiações por evento ===== */
+.event-expense-summary{
+  margin:12px 0;
+  padding:12px;
+  border:1px solid #e5ddd0;
+  border-radius:13px;
+  background:#fffdf9;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr)) auto;
+  gap:9px;
+  align-items:end;
+}
+.event-expense-summary>div{
+  min-width:0;
+  padding:9px 10px;
+  border-radius:10px;
+  background:#fff;
+  border:1px solid #eee8de;
+}
+.event-expense-summary span{display:block;color:var(--muted);font-size:9px}
+.event-expense-summary b{display:block;margin-top:4px;font-size:14px;font-variant-numeric:tabular-nums}
+.event-expense-summary details{grid-column:1/-1;border-top:1px solid #eee8de;padding-top:8px}
+.event-expense-summary summary{cursor:pointer;font-size:10px;font-weight:800;color:#7b5a16}
+.event-expense-list{margin-top:6px}
+.event-expense-list p{display:flex;justify-content:space-between;gap:10px;margin:0;padding:7px 0;border-bottom:1px solid #f0ece4;font-size:10px}
+.event-expense-list p:last-child{border-bottom:0}
+.event-expense-list span{color:var(--muted);text-align:right}
+@media(max-width:620px){
+  .event-expense-summary{grid-template-columns:minmax(0,1fr)}
+  .event-expense-summary details{grid-column:auto}
+  .event-expense-summary>button{width:100%}
+}
