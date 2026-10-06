@@ -507,7 +507,7 @@ window.openReceiptFile=async id=>{
         :`<div class="receipt-generic-file"><span>📎</span><b>${safe(receipt.original_filename||'Arquivo')}</b><p>Use os botões abaixo para abrir ou baixar.</p></div>`;
     openModal(`<div class="receipt-preview-modal">
       <div class="panel-head">
-        <div><span class="eyebrow">COMPROVANTE</span><h3>${safe(receipt.original_filename||'Arquivo enviado')}</h3><p>${brl.format(Number(receipt.amount||0))} • ${formatDate(receipt.submitted_at)}</p></div>
+        <div><span class="eyebrow">COMPROVANTE</span><h3>${safe(receipt.original_filename||'Arquivo enviado')}</h3><p>${receipt.member_name?safe(receipt.member_name)+' • ':''}${brl.format(Number(receipt.amount||0))} • ${formatDate(receipt.submitted_at)}</p></div>
         ${statusBadge(receipt.status)}
       </div>
       <div class="receipt-preview-stage">${preview}</div>
@@ -531,16 +531,26 @@ async function renderPayments(){
   if(!isAdmin())q.eq('member_id',state.user.id);
   const {data:rows,error}=await q;
   if(error){qs('#paymentHistory').innerHTML='<div class="stack-item"><p>Não foi possível carregar os comprovantes.</p></div>';return}
-  window.__receiptFiles=Object.fromEntries((rows||[]).map(r=>[r.id,r]));
+  let memberNames={};
+  if(isAdmin()&&(rows||[]).length){
+    const ids=[...new Set((rows||[]).map(r=>r.member_id).filter(Boolean))];
+    if(ids.length){
+      const {data:members}=await db.from('profiles').select('id,full_name').in('id',ids);
+      memberNames=Object.fromEntries((members||[]).map(m=>[m.id,m.full_name]));
+    }
+  }
+  const receiptRows=(rows||[]).map(r=>({...r,member_name:memberNames[r.member_id]||null}));
+  window.__receiptFiles=Object.fromEntries(receiptRows.map(r=>[r.id,r]));
   const typeLabel={contribution:'Cota mensal',loan:'Empréstimo',draw:'Rifa',trip:'Passeio',other:'Outro'};
-  qs('#paymentHistory').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Tipo</th><th>Valor</th><th>Comprovante</th><th>Status</th>${isAdmin()?'<th>Ação</th>':''}</tr></thead><tbody>${(rows||[]).map(p=>`<tr>
+  qs('#paymentHistory').innerHTML=`<table class="data-table"><thead><tr><th>Data</th>${isAdmin()?'<th>Cotista</th>':''}<th>Tipo</th><th>Valor</th><th>Comprovante</th><th>Status</th>${isAdmin()?'<th>Ação</th>':''}</tr></thead><tbody>${receiptRows.map(p=>`<tr>
     <td>${formatDate(p.submitted_at)}</td>
+    ${isAdmin()?`<td><b>${safe(p.member_name||'Cotista')}</b></td>`:''}
     <td>${safe(typeLabel[p.payment_kind]||p.payment_kind)}</td>
     <td>${brl.format(Number(p.amount))}</td>
     <td><div class="receipt-file-actions"><button class="outline-btn tiny" type="button" onclick="openReceiptFile('${p.id}')">Visualizar</button><button class="ghost-btn tiny" type="button" onclick="downloadReceiptFile('${p.id}')">Baixar</button><small>${safe(p.original_filename||'Arquivo')}</small></div></td>
     <td>${statusBadge(p.status)}</td>
     ${isAdmin()?`<td>${p.status==='pending'?`<div class="row-actions"><button class="primary-btn small" onclick="reviewReceipt('${p.id}',true)">Confirmar</button><button class="outline-btn small" onclick="reviewReceipt('${p.id}',false)">Recusar</button></div>`:'—'}</td>`:''}
-  </tr>`).join('')||`<tr><td colspan="${isAdmin()?6:5}">Nenhum comprovante enviado.</td></tr>`}</tbody></table>`;
+  </tr>`).join('')||`<tr><td colspan="${isAdmin()?7:5}">Nenhum comprovante enviado.</td></tr>`}</tbody></table>`;
   enhanceResponsiveTables(qs('#paymentHistory'));
   if(!isAdmin())await refreshReceiptReference();
 }
