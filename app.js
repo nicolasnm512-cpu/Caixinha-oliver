@@ -657,7 +657,7 @@ async function renderMembers(){
   });
   window.__memberAdminData=Object.fromEntries(rows.map(r=>[r.m.id,r]));
 
-  qs('#membersTable').innerHTML=`<table class="data-table member-admin-table compact-members"><thead><tr><th>#</th><th>Cotista</th><th>Pago no ano</th><th>Empréstimo aberto</th><th>Previsão anual</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(({m,mc,debt,snap,yr,credit})=>`<tr>
+  qs('#membersTable').innerHTML=`<table class="data-table member-admin-table compact-members"><thead><tr><th>#</th><th>Cotista</th><th>Pago no ano</th><th>Empréstimo aberto</th><th>Total acumulado</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(({m,mc,debt,snap,yr,credit})=>`<tr>
     <td>${m.cotista_number?String(m.cotista_number).padStart(2,'0'):'ADM'}</td>
     <td><b>${safe(m.full_name)}</b><small>${m.cotista_number?'Cotista':'Administrador'}</small></td>
     <td>${m.cotista_number?(snap?brl.format(Number(snap.contributions_paid||0)):'—'):'—'}</td>
@@ -693,7 +693,7 @@ window.openMemberAdminDetails=id=>{
       <div><span>Limite automático</span><b>${brl.format(autoLimit)}</b></div>
       <div><span>Limite válido</span><b>${brl.format(effectiveLimit)}</b><small>${customLimit==null?'Automático':'Personalizado pelo ADM'}</small></div>
       <div><span>Crédito disponível</span><b>${brl.format(availableLimit)}</b></div>
-      <div class="wide"><span>Previsão fim do ano</span><b>${yr?brl.format(Number(yr.estimated_year_end_total||0)):'—'}</b></div>
+      <div class="wide"><span>Total acumulado atual</span><b>${yr?brl.format(Number(yr.estimated_year_end_total||0)):'—'}</b></div>
     </div>
     <div class="member-mini-chart">
       <h4>Resumo visual</h4>
@@ -765,7 +765,7 @@ async function renderInterestDistributionAudit(){
     .order('created_at',{ascending:false})
     .limit(12);
   if(error){qs('#interestDistributionAudit').innerHTML='<div class="stack-item"><p>Não foi possível carregar a distribuição.</p></div>';return}
-  qs('#interestDistributionAudit').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Juro bruto</th><th>Cotas reais</th><th>Taxa ADM</th><th>Cota virtual ADM</th><th>Cotistas</th><th>Total ADM</th></tr></thead><tbody>${(data||[]).map(b=>{
+  qs('#interestDistributionAudit').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Base distribuída</th><th>Cotas reais</th><th>Taxa ADM</th><th>Cota virtual ADM</th><th>Cotistas</th><th>Total ADM</th></tr></thead><tbody>${(data||[]).map(b=>{
     const realShares=Number(b.real_share_count??b.participant_count??0);
     const adminFee=b.admin_fee_amount==null?null:Number(b.admin_fee_amount);
     const virtual=b.virtual_share_amount==null?null:Number(b.virtual_share_amount);
