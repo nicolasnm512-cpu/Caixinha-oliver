@@ -318,12 +318,16 @@
       '</div>':'';
       const prizesHtml=rafflePrizes.length?'<div class="prize-strip">'+rafflePrizes.map(p=>'<div><span>'+p.prize_position+'º prêmio</span><b>'+safe(p.prize_label)+'</b>'+(p.prize_value!=null?'<small>'+brl.format(Number(p.prize_value))+'</small>':'')+'</div>').join('')+'</div>':'';
 
-      if(a.type==='draw'&&raffleCfg?.allocation_mode==='quota_equal'){
+      if(a.type==='draw'&&raffleCfg){
         const raffleTotalNumbers=Number(raffleCfg.total_numbers||100);
         const rafflePrice=Number(raffleCfg.number_price||0);
         const raffleGross=raffleTotalNumbers*rafflePrice;
-        const raffleRemaining=Math.max(0,raffleGross-paid);
-        const raffleProgress=raffleGross>0?Math.min(100,Math.round(paid/raffleGross*100)):0;
+        const raffleReceived=a.status==='closed'
+          ?Number(a.target_amount||raffleGross)
+          :paid;
+        const raffleRemaining=Math.max(0,raffleGross-raffleReceived);
+        const raffleProgress=raffleGross>0?Math.min(100,Math.round(raffleReceived/raffleGross*100)):0;
+        const historicalRaffle=raffleCfg.allocation_mode!=='quota_equal';
         return '<article class="activity-card raffle-card-v2" data-activity-type="draw">'+
           '<div class="activity-cover sorteio"><span>RIFA • 100 NÚMEROS</span>'+statusBadge(a.status)+'</div>'+
           '<div class="activity-body"><h4>'+safe(a.title)+'</h4><p>'+safe(a.description||'')+'</p>'+
@@ -332,7 +336,7 @@
             ?'<div class="event-fund-progress">'+
               '<div class="trip-progress-grid">'+
                 '<div><span>Total da rifa</span><b>'+brl.format(raffleGross)+'</b><small>'+raffleTotalNumbers+' × '+brl.format(rafflePrice)+'</small></div>'+
-                '<div><span>Recebido</span><b>'+brl.format(paid)+'</b><small>'+raffleProgress+'% arrecadado</small></div>'+
+                '<div><span>Recebido</span><b>'+brl.format(raffleReceived)+'</b><small>'+raffleProgress+'% arrecadado</small></div>'+
                 '<div><span>A receber</span><b>'+brl.format(raffleRemaining)+'</b><small>Atualiza com os pagamentos</small></div>'+
               '</div>'+
               '<div class="trip-progress-bar"><i style="width:'+raffleProgress+'%"></i></div>'+
@@ -344,7 +348,9 @@
               '<div><span>Distribuição</span><b>Aleatória por cota</b></div>'+
             '</div>')+
           eventExpenseHtml+
-          '<button class="primary-btn raffle-open-btn" onclick="openQuotaRaffle(\''+a.id+'\')">'+(isAdmin()?'Gerenciar rifa':'Ver meus números e pagar')+'</button>'+
+          (historicalRaffle
+            ?'<div class="paid-banner historical-raffle-banner">Rifa encerrada • histórico financeiro consolidado</div>'
+            :'<button class="primary-btn raffle-open-btn" onclick="openQuotaRaffle(\''+a.id+'\')">'+(isAdmin()?'Gerenciar rifa':'Ver meus números e pagar')+'</button>')+
           '</div></article>';
       }
 
