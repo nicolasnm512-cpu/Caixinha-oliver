@@ -207,7 +207,15 @@ async function renderDashboard(){
     qs('#homePendingRequests').textContent=String(pendingReq||0);
     qs('#homePendingReceipts').textContent=String(pendingReceipts||0);
     qs('#homeActiveMembers').textContent=String(members||0);
-    const adminInterest=(interestBatches||[]).reduce((s,b)=>s+Number(b.admin_total_amount||0),0);
+    const batches=interestBatches||[];
+    const manualClosings=batches.filter(b=>b.source_kind==='manual_closing')
+      .sort((a,b)=>new Date(b.created_at||b.transaction_date)-new Date(a.created_at||a.transaction_date));
+    const latestManual=manualClosings[0]||null;
+    const adminInterest=latestManual
+      ? Number(latestManual.admin_total_amount||0)+batches
+          .filter(b=>b.source_kind==='transaction'&&new Date(b.created_at||0)>new Date(latestManual.created_at||0))
+          .reduce((s,b)=>s+Number(b.admin_total_amount||0),0)
+      : batches.reduce((s,b)=>s+Number(b.admin_total_amount||0),0);
     if(qs('#homeAdminInterest'))qs('#homeAdminInterest').textContent=brl.format(adminInterest);
     if(qs('#homeAdminInterestNote')){
       const fee=Number(state.settings?.interest_admin_fee_percent??10);
