@@ -308,11 +308,14 @@
       const myEntry=entries.find(e=>e.activity_id===a.id&&e.member_id===state.user.id);
       const adminEntries=entries.filter(e=>e.activity_id===a.id);
       const paid=adminEntries.reduce((s,e)=>s+Number(e.amount_paid||0),0);
+      const eventReceivedForBalance=a.type==='draw'&&a.status==='closed'&&Number(a.target_amount||0)>0
+        ?Number(a.target_amount)
+        :paid;
       const eventExpenses=activityExpenses.filter(x=>x.activity_id===a.id);
       const eventExpenseTotal=eventExpenses.reduce((s,x)=>s+Number(x.amount||0),0);
       const eventExpenseHtml=isAdmin()?'<div class="event-expense-summary">'+
         '<div><span>Saídas registradas</span><b>'+brl.format(eventExpenseTotal)+'</b></div>'+
-        '<div><span>Saldo após saídas</span><b>'+brl.format(paid-eventExpenseTotal)+'</b></div>'+
+        '<div><span>Saldo após saídas</span><b>'+brl.format(eventReceivedForBalance-eventExpenseTotal)+'</b></div>'+
         '<button type="button" class="outline-btn tiny" onclick="openActivityExpense(\''+a.id+'\',\''+String(a.title||'Evento').replaceAll("'","&#39;")+'\')">Registrar saída</button>'+
         (eventExpenses.length?'<details><summary>Ver saídas</summary><div class="event-expense-list">'+eventExpenses.map(x=>'<p><b>'+safe(x.description)+'</b><span>'+brl.format(Number(x.amount))+(x.inventory_status==='available'?' • disponível para próximo evento':'')+'</span></p>').join('')+'</div></details>':'')+
       '</div>':'';
