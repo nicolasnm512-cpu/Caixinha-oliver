@@ -450,6 +450,67 @@ async function refreshReceiptReference(){
   }
 }
 
+const RECEIPT_BUCKET='payment-receipts';
+
+function receiptFileKind(filename){
+  const ext=String(filename||'').split('.').pop()?.toLowerCase();
+  if(['jpg','jpeg','png','webp','gif'].includes(ext))return 'image';
+  if(ext==='pdf')return 'pdf';
+  return 'file';
+}
+
+async function createReceiptSignedUrl(receipt,download=false){
+  if(!receipt?.storage_path)throw new Error('Arquivo do comprovante não encontrado.');
+  const options=download?{download:receipt.original_filename||true}:undefined;
+  const {data,error}=await db.storage
+    .from(RECEIPT_BUCKET)
+    .createSignedUrl(receipt.storage_path,download?120:300,options);
+  if(error)throw error;
+  if(!data?.signedUrl)throw new Error('Não foi possível gerar o acesso ao comprovante.');
+  return data.signedUrl;
+}
+
+window.downloadReceiptFile=async id=>{
+  const receipt=window.__receiptFiles?.[id];
+  if(!receipt){toast('Comprovante não encontrado.');return}
+  try{
+    const url=await createReceiptSignedUrl(receipt,true);
+    const a=document.createElement('a');
+    a.href=url;
+    a.target='_blank';
+    a.rel='noopener';
+    a.download=receipt.original_filename||'comprovante';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }catch(err){toast(err.message||'Não foi possível baixar o comprovante.')}
+};
+
+window.openReceiptFile=async id=>{
+  const receipt=window.__receiptFiles?.[id];
+  if(!receipt){toast('Comprovante não encontrado.');return}
+  try{
+    const url=await createReceiptSignedUrl(receipt,false);
+    const kind=receiptFileKind(receipt.original_filename);
+    const preview=kind==='image'
+      ?`<img class="receipt-preview-image" src="${safe(url)}" alt="Comprovante ${safe(receipt.original_filename||'')}" />`
+      :kind==='pdf'
+        ?`<iframe class="receipt-preview-pdf" src="${safe(url)}" title="Comprovante"></iframe>`
+        :`<div class="receipt-generic-file"><span>📎</span><b>${safe(receipt.original_filename||'Arquivo')}</b><p>Use os botões abaixo para abrir ou baixar.</p></div>`;
+    openModal(`<div class="receipt-preview-modal">
+      <div class="panel-head">
+        <div><span class="eyebrow">COMPROVANTE</span><h3>${safe(receipt.original_filename||'Arquivo enviado')}</h3><p>${brl.format(Number(receipt.amount||0))} • ${formatDate(receipt.submitted_at)}</p></div>
+        ${statusBadge(receipt.status)}
+      </div>
+      <div class="receipt-preview-stage">${preview}</div>
+      <div class="receipt-preview-actions">
+        <a class="outline-btn" href="${safe(url)}" target="_blank" rel="noopener">Abrir em nova aba</a>
+        <button class="primary-btn" type="button" onclick="downloadReceiptFile('${receipt.id}')">Baixar arquivo</button>
+      </div>
+    </div>`);
+  }catch(err){toast(err.message||'Não foi possível abrir o comprovante.')}
+};
+
 async function renderPayments(){
   qs('#pixKeyText').textContent=state.settings?.pix_key||'58.119.805/0001-39';
   qs('#pixPayload').textContent=state.settings?.pix_base_payload||state.settings?.pix_key||'';
@@ -460,8 +521,19 @@ async function renderPayments(){
   if(qs('#pixAccount'))qs('#pixAccount').textContent=state.settings?.bank_account||'41655540-3';
   const q=db.from('payment_receipts').select('*').order('submitted_at',{ascending:false});
   if(!isAdmin())q.eq('member_id',state.user.id);
-  const {data:rows}=await q;
-  qs('#paymentHistory').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Tipo</th><th>Valor</th><th>Arquivo</th><th>Status</th>${isAdmin()?'<th>Ação</th>':''}</tr></thead><tbody>${(rows||[]).map(p=>`<tr><td>${formatDate(p.submitted_at)}</td><td>${safe(p.payment_kind)}</td><td>${brl.format(Number(p.amount))}</td><td>${safe(p.original_filename||'Arquivo')}</td><td>${statusBadge(p.status)}</td>${isAdmin()?`<td>${p.status==='pending'?`<button class="primary-btn small" onclick="reviewReceipt('${p.id}',true)">Confirmar</button> <button class="outline-btn" onclick="reviewReceipt('${p.id}',false)">Recusar</button>`:'—'}</td>`:''}</tr>`).join('')||`<tr><td colspan="${isAdmin()?6:5}">Nenhum comprovante enviado.</td></tr>`}</tbody></table>`;
+  const {data:rows,error}=await q;
+  if(error){qs('#paymentHistory').innerHTML='<div class="stack-item"><p>Não foi possível carregar os comprovantes.</p></div>';return}
+  window.__receiptFiles=Object.fromEntries((rows||[]).map(r=>[r.id,r]));
+  const typeLabel={contribution:'Cota mensal',loan:'Empréstimo',draw:'Rifa',trip:'Passeio',other:'Outro'};
+  qs('#paymentHistory').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Tipo</th><th>Valor</th><th>Comprovante</th><th>Status</th>${isAdmin()?'<th>Ação</th>':''}</tr></thead><tbody>${(rows||[]).map(p=>`<tr>
+    <td>${formatDate(p.submitted_at)}</td>
+    <td>${safe(typeLabel[p.payment_kind]||p.payment_kind)}</td>
+    <td>${brl.format(Number(p.amount))}</td>
+    <td><div class="receipt-file-actions"><button class="outline-btn tiny" type="button" onclick="openReceiptFile('${p.id}')">Visualizar</button><button class="ghost-btn tiny" type="button" onclick="downloadReceiptFile('${p.id}')">Baixar</button><small>${safe(p.original_filename||'Arquivo')}</small></div></td>
+    <td>${statusBadge(p.status)}</td>
+    ${isAdmin()?`<td>${p.status==='pending'?`<div class="row-actions"><button class="primary-btn small" onclick="reviewReceipt('${p.id}',true)">Confirmar</button><button class="outline-btn small" onclick="reviewReceipt('${p.id}',false)">Recusar</button></div>`:'—'}</td>`:''}
+  </tr>`).join('')||`<tr><td colspan="${isAdmin()?6:5}">Nenhum comprovante enviado.</td></tr>`}</tbody></table>`;
+  enhanceResponsiveTables(qs('#paymentHistory'));
   if(!isAdmin())await refreshReceiptReference();
 }
 
