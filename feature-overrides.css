@@ -973,3 +973,66 @@ body{min-width:320px}
   .event-expense-summary details{grid-column:auto}
   .event-expense-summary>button{width:100%}
 }
+
+
+/* ===== Comprovantes seguros: visualizar + baixar ===== */
+.receipt-file-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  align-items:center;
+}
+.receipt-file-actions small{
+  flex-basis:100%;
+  color:var(--muted);
+  font-size:9px;
+  overflow-wrap:anywhere;
+}
+.ghost-btn{
+  border:0;
+  background:transparent;
+  color:#7a5a19;
+  font-weight:800;
+  cursor:pointer;
+}
+.receipt-preview-stage{
+  margin-top:12px;
+  min-height:220px;
+  max-height:68vh;
+  display:grid;
+  place-items:center;
+  overflow:auto;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#f6f4ee;
+}
+.receipt-preview-image{
+  max-width:100%;
+  height:auto;
+  display:block;
+  border-radius:10px;
+}
+.receipt-preview-pdf{
+  width:100%;
+  min-height:62vh;
+  border:0;
+  background:#fff;
+}
+.receipt-generic-file{
+  padding:30px;
+  text-align:center;
+}
+.receipt-generic-file span{display:block;font-size:38px}
+.receipt-generic-file b,.receipt-generic-file p{display:block;margin-top:8px}
+.receipt-preview-actions{
+  display:flex;
+  gap:8px;
+  justify-content:flex-end;
+  margin-top:12px;
+}
+@media(max-width:620px){
+  .receipt-preview-stage{max-height:60vh}
+  .receipt-preview-pdf{min-height:56vh}
+  .receipt-preview-actions{display:grid;grid-template-columns:1fr}
+  .receipt-preview-actions>*{width:100%;text-align:center}
+}
