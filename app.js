@@ -244,8 +244,11 @@ async function renderDashboard(){
   if(memberDashboardError){
     toast('Não foi possível carregar seu resumo financeiro.');
   }else if(memberData){
-    qs('#memberPaidContributions').textContent=brl.format(Number(memberData.paid_contributions||0));
-    qs('#memberInterestYield').textContent=brl.format(Number(memberData.interest_yield||0));
+    const paidContributions=Number(memberData.paid_contributions||0);
+    const interestYield=Number(memberData.interest_yield||0);
+    qs('#memberPaidContributions').textContent=brl.format(paidContributions);
+    qs('#memberInterestYield').textContent=brl.format(interestYield);
+    if(qs('#memberAccumulatedTotal'))qs('#memberAccumulatedTotal').textContent=brl.format(paidContributions+interestYield);
   }
 
 }
