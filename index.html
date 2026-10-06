@@ -512,10 +512,36 @@
     <button id="chatbotEscalate" class="chatbot-escalate" type="button">Solicitar atendimento administrativo</button>
   </section>
 
+  <button id="adminAgentFab" class="admin-agent-fab hidden" type="button" aria-label="Abrir Oliver ADM">
+    <span>⚡</span><b>ADM</b>
+  </button>
+  <section id="adminAgentPanel" class="admin-agent-panel hidden" aria-label="Oliver ADM">
+    <div class="admin-agent-head">
+      <div><strong>Oliver ADM</strong><span>Atualizações financeiras com confirmação</span></div>
+      <button id="adminAgentClose" class="chatbot-close" type="button">×</button>
+    </div>
+    <div id="adminAgentMessages" class="admin-agent-messages">
+      <div class="admin-agent-msg bot">Pode escrever de forma simples. Ex.: “Anderson pagou R$ 100 de juros” ou “atualiza a cota da Gisele para R$ 100 em outubro”. Nenhuma alteração é aplicada sem confirmação.</div>
+    </div>
+    <div class="admin-agent-quick">
+      <button type="button" data-template="Consulta Tayná">Consultar cotista</button>
+      <button type="button" data-template="Gisele pagou R$ 100 de cota em outubro">Atualizar cota</button>
+      <button type="button" data-template="Anderson pagou R$ 100 de juros">Registrar juros</button>
+      <button type="button" data-template="Ajusta os juros da Tayná para R$ 187,50">Ajustar juros</button>
+      <button type="button" data-template="Limite do Anderson R$ 700">Editar limite</button>
+    </div>
+    <form id="adminAgentForm" class="admin-agent-form">
+      <textarea id="adminAgentInput" rows="2" placeholder="Digite a atualização ou consulta..." required></textarea>
+      <button class="primary-btn" type="submit">Enviar</button>
+    </form>
+    <div class="admin-agent-note">O Oliver ADM altera somente dados financeiros autorizados. Código, layout, imagens e estrutura continuam bloqueados para o agente.</div>
+  </section>
+
   <div id="modal" class="modal hidden"><div class="modal-card"><button id="closeModal" class="modal-close">×</button><div id="modalContent"></div></div></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
   <script src="/config.js?v=20261004-ui-v8"></script>
   <script src="/app.js?v=20261004-ui-v8"></script>
   <script src="/features.js?v=20261004-ui-v8"></script>
+  <script src="/admin-agent.js?v=20261006-final-v1"></script>
 </body>
 </html>
