@@ -312,7 +312,7 @@
       const eventExpenseTotal=eventExpenses.reduce((s,x)=>s+Number(x.amount||0),0);
       const eventExpenseHtml=isAdmin()?'<div class="event-expense-summary">'+
         '<div><span>Saídas registradas</span><b>'+brl.format(eventExpenseTotal)+'</b></div>'+
-        '<div><span>Saldo realizado</span><b>'+brl.format(paid-eventExpenseTotal)+'</b></div>'+
+        '<div><span>Saldo após saídas</span><b>'+brl.format(paid-eventExpenseTotal)+'</b></div>'+
         '<button type="button" class="outline-btn tiny" onclick="openActivityExpense(\''+a.id+'\',\''+String(a.title||'Evento').replaceAll("'","&#39;")+'\')">Registrar saída</button>'+
         (eventExpenses.length?'<details><summary>Ver saídas</summary><div class="event-expense-list">'+eventExpenses.map(x=>'<p><b>'+safe(x.description)+'</b><span>'+brl.format(Number(x.amount))+(x.inventory_status==='available'?' • disponível para próximo evento':'')+'</span></p>').join('')+'</div></details>':'')+
       '</div>':'';
