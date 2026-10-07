@@ -296,6 +296,11 @@
     $(id).addEventListener('change',historicalPreview);
     $(id).addEventListener('input',historicalPreview);
   }
+  $('#yieldShareMember').addEventListener('change',()=>{
+    const selected=getMember($('#yieldShareMember').value);
+    if(selected)$('#yieldShareCount').value=String(selected.share_count);
+    historicalPreview();
+  });
   let wasVisible=false;
   function check(){
     const visible=!!state?.user&&isAdmin()&&!$('#appView').classList.contains('hidden');
