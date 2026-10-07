@@ -5,7 +5,7 @@
   if(!box)return;
   const fmt=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
   const names=new Map();
-  let members=[],schedules=[],raffles=[],batches=[],lastAdjustment=null,lastRaffle=null,loading=false;
+  let members=[],schedules=[],raffles=[],eventExpenses=[],batches=[],lastAdjustment=null,lastRaffle=null,loading=false;
 
   function tell(message){
     if(typeof toast==='function')toast(message);
@@ -36,20 +36,37 @@
   }
   function historicalPreview(){
     const memberId=$('#yieldShareMember').value;
-    const date=$('#yieldEffectiveDate').value;
+    const effective=$('#yieldEffectiveDate').value;
     const qty=Number($('#yieldShareCount').value);
     const member=getMember(memberId);
     const el=$('#yieldShareHistorical');
     if(!el||!member)return;
-    const row=raffles.filter(r=>r.ends_at).sort((a,b)=>a.ends_at.localeCompare(b.ends_at))
-      .map(a=>{
-        let shares=countOn(memberId,a.ends_at);
-        if(date&&Number.isInteger(qty)&&qty>=1&&qty<=20&&a.ends_at>=date)
-          shares=qty;
-        return a.title+': '+shares+' cota'+(shares===1?'':'s');
+    const hypothetical=(id,date)=>{
+      if(id===memberId&&effective&&qty>=1&&qty<=20&&Number.isInteger(qty)&&date>=effective)return qty;
+      return countOn(id,date);
+    };
+    let estimatedTotal=0;
+    const rows=raffles.filter(r=>r.status==='closed'&&r.ends_at)
+      .sort((a,b)=>a.ends_at.localeCompare(b.ends_at)).map(a=>{
+        const myShares=hypothetical(memberId,a.ends_at);
+        const realShares=members.reduce((sum,m)=>sum+hypothetical(m.id,a.ends_at),0);
+        const virtual=Math.max(1,Number(state.settings?.admin_virtual_interest_shares||1));
+        const fees=Number(state.settings?.interest_admin_fee_percent??10);
+        const paidCost=eventExpenses.filter(e=>e.activity_id===a.id)
+          .reduce((sum,e)=>sum+Number(e.amount||0),0);
+        const gross=Math.max(0,Number(a.target_amount||0)-paidCost);
+        const grossCents=Math.round(gross*100);
+        const feeCents=Math.round(grossCents*fees/100);
+        const perShareCents=realShares>0?Math.floor((grossCents-feeCents)/(realShares+virtual)):0;
+        const receivedCents=perShareCents*myShares;
+        estimatedTotal+=receivedCents;
+        return a.title+': '+myShares+' cota(s), estimativa '+fmt.format(receivedCents/100);
       });
-    el.textContent='Participação por rifa (simulação): '+(row.length?row.join(' • '):'sem rifas cadastradas')+
-      '. Créditos de rifas já fechadas não serão reescritos automaticamente.';
+    el.textContent='SIMULAÇÃO POR RIFA — '+member.full_name+'\\n'+
+      (rows.length?rows.join('\\n'):'Sem rifas históricas cadastradas.')+
+      '\\nSubtotal estimado destas rifas: '+fmt.format(estimatedTotal/100)+
+      '\\nNão inclui juros de empréstimos nem reajustes de centavos do fechamento anual.'+
+      '\\nImportante: o total consolidado já creditado de 2026 NÃO é recalculado por esta programação.';
   }
   function invalidateAdjustment(){
     lastAdjustment=null;
@@ -111,15 +128,16 @@
     if(loading||!isAdmin())return;
     loading=true;
     try{
-      const [m,s,r,d]=await Promise.all([
+      const [m,s,r,ex,d]=await Promise.all([
         queryTable('profiles','id,full_name,cotista_number,share_count',
           q=>q.not('cotista_number','is',null).order('cotista_number')),
         queryTable('member_share_schedule','member_id,effective_from,share_count,reason'),
-        queryTable('activities','id,title,type,status,ends_at',
+        queryTable('activities','id,title,type,status,ends_at,target_amount',
           q=>q.eq('type','draw').order('ends_at')),
+        queryTable('activity_expenses','activity_id,amount'),
         queryTable('interest_distributions','batch_id',q=>q.eq('status','credited'))
       ]);
-      members=m;schedules=s;raffles=r;
+      members=m;schedules=s;raffles=r;eventExpenses=ex;
       names.clear();members.forEach(mem=>names.set(mem.id,mem.full_name));
       const chosenBatchIds=[...new Set(d.map(x=>x.batch_id).filter(Boolean))];
       batches=chosenBatchIds.length?await queryTable('interest_distribution_batches',
