@@ -609,7 +609,7 @@
     </div>
     <div id="chatbotQuick" class="chatbot-quick">
       <button type="button">Minha cota</button>
-      <button type="button">Meu rendimento de juros</button>
+      <button type="button">Meu rendimento</button>
       <button type="button">Meu limite</button>
       <button type="button">Meu empréstimo</button>
       <button type="button">Próxima parcela</button>
@@ -629,24 +629,27 @@
   </button>
   <section id="adminAgentPanel" class="admin-agent-panel hidden" aria-label="Oliver ADM">
     <div class="admin-agent-head">
-      <div><strong>Oliver ADM</strong><span>Atualizações financeiras com confirmação</span></div>
+      <div><strong>Oliver ADM</strong><span>Operações administrativas com confirmação</span></div>
       <button id="adminAgentClose" class="chatbot-close" type="button">×</button>
     </div>
     <div id="adminAgentMessages" class="admin-agent-messages">
-      <div class="admin-agent-msg bot">Pode escrever de forma simples. Ex.: “Anderson pagou R$ 100 de juros” ou “atualiza a cota da Gisele para R$ 100 em outubro”. Nenhuma alteração é aplicada sem confirmação.</div>
+      <div class="admin-agent-msg bot">Pode escrever de forma simples. Eu consulto dados e preparo operações administrativas. Ex.: “Consulta Tayná”, “Confirmar comprovante da Gisele” ou “Aprovar empréstimo da Gisele vencimento 20/11/2026”. Nenhuma alteração é aplicada sem confirmação.</div>
     </div>
     <div class="admin-agent-quick">
+      <button type="button" data-template="Ajuda">Ver comandos</button>
       <button type="button" data-template="Consulta Tayná">Consultar cotista</button>
+      <button type="button" data-template="Confirmar comprovante da Gisele">Comprovante</button>
+      <button type="button" data-template="Aprovar empréstimo da Gisele vencimento 20/11/2026">Aprovar empréstimo</button>
       <button type="button" data-template="Gisele pagou R$ 100 de cota em outubro">Atualizar cota</button>
       <button type="button" data-template="Anderson pagou R$ 100 de juros">Registrar juros</button>
-      <button type="button" data-template="Ajusta os juros da Tayná para R$ 187,50">Ajustar juros</button>
       <button type="button" data-template="Limite do Anderson R$ 700">Editar limite</button>
+      <button type="button" data-template="Aviso: Comunicado | Escreva aqui a mensagem para os cotistas">Enviar aviso</button>
     </div>
     <form id="adminAgentForm" class="admin-agent-form">
       <textarea id="adminAgentInput" rows="2" placeholder="Digite a atualização ou consulta..." required></textarea>
       <button class="primary-btn" type="submit">Enviar</button>
     </form>
-    <div class="admin-agent-note">O Oliver ADM altera somente dados financeiros autorizados. Código, layout, imagens e estrutura continuam bloqueados para o agente.</div>
+    <div class="admin-agent-note">O Oliver ADM executa somente operações administrativas autorizadas e sempre pede confirmação. Código, layout, credenciais e estrutura do sistema continuam bloqueados para o agente.</div>
   </section>
 
   <div id="modal" class="modal hidden"><div class="modal-card"><button id="closeModal" class="modal-close">×</button><div id="modalContent"></div></div></div>
