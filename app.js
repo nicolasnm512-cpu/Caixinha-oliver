@@ -262,6 +262,35 @@ async function renderDashboard(){
     if(qs('#memberAccumulatedTotal'))qs('#memberAccumulatedTotal').textContent=brl.format(paidContributions+interestYield);
   }
 
+  const upcomingBox=qs('#memberUpcomingActivities');
+  const receiptsBox=qs('#memberRecentReceipts');
+  if(upcomingBox||receiptsBox){
+    const [{data:activities},{data:receipts}] = await Promise.all([
+      db.from('activities').select('id,title,type,status,created_at').neq('status','draft').order('created_at',{ascending:false}).limit(5),
+      db.from('payment_receipts').select('id,payment_kind,amount,status,submitted_at').eq('member_id',state.user.id).order('submitted_at',{ascending:false}).limit(3)
+    ]);
+    const closedStatuses=new Set(['closed','cancelled','completed','finished','encerrada','encerrado']);
+    const upcoming=(activities||[]).filter(a=>!closedStatuses.has(String(a.status||'').toLowerCase())).slice(0,2);
+    if(upcomingBox){
+      upcomingBox.innerHTML=upcoming.map(a=>`
+        <button class="member-feed-row" type="button" data-page-jump="activities">
+          <span class="member-feed-icon">${a.type==='trip'?'▣':'★'}</span>
+          <span class="member-feed-copy"><b>${safe(a.title||'Atividade')}</b><small>${a.type==='trip'?'Passeio':'Rifa'} • ${formatDate(a.created_at)}</small></span>
+          <span class="member-feed-arrow">›</span>
+        </button>`).join('')||'<div class="member-feed-empty">Nenhuma atividade aberta no momento.</div>';
+    }
+    if(receiptsBox){
+      const receiptLabels={contribution:'Pagamento da cota',loan:'Parcela de empréstimo',draw:'Rifa',trip:'Passeio',other:'Pagamento'};
+      receiptsBox.innerHTML=(receipts||[]).map(p=>`
+        <button class="member-feed-row" type="button" data-page-jump="payments">
+          <span class="member-feed-icon receipt">▤</span>
+          <span class="member-feed-copy"><b>${safe(receiptLabels[p.payment_kind]||'Pagamento')}</b><small>${formatDate(p.submitted_at)} • ${safe(String(p.status||'Pendente'))}</small></span>
+          <span class="member-feed-value">${brl.format(Number(p.amount||0))}</span>
+          <span class="member-feed-arrow">›</span>
+        </button>`).join('')||'<div class="member-feed-empty">Nenhum comprovante enviado ainda.</div>';
+    }
+  }
+
 }
 
 async function renderRequests(){

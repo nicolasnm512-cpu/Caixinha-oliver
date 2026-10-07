@@ -1196,3 +1196,267 @@ body{min-width:320px}
 .loan-interest-grid>div:nth-child(4) strong{color:#9e4930}
 @media(max-width:1050px){.loan-interest-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:620px){.loan-interest-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.loan-interest-grid>div{padding:12px 9px}}
+
+
+/* ===== Member UI v14 • aprovado no Manual do Cotista ===== */
+:root{
+  --manual-gold:#d6aa47;
+  --manual-gold-strong:#b8831f;
+  --manual-cream:#f7f2e8;
+  --manual-cream-2:#fffaf0;
+  --manual-black:#0d0d0d;
+  --manual-ink:#17130b;
+  --manual-muted:#746b5d;
+  --manual-line:#e9dfcb;
+}
+
+.app-shell:not(.is-admin){
+  min-height:100dvh;
+  background:
+    radial-gradient(circle at 92% 2%,rgba(220,176,79,.19),transparent 18rem),
+    linear-gradient(180deg,#fffdf8 0,#f7f2e8 48%,#f4eee2 100%);
+  color:var(--manual-ink);
+}
+.app-shell:not(.is-admin) .main{
+  width:min(760px,100%);
+  max-width:760px;
+  margin:0 auto;
+  padding:0 18px 104px;
+}
+.app-shell:not(.is-admin) .member-app-brand{
+  margin:0 -18px 18px;
+  min-height:92px;
+  padding:18px 20px 20px;
+  display:flex!important;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  color:#fff;
+  background:
+    radial-gradient(circle at 78% 0,rgba(221,174,67,.23),transparent 9rem),
+    linear-gradient(135deg,#080808,#17130b 62%,#2a2111);
+  border-bottom:1px solid rgba(215,172,75,.28);
+  box-shadow:0 12px 28px rgba(27,20,7,.13);
+}
+.member-app-brand-copy{display:flex;align-items:center;gap:11px;min-width:0}
+.member-app-brand-copy img{width:48px;height:48px;object-fit:contain;filter:drop-shadow(0 7px 14px rgba(0,0,0,.3))}
+.member-app-brand-copy strong,.member-app-brand-copy span{display:block}
+.member-app-brand-copy strong{font-size:20px;line-height:1;color:#fff;letter-spacing:.015em}
+.member-app-brand-copy span{margin-top:3px;color:#e8bd59;font-weight:800;letter-spacing:.08em;font-size:13px}
+.member-profile-button{
+  width:42px;height:42px;border-radius:999px;border:1px solid rgba(220,176,79,.72);
+  display:grid;place-items:center;background:rgba(255,255,255,.02);color:#edc867;
+  font-size:19px;cursor:pointer;box-shadow:inset 0 0 0 3px rgba(0,0,0,.18)
+}
+
+.app-shell:not(.is-admin) .topbar{
+  min-height:0;height:auto;margin:0 0 14px;padding:0;border:0;align-items:end
+}
+.app-shell:not(.is-admin) .topbar h2{
+  font-size:27px;line-height:1.05;margin:0;color:var(--manual-ink);letter-spacing:-.035em
+}
+.app-shell:not(.is-admin) .topbar p{font-size:12px;color:var(--manual-muted);margin-top:5px}
+.app-shell:not(.is-admin) .topbar .mobile-brand,
+.app-shell:not(.is-admin) .topbar .status-dot,
+.app-shell:not(.is-admin) .topbar .outline-btn{display:none!important}
+.app-shell:not(.is-admin):has(#dashboard.active-page) .topbar{display:none}
+
+.app-shell:not(.is-admin) .home-profile-card{display:none}
+.app-shell:not(.is-admin) .member-summary-grid{
+  position:relative;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  gap:0!important;
+  margin:0 0 14px;
+  padding:17px 18px 12px;
+  border:1px solid var(--manual-line);
+  border-radius:22px;
+  background:rgba(255,255,255,.94);
+  box-shadow:0 12px 32px rgba(55,41,12,.07);
+  overflow:hidden;
+}
+.app-shell:not(.is-admin) .member-summary-grid:after{
+  content:"Ativo";
+  position:absolute;right:17px;top:17px;
+  padding:7px 13px;border-radius:999px;
+  background:#fff1c8;color:#75530d;font-size:11px;font-weight:900
+}
+.app-shell:not(.is-admin) .member-summary-grid .home-money-card{
+  min-height:0!important;
+  padding:13px 8px;
+  border:0!important;border-radius:0!important;
+  box-shadow:none!important;background:transparent!important;
+  overflow:visible
+}
+.app-shell:not(.is-admin) .member-summary-grid .home-money-card small{display:none}
+.app-shell:not(.is-admin) .member-summary-grid .home-money-card span{
+  color:#4e5b82;font-size:11px;font-weight:800
+}
+.app-shell:not(.is-admin) .member-summary-grid .home-money-card strong{
+  margin:5px 0 0;color:var(--manual-ink);font-size:clamp(18px,5.5vw,25px);line-height:1.08
+}
+.app-shell:not(.is-admin) .member-summary-grid .home-money-card.cash{
+  grid-column:1/-1;grid-row:1;
+  padding:6px 8px 17px;
+  border-bottom:1px solid var(--manual-line)!important
+}
+.app-shell:not(.is-admin) .member-summary-grid .home-money-card.cash span{font-size:0}
+.app-shell:not(.is-admin) .member-summary-grid .home-money-card.cash span:before{
+  content:"Meu saldo";font-size:12px;color:#4e5b82;font-weight:800
+}
+.app-shell:not(.is-admin) .member-summary-grid .home-money-card.cash strong{
+  font-size:clamp(29px,8vw,38px);letter-spacing:-.045em
+}
+.app-shell:not(.is-admin) .member-summary-grid .home-money-card.paid{
+  grid-row:2;border-right:1px solid var(--manual-line)!important;padding-left:8px
+}
+.app-shell:not(.is-admin) .member-summary-grid .home-money-card.interest{grid-row:2;padding-left:18px}
+.app-shell:not(.is-admin) .member-summary-grid .home-money-card.interest strong{color:#a47219}
+
+.member-dashboard-feed{
+  display:block!important;
+  margin-bottom:14px;
+  border:1px solid var(--manual-line);
+  border-radius:22px;
+  background:rgba(255,255,255,.94);
+  box-shadow:0 12px 32px rgba(55,41,12,.055);
+  overflow:hidden
+}
+.member-feed-section{padding:16px 17px}
+.member-feed-section+.member-feed-section{border-top:1px solid var(--manual-line)}
+.member-feed-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:9px}
+.member-feed-head h3{margin:0;font-size:17px;letter-spacing:-.02em}
+.member-feed-head p{margin:3px 0 0;font-size:9.5px;color:var(--manual-muted);line-height:1.4}
+.member-feed-head button{border:0;background:transparent;color:#795511;font-size:10px;font-weight:900;padding:3px 0;cursor:pointer;white-space:nowrap}
+.member-feed-list{display:grid}
+.member-feed-row{
+  width:100%;display:grid;grid-template-columns:38px minmax(0,1fr) auto 18px;gap:9px;align-items:center;
+  border:0;border-top:1px solid #f0e9dc;background:transparent;padding:11px 0;text-align:left;color:var(--manual-ink);cursor:pointer
+}
+.member-feed-row:first-child{border-top:0}
+.member-feed-icon{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:#fff3d4;color:#9a6c16;font-weight:900}
+.member-feed-icon.receipt{background:#edf8ef;color:#2d8754}
+.member-feed-copy{min-width:0}.member-feed-copy b,.member-feed-copy small{display:block}
+.member-feed-copy b{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.member-feed-copy small{margin-top:3px;font-size:9px;color:var(--manual-muted)}
+.member-feed-value{font-size:10px;color:#31815a;font-weight:900;white-space:nowrap}
+.member-feed-arrow{font-size:22px;color:#8c6a22;text-align:right}
+.member-feed-empty{padding:10px 0;color:var(--manual-muted);font-size:10px}
+
+.app-shell:not(.is-admin) .home-quick-card{display:none}
+.app-shell:not(.is-admin) .panel,
+.app-shell:not(.is-admin) .kpi,
+.app-shell:not(.is-admin) .loan-card,
+.app-shell:not(.is-admin) .activity-card{
+  border-color:var(--manual-line);
+  background:rgba(255,255,255,.95);
+  box-shadow:0 8px 24px rgba(55,41,12,.05)
+}
+.app-shell:not(.is-admin) .panel{border-radius:20px}
+.app-shell:not(.is-admin) .panel-head h3,
+.app-shell:not(.is-admin) .panel-head.standalone h3{
+  position:relative;padding-left:13px;font-size:20px;letter-spacing:-.025em
+}
+.app-shell:not(.is-admin) .panel-head h3:before,
+.app-shell:not(.is-admin) .panel-head.standalone h3:before{
+  content:"";position:absolute;left:0;top:2px;bottom:2px;width:4px;border-radius:999px;background:linear-gradient(#efc65f,#bb8420)
+}
+.app-shell:not(.is-admin) .panel-head p,
+.app-shell:not(.is-admin) .panel-head.standalone p{color:var(--manual-muted)}
+.app-shell:not(.is-admin) .primary-btn{background:linear-gradient(135deg,#16120b,#6e4d12);color:#fff;border:1px solid #9f741f}
+.app-shell:not(.is-admin) .outline-btn{border-color:#dfd2b8;color:#6d5017;background:#fffdf8}
+
+.app-shell:not(.is-admin) #payments .payment-layout{
+  display:flex;flex-direction:column;gap:14px
+}
+.app-shell:not(.is-admin) #payments .payment-layout>article:nth-child(2){order:1}
+.app-shell:not(.is-admin) #payments .payment-layout>article:nth-child(1){order:2}
+.app-shell:not(.is-admin) .payment-account{
+  background:linear-gradient(145deg,#0b0b0b,#2b2110);
+  border-color:rgba(215,172,75,.42)
+}
+.app-shell:not(.is-admin) .payment-account-logo b{color:#efc962}
+.app-shell:not(.is-admin) .qr-wrap.official{border-color:var(--manual-line);background:#fffdf9}
+
+.app-shell:not(.is-admin) .loan-tabs,
+.app-shell:not(.is-admin) .activity-tabs{
+  border-color:var(--manual-line);background:#f0eadf
+}
+.app-shell:not(.is-admin) .loan-tab.active,
+.app-shell:not(.is-admin) .activity-tab.active{background:#111;color:#efca70}
+.app-shell:not(.is-admin) .loan-tab.active b,
+.app-shell:not(.is-admin) .activity-tab.active b{background:#3a301d;color:#efca70}
+.app-shell:not(.is-admin) .progress i{background:linear-gradient(90deg,#b88420,#dfbd62)}
+.app-shell:not(.is-admin) .activity-cover,
+.app-shell:not(.is-admin) .activity-cover.sorteio,
+.app-shell:not(.is-admin) .activity-cover.passeio{
+  background:linear-gradient(135deg,#0b0b0b,#30240f)!important
+}
+
+.app-shell:not(.is-admin) .sidebar{
+  position:fixed;
+  inset:auto 50% 0 auto;
+  transform:translateX(50%);
+  width:min(760px,100%);
+  height:78px;
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+  display:block;
+  background:linear-gradient(180deg,#111,#070707);
+  border-top:1px solid rgba(224,184,86,.28);
+  color:#fff;
+  z-index:50;
+  box-shadow:0 -12px 30px rgba(25,17,4,.18)
+}
+.app-shell:not(.is-admin) .sidebar-brand,
+.app-shell:not(.is-admin) .sidebar-footer{display:none!important}
+.app-shell:not(.is-admin) .sidebar nav{
+  width:100%;height:100%;margin:0;padding:0;
+  display:flex;align-items:center;justify-content:space-around;gap:4px;overflow:visible
+}
+.app-shell:not(.is-admin) .sidebar .nav-item{
+  flex:1 1 25%;width:auto;max-width:25%;height:59px;
+  padding:6px 3px;border-radius:12px;
+  display:flex!important;flex-direction:column;justify-content:center;align-items:center;gap:4px;
+  color:#d4d8e5;background:transparent;text-align:center;font-size:9px!important;line-height:1.05
+}
+.app-shell:not(.is-admin) .sidebar .nav-item>span{font-size:18px;width:auto;line-height:1}
+.app-shell:not(.is-admin) .sidebar .nav-item .nav-label{font-size:9px;display:block;max-width:100%}
+.app-shell:not(.is-admin) .sidebar .nav-item.active{
+  background:linear-gradient(145deg,#3c2d11,#171109);
+  color:#f0c85f;
+  box-shadow:inset 0 0 0 1px rgba(223,180,76,.12)
+}
+.app-shell:not(.is-admin) .sidebar .nav-item[data-page="dashboard"]{order:1}
+.app-shell:not(.is-admin) .sidebar .nav-item[data-page="payments"]{order:2}
+.app-shell:not(.is-admin) .sidebar .nav-item[data-page="activities"]{order:3}
+.app-shell:not(.is-admin) .sidebar .nav-item[data-page="loans"]{order:4}
+.app-shell:not(.is-admin) .sidebar .nav-item[data-page="requests"],
+.app-shell:not(.is-admin) .sidebar .nav-item[data-page="account"],
+.app-shell:not(.is-admin) .sidebar .nav-item[data-page="members"],
+.app-shell:not(.is-admin) .sidebar .nav-item[data-page="admin"]{display:none!important}
+
+@media(min-width:761px){
+  .app-shell:not(.is-admin) .member-app-brand{border-radius:0 0 24px 24px}
+  .app-shell:not(.is-admin) .sidebar{
+    width:min(680px,calc(100% - 40px));bottom:14px;border:1px solid rgba(224,184,86,.28);border-radius:20px
+  }
+}
+@media(max-width:760px){
+  .app-shell:not(.is-admin) .main{width:100%!important;margin:0;padding:0 12px 100px}
+  .app-shell:not(.is-admin) .member-app-brand{margin:0 -12px 14px;padding-left:16px;padding-right:16px}
+  .app-shell:not(.is-admin) .sidebar{width:100%!important;transform:translateX(50%)!important;height:78px!important}
+  .app-shell:not(.is-admin) .member-summary-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+  .app-shell:not(.is-admin) .member-summary-grid .home-money-card{display:block!important}
+  .app-shell:not(.is-admin) .member-summary-grid .home-money-card strong{font-size:18px}
+  .app-shell:not(.is-admin) .member-summary-grid .home-money-card.cash strong{font-size:31px}
+  .app-shell:not(.is-admin) .kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .app-shell:not(.is-admin) .kpi{min-height:96px}
+}
+@media(max-width:420px){
+  .member-app-brand-copy img{width:43px;height:43px}
+  .member-app-brand-copy strong{font-size:18px}
+  .member-app-brand-copy span{font-size:12px}
+  .app-shell:not(.is-admin) .sidebar .nav-item{padding-left:2px;padding-right:2px}
+  .app-shell:not(.is-admin) .sidebar .nav-item .nav-label{font-size:8.5px}
+  .member-feed-value{display:none}
+}
