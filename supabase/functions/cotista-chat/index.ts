@@ -79,24 +79,10 @@ Deno.serve(async(req:Request)=>{
     }else if(command==="Meu rendimento"){
       intent="interest_yield";
       const year=new Date().getFullYear();
-      const res=await db.from("interest_distributions")
-        .select("amount")
-        .eq("member_id",user.id)
-        .eq("distribution_year",year)
-        .eq("status","credited");
-      const base=(res.data||[]).reduce((s:number,r:any)=>s+Number(r.amount||0),0);
-      const lineRes=await db.from("yield_adjustment_lines").select("batch_id,delta").eq("member_id",user.id);
-      const lines=lineRes.data||[];
-      let adjustment=0;
-      if(lines.length){
-        const ids=[...new Set(lines.map((x:any)=>x.batch_id).filter(Boolean))];
-        const batchRes=await db.from("interest_distribution_batches")
-          .select("id,transaction_date").in("id",ids)
-          .gte("transaction_date",year+"-01-01").lte("transaction_date",year+"-12-31");
-        const allowed=new Set((batchRes.data||[]).map((b:any)=>b.id));
-        adjustment=lines.filter((x:any)=>allowed.has(x.batch_id)).reduce((s:number,r:any)=>s+Number(r.delta||0),0);
-      }
-      const total=Math.round((base+adjustment)*100)/100;
+      const dashboardRes=await db.rpc("get_my_member_dashboard",{p_year:year});
+      if(dashboardRes.error)return json({error:"Não foi possível consultar seu rendimento agora."},400);
+      const dashboard=Array.isArray(dashboardRes.data)?dashboardRes.data[0]:dashboardRes.data;
+      const total=Number(dashboard?.interest_yield||0);
       answer="Seu rendimento confirmado em "+year+" é "+money(total)+". O valor considera juros recebidos, resultados aprovados das rifas e ajustes auditados de rendimento, conforme a quantidade de cotas de cada período.";
     }else if(command==="Meu limite"){
       intent="credit";
