@@ -13,7 +13,7 @@ const normalize=(s:string)=>s.normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").
 
 const COMMANDS=[
   "Minha cota",
-  "Meu rendimento de juros",
+  "Meu rendimento",
   "Meu limite",
   "Meu empréstimo",
   "Próxima parcela",
@@ -25,6 +25,7 @@ const COMMANDS=[
   "Avisos"
 ];
 const normalizedCommands=new Map(COMMANDS.map(c=>[normalize(c),c]));
+normalizedCommands.set(normalize("Meu rendimento de juros"),"Meu rendimento");
 const fallback="Esse assunto não faz parte das opções do Oliver Assistente. Em caso de dúvidas, fale com o administrativo.";
 
 Deno.serve(async(req:Request)=>{
@@ -75,7 +76,7 @@ Deno.serve(async(req:Request)=>{
       const shares=Number(profile.share_count||1);
       const monthly=Number(settings.monthly_share_amount||100)*shares;
       answer="Você possui "+shares+" cota"+(shares===1?"":"s")+". Valor mensal atual: "+money(monthly)+". Total confirmado em cotas em "+year+": "+money(total)+".";
-    }else if(command==="Meu rendimento de juros"){
+    }else if(command==="Meu rendimento"){
       intent="interest_yield";
       const year=new Date().getFullYear();
       const res=await db.from("interest_distributions")
@@ -83,8 +84,20 @@ Deno.serve(async(req:Request)=>{
         .eq("member_id",user.id)
         .eq("distribution_year",year)
         .eq("status","credited");
-      const total=(res.data||[]).reduce((s:number,r:any)=>s+Number(r.amount||0),0);
-      answer="Seu rendimento confirmado em "+year+" é "+money(total)+". O valor considera os rendimentos creditados da caixinha, incluindo juros recebidos e resultados aprovados das rifas, distribuídos conforme a quantidade de cotas.";
+      const base=(res.data||[]).reduce((s:number,r:any)=>s+Number(r.amount||0),0);
+      const lineRes=await db.from("yield_adjustment_lines").select("batch_id,delta").eq("member_id",user.id);
+      const lines=lineRes.data||[];
+      let adjustment=0;
+      if(lines.length){
+        const ids=[...new Set(lines.map((x:any)=>x.batch_id).filter(Boolean))];
+        const batchRes=await db.from("interest_distribution_batches")
+          .select("id,transaction_date").in("id",ids)
+          .gte("transaction_date",year+"-01-01").lte("transaction_date",year+"-12-31");
+        const allowed=new Set((batchRes.data||[]).map((b:any)=>b.id));
+        adjustment=lines.filter((x:any)=>allowed.has(x.batch_id)).reduce((s:number,r:any)=>s+Number(r.delta||0),0);
+      }
+      const total=Math.round((base+adjustment)*100)/100;
+      answer="Seu rendimento confirmado em "+year+" é "+money(total)+". O valor considera juros recebidos, resultados aprovados das rifas e ajustes auditados de rendimento, conforme a quantidade de cotas de cada período.";
     }else if(command==="Meu limite"){
       intent="credit";
       const res=await db.from("member_credit_summary").select("credit_limit,used_credit,available_credit").eq("member_id",user.id).maybeSingle();
@@ -155,7 +168,14 @@ Deno.serve(async(req:Request)=>{
       }
     }else if(command==="Comprovantes"){
       intent="receipt";
-      answer="Abra “Pagamentos e comprovantes”, selecione o pagamento e envie a foto ou PDF. O pagamento só fica confirmado após a conferência do administrativo.";
+      const res=await db.from("payment_receipts")
+        .select("payment_kind,amount,status,submitted_at")
+        .eq("member_id",user.id).order("submitted_at",{ascending:false}).limit(3);
+      const receipts=res.data||[];
+      const labels:any={pending:"pendente",confirmed:"confirmado",rejected:"recusado"};
+      answer=receipts.length
+        ?"Seus últimos comprovantes: "+receipts.map((r:any)=>money(r.amount)+" ("+(labels[r.status]||r.status)+")").join(" • ")+". Para enviar outro, abra “Pagamentos”."
+        :"Você ainda não enviou comprovantes. Abra “Pagamentos”, informe o valor e envie a foto ou PDF.";
     }else if(command==="Regulamento"){
       intent="rules";
       answer="O regulamento está disponível em “Meu cadastro”. Para qualquer interpretação ou situação não prevista, fale com o administrativo.";
