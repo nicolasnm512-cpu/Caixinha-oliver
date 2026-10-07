@@ -706,6 +706,7 @@ window.openMemberAdminDetails=id=>{
       <button class="primary-btn" onclick="editMemberCreditLimit('${m.id}')">Editar limite</button>
       <button class="outline-btn" onclick="toggleMemberAccess('${m.id}',${m.active?'false':'true'});closeModal()">${m.active?'Desativar acesso':'Ativar acesso'}</button>
       <button class="outline-btn" onclick="resetMemberPassword('${m.id}')">Redefinir senha</button>
+      <button class="outline-btn" onclick="resetMemberTerms('${m.id}')">Resetar termos para teste</button>
     </div>
   </div>`);
 };
@@ -733,6 +734,17 @@ window.editMemberCreditLimit=async id=>{
 };
 
 window.resetMemberPassword=async(id)=>{const name=window.__membersById?.[id]?.full_name||'cotista';const password=prompt(`Nova senha provisória para ${name} (mínimo 8 caracteres):`,'Oliver@2026');if(!password)return;if(password.length<8){toast('Use ao menos 8 caracteres.');return}try{await callAdminUsers({action:'reset_password',user_id:id,password});await renderMembers();toast('Senha redefinida com sucesso.')}catch(err){toast(err.message)}};
+
+window.resetMemberTerms=async(id)=>{
+  const name=window.__membersById?.[id]?.full_name||'cotista';
+  const ok=confirm(`Resetar somente o aceite de privacidade/regulamento de ${name}?\n\nNenhum valor, senha, empréstimo, cota ou comprovante será alterado. No próximo login, o painel ficará bloqueado até o regulamento ser aceito novamente.`);
+  if(!ok)return;
+  try{
+    const result=await callAdminUsers({action:'reset_terms',user_id:id});
+    closeModal();
+    toast(result?.message||'Termos resetados. Faça login com o cotista para testar.');
+  }catch(err){toast(err.message||'Não foi possível resetar os termos.')}
+};
 
 async function renderFinanceAgent(){
   if(!isAdmin())return;
