@@ -247,6 +247,30 @@
     });
   }
 
+  function applyActivityFilter(){
+    const filter=window.__activityFilter||'all';
+    let visible=0;
+    document.querySelectorAll('#activityCards > .activity-card').forEach(card=>{
+      const show=filter==='all'||card.dataset.activityType===filter;
+      card.classList.toggle('activity-filter-hidden',!show);
+      if(show)visible++;
+    });
+    document.querySelectorAll('#activityTabs .activity-tab').forEach(btn=>{
+      const active=btn.dataset.activityFilter===filter;
+      btn.classList.toggle('active',active);
+      btn.setAttribute('aria-selected',String(active));
+    });
+    const empty=document.querySelector('#activityEmptyFilter');
+    if(empty)empty.classList.toggle('hidden',visible>0);
+  }
+
+  document.querySelector('#activityTabs')?.addEventListener('click',e=>{
+    const btn=e.target.closest('[data-activity-filter]');
+    if(!btn)return;
+    window.__activityFilter=btn.dataset.activityFilter;
+    applyActivityFilter();
+  });
+
   window.renderActivities=async function(){
     const {data:acts,error}=await db.from('activities')
       .select('*,raffle_configs(*),raffle_prizes(*),trip_configs(*),trip_prizes(*)')
@@ -254,17 +278,29 @@
       .order('created_at',{ascending:false});
     if(error){$('#activityCards').innerHTML='<div class="stack-item"><p>Não foi possível carregar as atividades.</p></div>';return}
 
-    let entries=[],tripSeats=[];
+    let entries=[],tripSeats=[],activityExpenses=[];
     const ids=(acts||[]).map(a=>a.id);
     const tripIds=(acts||[]).filter(a=>a.type==='trip').map(a=>a.id);
     if(ids.length){
-      const {data}=await db.from('activity_entries').select('*').in('activity_id',ids);
-      entries=data||[];
+      const [{data:entryData},{data:expenseData,error:expenseError}]=await Promise.all([
+        db.from('activity_entries').select('*').in('activity_id',ids),
+        db.from('activity_expenses').select('*').in('activity_id',ids).order('occurred_at')
+      ]);
+      entries=entryData||[];
+      activityExpenses=expenseError?[]:(expenseData||[]);
     }
     if(tripIds.length){
       const {data}=await db.from('trip_seats').select('*').in('activity_id',tripIds).order('seat_number');
       tripSeats=data||[];
     }
+
+    const allActs=acts||[];
+    const allCount=document.querySelector('#allActivityCount');
+    const drawCount=document.querySelector('#drawActivityCount');
+    const tripCount=document.querySelector('#tripActivityCount');
+    if(allCount)allCount.textContent=String(allActs.length);
+    if(drawCount)drawCount.textContent=String(allActs.filter(a=>a.type==='draw').length);
+    if(tripCount)tripCount.textContent=String(allActs.filter(a=>a.type==='trip').length);
 
     $('#activityCards').innerHTML=(acts||[]).map(a=>{
       const raffleCfg=Array.isArray(a.raffle_configs)?a.raffle_configs[0]:a.raffle_configs;
@@ -272,19 +308,52 @@
       const myEntry=entries.find(e=>e.activity_id===a.id&&e.member_id===state.user.id);
       const adminEntries=entries.filter(e=>e.activity_id===a.id);
       const paid=adminEntries.reduce((s,e)=>s+Number(e.amount_paid||0),0);
+      const eventReceivedForBalance=a.type==='draw'&&a.status==='closed'&&Number(a.target_amount||0)>0
+        ?Number(a.target_amount)
+        :paid;
+      const eventExpenses=activityExpenses.filter(x=>x.activity_id===a.id);
+      const eventExpenseTotal=eventExpenses.reduce((s,x)=>s+Number(x.amount||0),0);
+      const eventExpenseHtml=isAdmin()?'<div class="event-expense-summary">'+
+        '<div><span>Saídas registradas</span><b>'+brl.format(eventExpenseTotal)+'</b></div>'+
+        '<div><span>Saldo após saídas</span><b>'+brl.format(eventReceivedForBalance-eventExpenseTotal)+'</b></div>'+
+        '<button type="button" class="outline-btn tiny" onclick="openActivityExpense(\''+a.id+'\',\''+String(a.title||'Evento').replaceAll("'","&#39;")+'\')">Registrar saída</button>'+
+        (eventExpenses.length?'<details><summary>Ver saídas</summary><div class="event-expense-list">'+eventExpenses.map(x=>'<p><b>'+safe(x.description)+'</b><span>'+brl.format(Number(x.amount))+(x.inventory_status==='available'?' • disponível para próximo evento':'')+'</span></p>').join('')+'</div></details>':'')+
+      '</div>':'';
       const prizesHtml=rafflePrizes.length?'<div class="prize-strip">'+rafflePrizes.map(p=>'<div><span>'+p.prize_position+'º prêmio</span><b>'+safe(p.prize_label)+'</b>'+(p.prize_value!=null?'<small>'+brl.format(Number(p.prize_value))+'</small>':'')+'</div>').join('')+'</div>':'';
 
-      if(a.type==='draw'&&raffleCfg?.allocation_mode==='quota_equal'){
-        return '<article class="activity-card raffle-card-v2">'+
+      if(a.type==='draw'&&raffleCfg){
+        const raffleTotalNumbers=Number(raffleCfg.total_numbers||100);
+        const rafflePrice=Number(raffleCfg.number_price||0);
+        const raffleGross=raffleTotalNumbers*rafflePrice;
+        const raffleReceived=a.status==='closed'
+          ?Number(a.target_amount||raffleGross)
+          :paid;
+        const raffleRemaining=Math.max(0,raffleGross-raffleReceived);
+        const raffleProgress=raffleGross>0?Math.min(100,Math.round(raffleReceived/raffleGross*100)):0;
+        const historicalRaffle=raffleCfg.allocation_mode!=='quota_equal';
+        return '<article class="activity-card raffle-card-v2" data-activity-type="draw">'+
           '<div class="activity-cover sorteio"><span>RIFA • 100 NÚMEROS</span>'+statusBadge(a.status)+'</div>'+
           '<div class="activity-body"><h4>'+safe(a.title)+'</h4><p>'+safe(a.description||'')+'</p>'+
           prizesHtml+
-          '<div class="activity-stats">'+
-            '<div><span>Valor por número</span><b>'+brl.format(Number(raffleCfg.number_price))+'</b></div>'+
-            '<div><span>'+(isAdmin()?'Arrecadado':'Seu total')+'</span><b>'+brl.format(isAdmin()?paid:Number(myEntry?.amount_due||0))+'</b></div>'+
-            '<div><span>Distribuição</span><b>Aleatória por cota</b></div>'+
-          '</div>'+
-          '<button class="primary-btn raffle-open-btn" onclick="openQuotaRaffle(\''+a.id+'\')">'+(isAdmin()?'Gerenciar rifa':'Ver meus números e pagar')+'</button>'+
+          (isAdmin()
+            ?'<div class="event-fund-progress">'+
+              '<div class="trip-progress-grid">'+
+                '<div><span>Total da rifa</span><b>'+brl.format(raffleGross)+'</b><small>'+raffleTotalNumbers+' × '+brl.format(rafflePrice)+'</small></div>'+
+                '<div><span>Recebido</span><b>'+brl.format(raffleReceived)+'</b><small>'+raffleProgress+'% arrecadado</small></div>'+
+                '<div><span>A receber</span><b>'+brl.format(raffleRemaining)+'</b><small>Atualiza com os pagamentos</small></div>'+
+              '</div>'+
+              '<div class="trip-progress-bar"><i style="width:'+raffleProgress+'%"></i></div>'+
+              '<div class="trip-progress-caption"><span>'+raffleProgress+'% arrecadado</span><span>Distribuição automática por cota</span></div>'+
+            '</div>'
+            :'<div class="activity-stats">'+
+              '<div><span>Valor por número</span><b>'+brl.format(rafflePrice)+'</b></div>'+
+              '<div><span>Seu total</span><b>'+brl.format(Number(myEntry?.amount_due||0))+'</b></div>'+
+              '<div><span>Distribuição</span><b>Aleatória por cota</b></div>'+
+            '</div>')+
+          eventExpenseHtml+
+          (historicalRaffle
+            ?'<div class="paid-banner historical-raffle-banner">Rifa encerrada • histórico financeiro consolidado</div>'
+            :'<button class="primary-btn raffle-open-btn" onclick="openQuotaRaffle(\''+a.id+'\')">'+(isAdmin()?'Gerenciar rifa':'Ver meus números e pagar')+'</button>')+
           '</div></article>';
       }
 
@@ -296,7 +365,13 @@
         const available=seats.filter(s=>s.status==='available').length;
         const assigned=seats.filter(s=>s.member_id).length;
         const paidSeats=seats.filter(s=>s.status==='paid').length;
-        const due=isAdmin()?Number(tripCfg?.seat_price||a.unit_price||0):Number(myEntry?.amount_due||0);
+        const seatPrice=Number(tripCfg?.seat_price||a.unit_price||0);
+        const totalSeats=Number(tripCfg?.total_seats||seats.length||0);
+        const tripGrossTotal=totalSeats*seatPrice;
+        const tripReceived=adminEntries.reduce((s,e)=>s+Number(e.amount_paid||0),0);
+        const tripRemaining=Math.max(0,tripGrossTotal-tripReceived);
+        const tripProgress=tripGrossTotal>0?Math.min(100,Math.round((tripReceived/tripGrossTotal)*100)):0;
+        const due=isAdmin()?tripGrossTotal:Number(myEntry?.amount_due||0);
         const paidMine=Number(myEntry?.amount_paid||0);
         const remaining=Math.max(0,due-paidMine);
         const paidStatus=myEntry?.status==='confirmed';
@@ -305,7 +380,7 @@
         const seatChips=!isAdmin()&&mySeats.length?'<div class="my-seat-preview">'+mySeats.map(s=>'<span>'+String(s.seat_number).padStart(2,'0')+'</span>').join('')+'</div>':'';
         const tripPrizeHtml=tripPrizes.length?'<div class="trip-prize-mini">'+tripPrizes.map(p=>'<span><b>'+p.prize_position+'º</b> '+safe(p.prize_label)+(p.prize_value!=null?' • '+brl.format(Number(p.prize_value)):'')+'</span>').join('')+'</div>':'';
 
-        return '<article class="activity-card trip-card bus-trip-card">'+
+        return '<article class="activity-card trip-card bus-trip-card" data-activity-type="trip">'+
           '<div class="activity-cover passeio"><span>ÔNIBUS • PASSEIO</span>'+statusBadge(a.status)+'</div>'+
           '<div class="activity-body">'+
             '<h4>'+safe(a.title)+'</h4><p>'+safe(a.description||'')+'</p>'+
@@ -316,8 +391,17 @@
               '<div><span>Valor por assento</span><b>'+brl.format(Number(tripCfg?.seat_price||a.unit_price||0))+'</b></div>'+
             '</div>'+
             (isAdmin()
-              ?'<div class="activity-stats"><div><span>Poltronas</span><b>'+Number(tripCfg?.total_seats||seats.length)+'</b></div><div><span>Atribuídas</span><b>'+assigned+'</b></div><div><span>Disponíveis</span><b>'+available+'</b></div></div>'
+              ?'<div class="trip-fund-progress">'+
+                '<div class="trip-progress-grid">'+
+                  '<div><span>Total das poltronas</span><b>'+brl.format(tripGrossTotal)+'</b><small>'+totalSeats+' × '+brl.format(seatPrice)+'</small></div>'+
+                  '<div><span>Recebido</span><b>'+brl.format(tripReceived)+'</b><small>'+tripProgress+'% arrecadado</small></div>'+
+                  '<div><span>A receber</span><b>'+brl.format(tripRemaining)+'</b><small>Atualiza conforme os pagamentos</small></div>'+
+                '</div>'+
+                '<div class="trip-progress-bar"><i style="width:'+tripProgress+'%"></i></div>'+
+                '<div class="trip-progress-caption"><span>'+tripProgress+'% arrecadado</span><span>'+assigned+' atribuída(s) • '+available+' disponível(is)</span></div>'+
+              '</div>'
               :'<div class="activity-stats"><div><span>Suas poltronas</span><b>'+mySeats.length+'</b></div><div><span>Total</span><b>'+brl.format(due)+'</b></div><div><span>Situação</span><b>'+(paidStatus?'Pago':'Pendente')+'</b></div></div>')+
+            (isAdmin()?eventExpenseHtml:'')+
             seatChips+
             (!isAdmin()&&!paidStatus&&mySeats.length
               ?'<div class="mandatory-trip-note">'+(a.payment_due_date?'Pagamento até '+safe(dueText)+'. Em caso de atraso, será aplicada somente a regra vigente do exercício.':'A administração ainda não definiu a data limite de pagamento.')+'</div>'
@@ -327,9 +411,44 @@
           '</div></article>';
       }
 
-      return '<article class="activity-card"><div class="activity-cover sorteio"><span>EVENTO</span>'+statusBadge(a.status)+'</div><div class="activity-body"><h4>'+safe(a.title)+'</h4><p>'+safe(a.description||'')+'</p><div class="activity-stats"><div><span>Valor</span><b>'+brl.format(Number(a.unit_price||0))+'</b></div><div><span>Meta</span><b>'+brl.format(Number(a.target_amount||0))+'</b></div><div><span>Status</span><b>'+safe(a.status)+'</b></div></div></div></article>';
+      return '<article class="activity-card" data-activity-type="'+safe(a.type||'other')+'"><div class="activity-cover sorteio"><span>EVENTO</span>'+statusBadge(a.status)+'</div><div class="activity-body"><h4>'+safe(a.title)+'</h4><p>'+safe(a.description||'')+'</p><div class="activity-stats"><div><span>Valor</span><b>'+brl.format(Number(a.unit_price||0))+'</b></div><div><span>Meta</span><b>'+brl.format(Number(a.target_amount||0))+'</b></div><div><span>Status</span><b>'+safe(a.status)+'</b></div></div></div></article>';
     }).join('')||'<div class="stack-item"><p>Nenhuma atividade cadastrada.</p></div>';
     makeActivityCardsCollapsible();
+    applyActivityFilter();
+  };
+
+  window.openActivityExpense=function(activityId,title){
+    if(!isAdmin()){toast('Somente a administração pode registrar saídas.');return}
+    openModal('<div class="panel-head"><div><span class="eyebrow">SAÍDA DO EVENTO</span><h3>'+safe(title)+'</h3><p>Registre premiações e despesas sem misturar com a arrecadação.</p></div></div>'+
+      '<form id="activityExpenseForm" class="form-grid">'+
+        '<label>Tipo<select id="activityExpenseType"><option value="prize">Premiação</option><option value="transport">Transporte / ônibus</option><option value="purchase">Compra</option><option value="cash_prize">Prêmio em dinheiro</option><option value="other">Outra saída</option></select></label>'+
+        '<label>Valor<input id="activityExpenseAmount" type="number" min="0.01" step="0.01" required></label>'+
+        '<label class="full-span">Descrição<input id="activityExpenseDescription" required placeholder="Ex.: Máquina de lavar"></label>'+
+        '<label>Ganhador / destino<input id="activityExpenseWinner" placeholder="Opcional"></label>'+
+        '<label>Situação do item<select id="activityExpenseInventory"><option value="delivered">Entregue / consumido</option><option value="available">Comprado e disponível</option><option value="not_applicable">Não se aplica</option></select></label>'+
+        '<label class="full-span">Observação<input id="activityExpenseNote" placeholder="Ex.: prêmio fica para o próximo sorteio"></label>'+
+        '<button class="primary-btn full-span" type="submit">Registrar saída</button>'+
+      '</form>');
+    setTimeout(()=>document.querySelector('#activityExpenseForm')?.addEventListener('submit',async e=>{
+      e.preventDefault();
+      const btn=e.submitter;if(btn){btn.disabled=true;btn.textContent='Registrando...'}
+      try{
+        const {error}=await db.from('activity_expenses').insert({
+          activity_id:activityId,
+          expense_type:document.querySelector('#activityExpenseType').value,
+          description:document.querySelector('#activityExpenseDescription').value.trim(),
+          amount:Number(document.querySelector('#activityExpenseAmount').value),
+          winner_name:document.querySelector('#activityExpenseWinner').value.trim()||null,
+          inventory_status:document.querySelector('#activityExpenseInventory').value,
+          notes:document.querySelector('#activityExpenseNote').value.trim()||null,
+          occurred_at:new Date().toISOString().slice(0,10),
+          created_by:state.user.id
+        });
+        if(error)throw error;
+        closeModal();await renderActivities();toast('Saída registrada no evento.');
+      }catch(err){toast(err.message||'Não foi possível registrar a saída.')}
+      finally{if(btn){btn.disabled=false;btn.textContent='Registrar saída'}}
+    }),0);
   };
 
   window.payActivity=async function(activityId,kind,amount){
