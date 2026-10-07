@@ -213,14 +213,14 @@ async function renderDashboard(){
     const latestManual=manualClosings[0]||null;
     const adminInterest=latestManual
       ? Number(latestManual.admin_total_amount||0)+batches
-          .filter(b=>b.source_kind==='transaction'&&new Date(b.created_at||0)>new Date(latestManual.created_at||0))
+          .filter(b=>b.source_kind!=='manual_closing'&&new Date(b.created_at||0)>new Date(latestManual.created_at||0))
           .reduce((s,b)=>s+Number(b.admin_total_amount||0),0)
       : batches.reduce((s,b)=>s+Number(b.admin_total_amount||0),0);
     if(qs('#homeAdminInterest'))qs('#homeAdminInterest').textContent=brl.format(adminInterest);
     if(qs('#homeAdminInterestNote')){
       const fee=Number(state.settings?.interest_admin_fee_percent??10);
       const virtual=Number(state.settings?.admin_virtual_interest_shares??1);
-      qs('#homeAdminInterestNote').textContent=`${fee.toLocaleString('pt-BR')}% de taxa + ${virtual} cota(s) virtual(is) de juros`;
+      qs('#homeAdminInterestNote').textContent=`${fee.toLocaleString('pt-BR')}% de taxa + ${virtual} cota(s) virtual(is) de juros e rifas`;
     }
 
     const expenses=(yearTx||[]).filter(t=>t.direction==='expense').reduce((s,t)=>s+Number(t.amount||0),0);
