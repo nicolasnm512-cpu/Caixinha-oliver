@@ -1184,3 +1184,15 @@ body{min-width:320px}
   .yield-management{margin-top:12px}
   .yield-tool-form input,.yield-tool-form select{font-size:16px}
 }
+
+
+/* Juros efetivamente recebidos dos empréstimos — ADM */
+.loan-interest-consolidation{margin-top:13px}
+.loan-interest-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}
+.loan-interest-grid>div{min-width:0;padding:13px 10px;border:1px solid #e5ddca;border-radius:13px;background:#faf8f3}
+.loan-interest-grid span,.loan-interest-grid small{display:block;color:var(--muted,#6e675a);font-size:10px;line-height:1.35}
+.loan-interest-grid strong{display:block;margin:8px 0 5px;font-size:clamp(13px,1.5vw,19px);font-weight:900;color:#1b1b1b;overflow-wrap:anywhere}
+.loan-interest-grid>div:first-child strong{color:#2b7049}
+.loan-interest-grid>div:nth-child(4) strong{color:#9e4930}
+@media(max-width:1050px){.loan-interest-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:620px){.loan-interest-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.loan-interest-grid>div{padding:12px 9px}}
