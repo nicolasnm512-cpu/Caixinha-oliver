@@ -10,11 +10,11 @@
   <meta name="apple-mobile-web-app-title" content="OLIVER Caixinha" />
   <title>OLIVER Caixinha • Gestão dos Cotistas</title>
   <meta name="description" content="Sistema interno de gestão financeira para 20 cotistas." />
-  <link rel="manifest" href="/manifest.webmanifest?v=20261006-final-v13" />
-  <link rel="icon" type="image/svg+xml" href="/assets/oliver-logo.svg?v=20261006-final-v13" />
-  <link rel="apple-touch-icon" href="/assets/oliver-app-icon.svg?v=20261006-final-v13" />
-  <link rel="stylesheet" href="/style.css?v=20261006-final-v13" />
-  <link rel="stylesheet" href="/feature-overrides.css?v=20261006-final-v13" />
+  <link rel="manifest" href="/manifest.webmanifest?v=20261007-member-manual-v14" />
+  <link rel="icon" type="image/svg+xml" href="/assets/oliver-logo.svg?v=20261007-member-manual-v14" />
+  <link rel="apple-touch-icon" href="/assets/oliver-app-icon.svg?v=20261007-member-manual-v14" />
+  <link rel="stylesheet" href="/style.css?v=20261007-member-manual-v14" />
+  <link rel="stylesheet" href="/feature-overrides.css?v=20261007-member-manual-v14" />
 
 </head>
 <body>
@@ -22,7 +22,7 @@
 
   <section id="loginView" class="login-shell">
     <div class="login-brand">
-      <img class="brand-logo login-logo" src="/assets/oliver-logo.svg?v=20261006-final-v13" alt="OLIVER Caixinha" />
+      <img class="brand-logo login-logo" src="/assets/oliver-logo.svg?v=20261007-member-manual-v14" alt="OLIVER Caixinha" />
       <div>
         <strong>OLIVER Caixinha</strong>
         <span>Gestão financeira dos cotistas</span>
@@ -51,7 +51,7 @@
 
   <section id="firstAccessView" class="login-shell hidden">
     <div class="login-brand">
-      <img class="brand-logo login-logo" src="/assets/oliver-logo.svg?v=20261006-final-v13" alt="OLIVER Caixinha" />
+      <img class="brand-logo login-logo" src="/assets/oliver-logo.svg?v=20261007-member-manual-v14" alt="OLIVER Caixinha" />
       <div><b>OLIVER Caixinha</b><small>Atualização obrigatória de cadastro</small></div>
     </div>
     <div class="login-card first-access-card">
@@ -120,15 +120,15 @@
   <div id="appView" class="app-shell hidden">
     <aside class="sidebar">
       <div class="sidebar-brand">
-        <img class="brand-logo sidebar-logo" src="/assets/oliver-logo.svg?v=20261006-final-v13" alt="OLIVER Caixinha" />
+        <img class="brand-logo sidebar-logo" src="/assets/oliver-logo.svg?v=20261007-member-manual-v14" alt="OLIVER Caixinha" />
         <div><strong>OLIVER Caixinha</strong><span>Área dos cotistas</span></div>
       </div>
       <nav id="mainNav">
-        <button class="nav-item active" data-page="dashboard"><span>◫</span><b class="nav-label">Início</b></button>
+        <button class="nav-item active" data-page="dashboard" data-member-label="Visão geral" data-admin-label="Início"><span>⌂</span><b class="nav-label">Início</b></button>
         <button class="nav-item member-only" data-page="requests"><span>✦</span><b class="nav-label">Solicitar empréstimo</b></button>
         <button class="nav-item" data-page="loans" data-member-label="Meus empréstimos" data-admin-label="Contratos"><span>↗</span><b class="nav-label">Meus empréstimos</b></button>
         <button class="nav-item" data-page="payments" data-member-label="Pagamentos" data-admin-label="Comprovantes"><span>✓</span><b class="nav-label">Pagamentos</b></button>
-        <button class="nav-item" data-page="activities"><span>★</span><b class="nav-label">Rifas e passeios</b></button>
+        <button class="nav-item" data-page="activities" data-member-label="Rifas e passeios" data-admin-label="Rifas e passeios"><span>★</span><b class="nav-label">Rifas e passeios</b></button>
         <button class="nav-item member-only" data-page="account"><span>◉</span><b class="nav-label">Meu cadastro</b></button>
         <button class="nav-item admin-only" data-page="members"><span>◎</span>Cotistas</button>
         <button class="nav-item admin-only" data-page="admin"><span>⚙</span>Administração</button>
@@ -140,6 +140,13 @@
     </aside>
 
     <main class="main">
+      <div class="member-app-brand member-only">
+        <div class="member-app-brand-copy">
+          <img src="/assets/oliver-logo.svg?v=20261007-member-manual-v14" alt="OLIVER Caixinha" />
+          <div><strong>OLIVER</strong><span>Caixinha</span></div>
+        </div>
+        <button class="member-profile-button" type="button" data-page-jump="account" aria-label="Abrir meu cadastro">◉</button>
+      </div>
       <header class="topbar">
         <div>
           <div class="mobile-brand">OLIVER Caixinha</div>
@@ -159,7 +166,7 @@
             <h2 id="homeName">Cotista</h2>
             <p id="homeRole">Resumo da sua OLIVER Caixinha</p>
           </div>
-          <img src="/assets/oliver-logo.svg?v=20261006-final-v13" class="home-profile-logo" alt="OLIVER Caixinha" />
+          <img src="/assets/oliver-logo.svg?v=20261007-member-manual-v14" class="home-profile-logo" alt="OLIVER Caixinha" />
         </article>
 
         <div class="home-money-grid member-summary-grid">
@@ -220,6 +227,17 @@
             <small>Recebidos + pendentes (sem incluir juros de rifas/cotas)</small>
           </article>
         </div>
+
+        <article class="member-dashboard-feed member-only">
+          <div class="member-feed-section">
+            <div class="member-feed-head"><div><h3>Próximas atividades</h3><p>Rifas, passeios e movimentações da sua caixinha.</p></div><button type="button" data-page-jump="activities">Ver todas ›</button></div>
+            <div id="memberUpcomingActivities" class="member-feed-list"><div class="member-feed-empty">Carregando atividades...</div></div>
+          </div>
+          <div class="member-feed-section">
+            <div class="member-feed-head"><div><h3>Últimos comprovantes</h3><p>Acompanhe seus pagamentos enviados.</p></div><button type="button" data-page-jump="payments">Ver todos ›</button></div>
+            <div id="memberRecentReceipts" class="member-feed-list"><div class="member-feed-empty">Carregando comprovantes...</div></div>
+          </div>
+        </article>
 
         <article class="admin-flow-guide admin-only">
           <div class="admin-flow-head">
@@ -328,14 +346,14 @@
             <div class="panel-head"><div><h3>Pagamento via Pix</h3><p>Conta oficial da OLIVER Caixinha.</p></div><span class="badge success">Inter • 077</span></div>
             <div class="official-pix-layout">
               <div class="qr-wrap official">
-                <img src="/assets/pix-qr.svg?v=20261006-final-v13" alt="QR Code Pix oficial da OLIVER Caixinha" />
+                <img src="/assets/pix-qr.svg?v=20261007-member-manual-v14" alt="QR Code Pix oficial da OLIVER Caixinha" />
                 <div class="qr-instruction">
                   <b>Escaneie o QR Code</b>
                   <span>Informe o valor exato do pagamento no seu banco.</span>
                 </div>
               </div>
               <div class="payment-account">
-                <div class="payment-account-logo"><img src="/assets/oliver-logo.svg?v=20261006-final-v13" alt="" /><div><b>OLIVER Caixinha</b><span>Dados oficiais para pagamento</span></div></div>
+                <div class="payment-account-logo"><img src="/assets/oliver-logo.svg?v=20261007-member-manual-v14" alt="" /><div><b>OLIVER Caixinha</b><span>Dados oficiais para pagamento</span></div></div>
                 <div class="payment-data-grid">
                   <div><span>Banco</span><b id="pixBank">Inter</b></div>
                   <div><span>Código</span><b id="pixBankCode">077</b></div>
@@ -633,10 +651,10 @@
 
   <div id="modal" class="modal hidden"><div class="modal-card"><button id="closeModal" class="modal-close">×</button><div id="modalContent"></div></div></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
-  <script src="/config.js?v=20261006-final-v13"></script>
-  <script src="/app.js?v=20261006-final-v13"></script>
-  <script src="/features.js?v=20261006-final-v13"></script>
-  <script src="/admin-agent.js?v=20261006-final-v13"></script>
-  <script src="/yield-management.js?v=20261006-final-v13"></script>
+  <script src="/config.js?v=20261007-member-manual-v14"></script>
+  <script src="/app.js?v=20261007-member-manual-v14"></script>
+  <script src="/features.js?v=20261007-member-manual-v14"></script>
+  <script src="/admin-agent.js?v=20261007-member-manual-v14"></script>
+  <script src="/yield-management.js?v=20261007-member-manual-v14"></script>
 </body>
 </html>
