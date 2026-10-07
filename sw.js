@@ -1,4 +1,4 @@
-const VERSION='oliver-final-agents-v15';
+const VERSION='oliver-mobile-hotfix-v16';
 self.addEventListener('install',()=>self.skipWaiting());
 self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
 self.addEventListener('fetch',event=>{
