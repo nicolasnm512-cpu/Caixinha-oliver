@@ -37,6 +37,14 @@ function refMonth(text:string){
 }
 function ptDate(d:string|null|undefined){return d?new Date(d+"T12:00:00").toLocaleDateString("pt-BR"):"—"}
 
+function explicitDate(text:string){
+  const iso=text.match(/\b(20\d{2})-(\d{2})-(\d{2})\b/);
+  if(iso)return iso[1]+"-"+iso[2]+"-"+iso[3];
+  const br=text.match(/\b(\d{1,2})\/(\d{1,2})\/(20\d{2})\b/);
+  if(br)return br[3]+"-"+String(Number(br[2])).padStart(2,"0")+"-"+String(Number(br[1])).padStart(2,"0");
+  return null;
+}
+
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response("ok",{headers:cors});
   if(req.method!=="POST")return json({error:"Método não permitido."},405);
@@ -56,9 +64,46 @@ Deno.serve(async(req:Request)=>{
     const body=await req.json().catch(()=>({}));
 
     if(body?.action==="confirm"&&body?.action_id){
-      const {data,error}=await db.rpc("admin_agent_execute",{p_action_id:body.action_id});
-      if(error)return json({error:error.message},400);
-      return json({answer:"Atualização confirmada e registrada no histórico.",result:data});
+      const {data:pending,error:pendingError}=await db.from("admin_agent_actions")
+        .select("id,action_type,member_id,payload,status")
+        .eq("id",body.action_id).eq("admin_id",user.id).maybeSingle();
+      if(pendingError||!pending)return json({error:"Ação do Oliver ADM não encontrada."},400);
+      if(pending.status!=="preview")return json({error:"Ação já processada."},400);
+
+      let directResult:any=null;
+      const p:any=pending.payload||{};
+      if(pending.action_type==="confirm_receipt"){
+        const {data,error}=await db.rpc("admin_confirm_receipt",{p_receipt_id:p.receipt_id,p_confirm:Boolean(p.confirm),p_note:p.note||null});
+        if(error)return json({error:error.message},400); directResult=data;
+      }else if(pending.action_type==="approve_loan_request"){
+        const {data,error}=await db.rpc("admin_approve_loan_request",{p_request_id:p.request_id,p_first_due_date:p.first_due_date});
+        if(error)return json({error:error.message},400); directResult=data;
+      }else if(pending.action_type==="reject_loan_request"){
+        const {data,error}=await db.rpc("admin_reject_loan_request",{p_request_id:p.request_id,p_reason:p.reason});
+        if(error)return json({error:error.message},400); directResult=data;
+      }else if(pending.action_type==="confirm_trip_member"){
+        const {data,error}=await db.rpc("admin_confirm_trip_member",{p_activity_id:p.activity_id,p_member_id:pending.member_id});
+        if(error)return json({error:error.message},400); directResult=data;
+      }else if(pending.action_type==="confirm_raffle_member"){
+        const {data,error}=await db.rpc("admin_confirm_raffle_member",{p_activity_id:p.activity_id,p_member_id:pending.member_id});
+        if(error)return json({error:error.message},400); directResult=data;
+      }else if(pending.action_type==="broadcast_notification"){
+        const {data,error}=await db.rpc("admin_broadcast_notification",{p_title:p.title,p_message:p.message,p_notification_type:p.notification_type||"info",p_link_page:p.link_page||null});
+        if(error)return json({error:error.message},400); directResult=data;
+      }else if(pending.action_type==="generate_month_contributions"){
+        const {data,error}=await db.rpc("admin_generate_month_contributions",{p_reference_month:p.reference_month,p_due_date:p.due_date});
+        if(error)return json({error:error.message},400); directResult=data;
+      }else{
+        const {data,error}=await db.rpc("admin_agent_execute",{p_action_id:body.action_id});
+        if(error)return json({error:error.message},400);
+        return json({answer:"Atualização confirmada e registrada no histórico.",result:data});
+      }
+
+      const {error:auditError}=await db.from("admin_agent_actions")
+        .update({status:"confirmed",after_data:directResult??{},confirmed_at:new Date().toISOString()})
+        .eq("id",body.action_id).eq("admin_id",user.id).eq("status","preview");
+      if(auditError)return json({error:auditError.message},400);
+      return json({answer:"Atualização confirmada e registrada no histórico.",result:directResult});
     }
     if(body?.action==="cancel"&&body?.action_id){
       const {error}=await db.from("admin_agent_actions").update({status:"cancelled"}).eq("id",body.action_id).eq("admin_id",user.id).eq("status","preview");
@@ -91,6 +136,69 @@ Deno.serve(async(req:Request)=>{
     const amount=parseMoney(text);
     const month=refMonth(text);
 
+    const explicit=explicitDate(text);
+
+    if(/\b(ajuda|comandos|o que voce faz|o que pode fazer|funcoes)\b/.test(n)){
+      return json({answer:"No Oliver ADM você pode consultar cotista; registrar cotas, juros, rifas e passeios; confirmar ou recusar comprovantes; aprovar ou recusar solicitações de empréstimo; editar limite; programar cotas por data; transferir/abater/redistribuir rendimentos; registrar despesas; confirmar pagamentos de rifa/passeio; gerar cotas mensais e enviar avisos gerais. Toda alteração exige confirmação.",intent:"help"});
+    }
+
+    if(/\b(comprovante|recibo)\b/.test(n)&&member&&/\b(confirmar|aprovar|aceitar|recusar|rejeitar)\b/.test(n)){
+      const reject=/\b(recusar|rejeitar)\b/.test(n);
+      const {data:receipts}=await service.from("payment_receipts")
+        .select("id,amount,payment_kind,submitted_at,status")
+        .eq("member_id",member.id).eq("status","pending")
+        .order("submitted_at",{ascending:false}).limit(1);
+      const receipt=receipts?.[0];
+      if(!receipt)return json({error:"Não há comprovante pendente desse cotista."},400);
+      actionType="confirm_receipt";
+      payload={receipt_id:receipt.id,confirm:!reject,note:"Oliver ADM: "+text};
+      preview=(reject?"Recusar":"Confirmar")+" o comprovante pendente de "+member.full_name+
+        " no valor de "+money(Number(receipt.amount||0))+"? Confirmar?";
+    }else if(/\b(emprestimo|credito)\b/.test(n)&&member&&/\b(aprovar|aceitar|recusar|rejeitar)\b/.test(n)){
+      const reject=/\b(recusar|rejeitar)\b/.test(n);
+      const {data:reqs}=await service.from("loan_requests")
+        .select("id,requested_amount,status,created_at")
+        .eq("member_id",member.id).in("status",["pending","under_review"])
+        .order("created_at",{ascending:false}).limit(1);
+      const loanReq=reqs?.[0];
+      if(!loanReq)return json({error:"Não há solicitação de empréstimo pendente desse cotista."},400);
+      if(reject){
+        actionType="reject_loan_request";
+        payload={request_id:loanReq.id,reason:text};
+        preview="Recusar a solicitação de "+money(Number(loanReq.requested_amount||0))+" de "+member.full_name+"? Confirmar?";
+      }else{
+        if(!explicit)return json({error:"Para aprovar, informe o primeiro vencimento. Ex.: 'Aprovar empréstimo da Gisele vencimento 20/11/2026'."},400);
+        actionType="approve_loan_request";
+        payload={request_id:loanReq.id,first_due_date:explicit};
+        preview="Aprovar a solicitação de "+money(Number(loanReq.requested_amount||0))+" de "+member.full_name+
+          ", com primeiro vencimento em "+ptDate(explicit)+"? Confirmar?";
+      }
+    }else if(member&&/\b(confirmar|quitar)\b/.test(n)&&/\bpasseio\b/.test(n)&&amount==null){
+      const {data:trips}=await service.from("activities").select("id,title").eq("type","trip").eq("status","open").order("created_at",{ascending:false}).limit(1);
+      const trip=trips?.[0];
+      if(!trip)return json({error:"Não existe passeio aberto."},400);
+      const {data:entry}=await service.from("activity_entries").select("id,amount_due,amount_paid,status").eq("activity_id",trip.id).eq("member_id",member.id).maybeSingle();
+      if(!entry)return json({error:"Esse cotista não possui lançamento nesse passeio."},400);
+      actionType="confirm_trip_member"; payload={activity_id:trip.id};
+      preview="Confirmar integralmente o pagamento de "+member.full_name+" no passeio “"+trip.title+"”? Confirmar?";
+    }else if(member&&/\b(confirmar|quitar)\b/.test(n)&&/\brifa\b/.test(n)&&amount==null){
+      const {data:raffles}=await service.from("activities").select("id,title").eq("type","draw").eq("status","open").order("created_at",{ascending:false}).limit(1);
+      const raffle=raffles?.[0];
+      if(!raffle)return json({error:"Não existe rifa aberta."},400);
+      actionType="confirm_raffle_member"; payload={activity_id:raffle.id};
+      preview="Confirmar todos os números/pagamento de "+member.full_name+" na rifa “"+raffle.title+"”? Confirmar?";
+    }else if(/^\s*(enviar\s+)?aviso\b/.test(n)){
+      const raw=text.replace(/^\s*(enviar\s+)?aviso\s*:?\s*/i,"");
+      const parts=raw.split("|").map(x=>x.trim()).filter(Boolean);
+      if(parts.length<2)return json({error:"Use: Aviso: Título | Mensagem"},400);
+      actionType="broadcast_notification"; payload={title:parts[0],message:parts.slice(1).join(" | "),notification_type:"info",link_page:null};
+      preview="Enviar aviso para todos os cotistas: “"+parts[0]+"” — “"+parts.slice(1).join(" | ")+"”? Confirmar?";
+    }else if(/\b(gerar|lancar|criar)\b/.test(n)&&/\b(cotas|mensalidades)\b/.test(n)){
+      if(!explicit)return json({error:"Informe a data de vencimento. Ex.: 'Gerar cotas de outubro de 2026 vencimento 20/10/2026'."},400);
+      actionType="generate_month_contributions"; payload={reference_month:month,due_date:explicit};
+      preview="Gerar as cotas de "+ptDate(month)+" com vencimento em "+ptDate(explicit)+"? Confirmar?";
+    }else 
+
     if(/\b(consulta|consultar|ver|situacao|resumo|quanto|saldo)\b/.test(n)&&member){
       const year=new Date().getFullYear();
       const [{data:credit},{data:loans},{data:balances}]=await Promise.all([
@@ -113,7 +221,7 @@ Deno.serve(async(req:Request)=>{
     const scheduleChange=/(?:cota|cotas).*(?:a partir|passar a|reduzir|diminuir|retirar|alterar|ficar com)/
       .test(n)||/(?:reduzir|diminuir|programar|alterar).*(?:cota|cotas)/.test(n);
 
-    if(yieldChange){
+    if(!actionType&&yieldChange){
       if(!member)return json({error:"Informe o cotista que terá o rendimento abatido."},400);
       if(amount==null||amount<=0)return json({error:"Informe o valor do rendimento, como R$ 50,00."},400);
 
@@ -150,7 +258,7 @@ Deno.serve(async(req:Request)=>{
         ". Saldo antes: "+money(Number(plan.before))+"; depois: "+money(Number(plan.after))+
         ". "+summary+" Confirmar?";
 
-    }else if(scheduleChange){
+    }else if(!actionType&&scheduleChange){
       if(!member)return json({error:"Informe o cotista para programar as cotas."},400);
       const hasMonth=Object.keys(months).some(m=>n.split(/[^a-z0-9]+/).includes(m))
         ||/\b\d{4}-\d{2}-\d{2}\b/.test(n);
@@ -165,11 +273,11 @@ Deno.serve(async(req:Request)=>{
         " a partir de "+ptDate(month)+
         "? Créditos de rifas e juros já fechados serão preservados. Confirmar?";
 
-    }else     if(/\b(tarifa|despesa|saida)\b/.test(n)){
+    }else if(!actionType&&/\b(tarifa|despesa|saida)\b/.test(n)){
       if(amount==null)return json({error:"Informe o valor da saída."},400);
       actionType="register_expense"; payload={amount,description:text};
       preview=`Registrar saída de ${money(amount)}: “${text}”?`;
-    }else{
+    }else if(!actionType){
       if(!member)return json({error:"Não consegui identificar o cotista. Use o nome ou apelido cadastrado."},400);
 
       if(/\blimite\b/.test(n)){
@@ -206,7 +314,7 @@ Deno.serve(async(req:Request)=>{
       }
     }
 
-    if(!actionType)return json({answer:"Posso consultar cotista e preparar ajustes de cota, juros, limite, rifa, passeio, despesas, mudança de cotas por data, abatimento e redistribuição de rendimentos. Nenhuma alteração é feita sem confirmação.",intent:"help"});
+    if(!actionType)return json({answer:"Posso consultar cotista e preparar ajustes de cota, juros, limite, rifa, passeio, comprovantes, solicitações de empréstimo, despesas, avisos, geração mensal de cotas, mudança de cotas por data e ajustes de rendimentos. Nenhuma alteração é feita sem confirmação.",intent:"help"});
 
     const {data:row,error}=await db.from("admin_agent_actions").insert({
       admin_id:user.id,raw_text:text,action_type:actionType,member_id:member?.id||null,payload,status:"preview"
@@ -218,7 +326,7 @@ Deno.serve(async(req:Request)=>{
       intent:actionType,
       requires_confirmation:true,
       action_id:row.id,
-      quick_replies:["Consultar cotista","Atualizar cota","Registrar juros pagos","Ajustar juros","Atualizar passeio","Atualizar rifa","Editar limite","Programar cotas de Jamaica para 1 em agosto de 2026","Abater R$ 50 de rendimento do Jamaica sem redistribuir"]
+      quick_replies:["Consultar cotista","Confirmar comprovante","Aprovar empréstimo","Recusar empréstimo","Atualizar cota","Registrar juros pagos","Confirmar passeio","Confirmar rifa","Editar limite","Gerar cotas do mês","Enviar aviso","Programar cotas por data","Transferir rendimento"]
     });
   }catch(e){
     console.error(e);
