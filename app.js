@@ -182,14 +182,15 @@ async function renderDashboard(){
   if(isAdmin()){
     const yearStart=`${now.getFullYear()}-01-01`;
     const yearEnd=`${now.getFullYear()}-12-31`;
-    const [{data:summary},{data:yearTx},{data:loans},{count:pendingReq},{count:pendingReceipts},{count:members},{data:interestBatches}] = await Promise.all([
+    const [{data:summary},{data:yearTx},{data:loans},{count:pendingReq},{count:pendingReceipts},{count:members},{data:interestBatches},{data:loanInterest,error:loanInterestError}] = await Promise.all([
       db.from('shared_fund_summary').select('*').maybeSingle(),
       db.from('fund_transactions').select('direction,category,amount,transaction_date').gte('transaction_date',yearStart).lte('transaction_date',yearEnd),
       db.from('loans').select('id,outstanding_amount,status').in('status',['active','late']),
       db.from('loan_requests').select('id',{count:'exact',head:true}).in('status',['pending','under_review']),
       db.from('payment_receipts').select('id',{count:'exact',head:true}).eq('status','pending'),
       db.from('profiles').select('id',{count:'exact',head:true}).eq('active',true).not('cotista_number','is',null),
-      db.from('interest_distribution_batches').select('*').gte('transaction_date',yearStart).lte('transaction_date',yearEnd)
+      db.from('interest_distribution_batches').select('*').gte('transaction_date',yearStart).lte('transaction_date',yearEnd),
+      db.rpc('admin_get_loan_interest_summary')
     ]);
     const paid=(yearTx||[]).filter(t=>t.direction==='income'&&['contribution','draw','trip'].includes(t.category));
     const paidTotal=paid.reduce((s,t)=>s+Number(t.amount||0),0);
@@ -207,6 +208,16 @@ async function renderDashboard(){
     qs('#homePendingRequests').textContent=String(pendingReq||0);
     qs('#homePendingReceipts').textContent=String(pendingReceipts||0);
     qs('#homeActiveMembers').textContent=String(members||0);
+    const loanInterestStats=[
+      ['#homeLoanInterestReceived','interest_received'],
+      ['#homeLoanInterestSettled','received_settled_contracts'],
+      ['#homeLoanInterestPending','interest_pending'],
+      ['#homeLoanInterestGenerated','interest_generated']
+    ];
+    for(const [selector,key] of loanInterestStats){
+      const elem=qs(selector);
+      if(elem)elem.textContent=loanInterestError||!loanInterest?'Indisponível':brl.format(Number(loanInterest[key]||0));
+    }
     const batches=interestBatches||[];
     const manualClosings=batches.filter(b=>b.source_kind==='manual_closing')
       .sort((a,b)=>new Date(b.created_at||b.transaction_date)-new Date(a.created_at||a.transaction_date));
@@ -360,6 +371,19 @@ window.acceptAvailableCredit=async requestId=>{
   await renderRequests();toast('Nova solicitação enviada com o valor disponível.');
 };
 
+// Juros recebidos: nunca tratar a taxa/juros contratados como dinheiro já pago.
+// Parcelas somente de juros permitem reconhecer recebimento parcial; nas
+// parcelas que misturam principal + juros, aguardar confirmação do pagamento.
+function loanInstallmentInterestReceived(installment){
+  const interest=Number(installment.interest_amount||0);
+  const principal=Number(installment.principal_amount||0);
+  const paid=Number(installment.amount_paid||0);
+  const total=Number(installment.total_amount||0);
+  if(installment.status==='confirmed'&&paid>=total-0.005)return interest;
+  if(principal===0&&paid>0)return Math.min(interest,paid);
+  return 0;
+}
+
 async function renderLoans(){
   const q=db.from('loans').select('*').order('created_at',{ascending:false});
   if(!isAdmin())q.eq('member_id',state.user.id);
@@ -380,7 +404,25 @@ async function renderLoans(){
   const activeIds=new Set(active.map(l=>l.id));
   const pending=installments.filter(i=>activeIds.has(i.loan_id)&&i.status==='pending');
   qs('#loanRemaining').textContent=pending.length;
-  qs('#loanInterestEstimate').textContent=brl.format(active.reduce((s,l)=>s+Number(l.interest_amount||0),0));
+  const outstandingInterest=installments
+    .filter(i=>activeIds.has(i.loan_id))
+    .reduce((s,i)=>s+Math.max(0,Number(i.interest_amount||0)-loanInstallmentInterestReceived(i)),0);
+  qs('#loanInterestEstimate').textContent=brl.format(outstandingInterest);
+
+  if(isAdmin()){
+    const summaryFields=[
+      ['#loanInterestReceived','interest_received'],
+      ['#loanInterestSettled','received_settled_contracts'],
+      ['#loanInterestReceivedActive','received_open_contracts'],
+      ['#loanInterestPendingConsolidated','interest_pending'],
+      ['#loanInterestGenerated','interest_generated']
+    ];
+    const {data:interestTotals,error:interestTotalsError}=await db.rpc('admin_get_loan_interest_summary');
+    for(const [selector,key] of summaryFields){
+      const elem=qs(selector);
+      if(elem)elem.textContent=interestTotalsError||!interestTotals?'Indisponível':brl.format(Number(interestTotals[key]||0));
+    }
+  }
   if(qs('#activeLoanCount'))qs('#activeLoanCount').textContent=String(active.length);
   if(qs('#paidLoanCount'))qs('#paidLoanCount').textContent=String(paidLoans.length);
 
@@ -394,6 +436,8 @@ async function renderLoans(){
 
   qs('#loanCards').innerHTML=visible.map(l=>{
     const ins=installments.filter(i=>i.loan_id===l.id);
+    const receivedInterest=ins.reduce((s,i)=>s+loanInstallmentInterestReceived(i),0);
+    const pendingInterest=ins.reduce((s,i)=>s+Math.max(0,Number(i.interest_amount||0)-loanInstallmentInterestReceived(i)),0);
     const paid=ins.filter(i=>i.status==='confirmed').length;
     const pct=l.installments?Math.min(100,Math.round(paid/l.installments*100)):0;
     const tripLoan=l.source_kind==='trip_overdue';
@@ -419,7 +463,9 @@ async function renderLoans(){
       <div class="loan-meta">
         <div><span>Progresso</span><b>${isPaid?'Quitado':paid+'/'+l.installments+' parcela(s)'}</b></div>
         <div><span>Total contratado</span><b>${brl.format(Number(l.total_contract_amount||0))}</b></div>
-        <div><span>Juros</span><b>${rateLabel}</b></div>
+        <div><span>Taxa do contrato</span><b>${rateLabel}</b></div>
+        <div><span>Juros já recebidos</span><b>${brl.format(receivedInterest)}</b></div>
+        <div><span>Juros ainda pendentes</span><b>${brl.format(pendingInterest)}</b></div>
       </div>
       ${tripLoan?`<div class="trip-loan-note">Contrato legado. A nova régua fica desativada em 2026.</div>`:''}
     </div>`;
