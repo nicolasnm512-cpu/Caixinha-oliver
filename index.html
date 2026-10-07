@@ -10,11 +10,11 @@
   <meta name="apple-mobile-web-app-title" content="OLIVER Caixinha" />
   <title>OLIVER Caixinha • Gestão dos Cotistas</title>
   <meta name="description" content="Sistema interno de gestão financeira para 20 cotistas." />
-  <link rel="manifest" href="/manifest.webmanifest?v=20261006-final-v11" />
-  <link rel="icon" type="image/svg+xml" href="/assets/oliver-logo.svg?v=20261006-final-v11" />
-  <link rel="apple-touch-icon" href="/assets/oliver-app-icon.svg?v=20261006-final-v11" />
-  <link rel="stylesheet" href="/style.css?v=20261006-final-v11" />
-  <link rel="stylesheet" href="/feature-overrides.css?v=20261006-final-v11" />
+  <link rel="manifest" href="/manifest.webmanifest?v=20261006-final-v12" />
+  <link rel="icon" type="image/svg+xml" href="/assets/oliver-logo.svg?v=20261006-final-v12" />
+  <link rel="apple-touch-icon" href="/assets/oliver-app-icon.svg?v=20261006-final-v12" />
+  <link rel="stylesheet" href="/style.css?v=20261006-final-v12" />
+  <link rel="stylesheet" href="/feature-overrides.css?v=20261006-final-v12" />
 
 </head>
 <body>
@@ -22,7 +22,7 @@
 
   <section id="loginView" class="login-shell">
     <div class="login-brand">
-      <img class="brand-logo login-logo" src="/assets/oliver-logo.svg?v=20261006-final-v11" alt="OLIVER Caixinha" />
+      <img class="brand-logo login-logo" src="/assets/oliver-logo.svg?v=20261006-final-v12" alt="OLIVER Caixinha" />
       <div>
         <strong>OLIVER Caixinha</strong>
         <span>Gestão financeira dos cotistas</span>
@@ -51,7 +51,7 @@
 
   <section id="firstAccessView" class="login-shell hidden">
     <div class="login-brand">
-      <img class="brand-logo login-logo" src="/assets/oliver-logo.svg?v=20261006-final-v11" alt="OLIVER Caixinha" />
+      <img class="brand-logo login-logo" src="/assets/oliver-logo.svg?v=20261006-final-v12" alt="OLIVER Caixinha" />
       <div><b>OLIVER Caixinha</b><small>Atualização obrigatória de cadastro</small></div>
     </div>
     <div class="login-card first-access-card">
@@ -120,7 +120,7 @@
   <div id="appView" class="app-shell hidden">
     <aside class="sidebar">
       <div class="sidebar-brand">
-        <img class="brand-logo sidebar-logo" src="/assets/oliver-logo.svg?v=20261006-final-v11" alt="OLIVER Caixinha" />
+        <img class="brand-logo sidebar-logo" src="/assets/oliver-logo.svg?v=20261006-final-v12" alt="OLIVER Caixinha" />
         <div><strong>OLIVER Caixinha</strong><span>Área dos cotistas</span></div>
       </div>
       <nav id="mainNav">
@@ -159,7 +159,7 @@
             <h2 id="homeName">Cotista</h2>
             <p id="homeRole">Resumo da sua OLIVER Caixinha</p>
           </div>
-          <img src="/assets/oliver-logo.svg?v=20261006-final-v11" class="home-profile-logo" alt="OLIVER Caixinha" />
+          <img src="/assets/oliver-logo.svg?v=20261006-final-v12" class="home-profile-logo" alt="OLIVER Caixinha" />
         </article>
 
         <div class="home-money-grid member-summary-grid">
@@ -293,14 +293,14 @@
             <div class="panel-head"><div><h3>Pagamento via Pix</h3><p>Conta oficial da OLIVER Caixinha.</p></div><span class="badge success">Inter • 077</span></div>
             <div class="official-pix-layout">
               <div class="qr-wrap official">
-                <img src="/assets/pix-qr.svg?v=20261006-final-v11" alt="QR Code Pix oficial da OLIVER Caixinha" />
+                <img src="/assets/pix-qr.svg?v=20261006-final-v12" alt="QR Code Pix oficial da OLIVER Caixinha" />
                 <div class="qr-instruction">
                   <b>Escaneie o QR Code</b>
                   <span>Informe o valor exato do pagamento no seu banco.</span>
                 </div>
               </div>
               <div class="payment-account">
-                <div class="payment-account-logo"><img src="/assets/oliver-logo.svg?v=20261006-final-v11" alt="" /><div><b>OLIVER Caixinha</b><span>Dados oficiais para pagamento</span></div></div>
+                <div class="payment-account-logo"><img src="/assets/oliver-logo.svg?v=20261006-final-v12" alt="" /><div><b>OLIVER Caixinha</b><span>Dados oficiais para pagamento</span></div></div>
                 <div class="payment-data-grid">
                   <div><span>Banco</span><b id="pixBank">Inter</b></div>
                   <div><span>Código</span><b id="pixBankCode">077</b></div>
@@ -481,6 +481,60 @@
               <article class="admin-subpanel">
                 <div class="admin-subpanel-head"><h4>Distribuição de rendimentos</h4><span class="badge success">Automática</span></div>
                 <div id="interestDistributionAudit" class="table-wrap compact-admin-table"></div>
+                <div class="yield-management" id="yieldManagement">
+                  <div class="yield-management-head">
+                    <h4>Gestão de cotas e rendimentos por período</h4>
+                    <p>As cotas de cada rifa são consideradas na data do sorteio. Alterações futuras não apagam créditos históricos.</p>
+                  </div>
+                  <div class="yield-management-grid">
+                    <section class="yield-tool-card">
+                      <h5>Programar mudança de cotas</h5>
+                      <p>Exemplo: Jamaica, 3 cotas até julho e 1 a partir de agosto.</p>
+                      <form id="yieldShareForm" class="yield-tool-form">
+                        <label>Cotista<select id="yieldShareMember" required></select></label>
+                        <label>Válido a partir de<input id="yieldEffectiveDate" type="date" min="2026-01-01" required></label>
+                        <label>Nova quantidade de cotas<input id="yieldShareCount" type="number" min="1" max="20" required></label>
+                        <label>Motivo<input id="yieldShareReason" maxlength="500" required placeholder="Ex.: redução solicitada pelo cotista"></label>
+                        <div id="yieldShareHistorical" class="yield-event-history"></div>
+                        <button class="primary-btn" type="submit">Confirmar programação</button>
+                      </form>
+                    </section>
+                    <section class="yield-tool-card">
+                      <h5>Ajustar rendimento de um cotista</h5>
+                      <p>Abater e guardar no fundo, redistribuir aos demais ou transferir integralmente a outro cotista.</p>
+                      <form id="yieldAdjustmentForm" class="yield-tool-form">
+                        <label>Lote de rendimentos<select id="yieldBatch" required></select></label>
+                        <label>Retirar do cotista<select id="yieldMember" required></select></label>
+                        <label>Valor do ajuste (R$)<input id="yieldAmount" type="number" min="0.01" step="0.01" required></label>
+                        <label>Destino do valor
+                          <select id="yieldMode">
+                            <option value="hold">Não redistribuir: reservar na caixinha</option>
+                            <option value="redistribute">Redistribuir entre os demais cotistas</option>
+                            <option value="transfer">Transferir para um cotista específico</option>
+                          </select>
+                        </label>
+                        <label id="yieldRecipientWrap" class="hidden">Receberá o valor<select id="yieldRecipient"></select></label>
+                        <label>Motivo da alteração<input id="yieldReason" maxlength="500" required placeholder="Explique o motivo do abatimento"></label>
+                        <button class="outline-btn" id="yieldPreviewBtn" type="button">Ver prévia dos valores</button>
+                        <div id="yieldPreview" class="yield-preview"></div>
+                        <button class="primary-btn" id="yieldConfirmBtn" type="submit" disabled>Confirmar ajuste financeiro</button>
+                      </form>
+                    </section>
+                    <section class="yield-tool-card yield-tool-wide">
+                      <h5>Distribuir lucro de uma rifa encerrada</h5>
+                      <p>O cálculo usa as cotas vigentes na data da rifa, 10% da administração e 1 cota virtual. Rifas de 2026 já incluídas no fechamento consolidado não serão lançadas novamente.</p>
+                      <form id="yieldRaffleForm" class="yield-tool-form">
+                        <label>Rifa<select id="yieldRaffle" required></select></label>
+                        <label>Motivo da confirmação<input id="yieldRaffleReason" maxlength="500" required placeholder="Conferido com a prestação de contas da rifa"></label>
+                        <button class="outline-btn" id="yieldRafflePreviewBtn" type="button">Simular distribuição da rifa</button>
+                        <div id="yieldRafflePreview" class="yield-preview"></div>
+                        <button class="primary-btn" id="yieldRaffleConfirm" type="submit" disabled>Confirmar distribuição desta rifa</button>
+                      </form>
+                    </section>
+                  </div>
+                  <h5>Histórico de ajustes confirmados</h5>
+                  <div id="yieldAdjustmentsHistory" class="yield-audit-list">Nenhum ajuste confirmado.</div>
+                </div>
               </article>
             </div>
           </div>
@@ -544,9 +598,10 @@
 
   <div id="modal" class="modal hidden"><div class="modal-card"><button id="closeModal" class="modal-close">×</button><div id="modalContent"></div></div></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
-  <script src="/config.js?v=20261006-final-v11"></script>
-  <script src="/app.js?v=20261006-final-v11"></script>
-  <script src="/features.js?v=20261006-final-v11"></script>
-  <script src="/admin-agent.js?v=20261006-final-v11"></script>
+  <script src="/config.js?v=20261006-final-v12"></script>
+  <script src="/app.js?v=20261006-final-v12"></script>
+  <script src="/features.js?v=20261006-final-v12"></script>
+  <script src="/admin-agent.js?v=20261006-final-v12"></script>
+  <script src="/yield-management.js?v=20261006-final-v12"></script>
 </body>
 </html>
