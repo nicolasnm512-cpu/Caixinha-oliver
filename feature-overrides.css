@@ -1460,3 +1460,52 @@ body{min-width:320px}
   .app-shell:not(.is-admin) .sidebar .nav-item .nav-label{font-size:8.5px}
   .member-feed-value{display:none}
 }
+
+
+/* ===== Mobile layout hotfix v16 • 2026-10-07 ===== */
+/* Cotista: nunca reexibir cards exclusivos do ADM no resumo mobile. */
+.app-shell:not(.is-admin) .member-summary-grid .home-money-card.admin-only{
+  display:none!important;
+}
+@media(max-width:760px){
+  .app-shell:not(.is-admin) .member-summary-grid .home-money-card.member-only{
+    display:block!important;
+  }
+  .app-shell:not(.is-admin) .member-summary-grid .home-money-card.admin-only{
+    display:none!important;
+  }
+}
+
+/* ADM: painéis em <article> devem manter fluxo vertical; a regra global admin-only usa flex. */
+.app-shell.is-admin article.admin-only{
+  display:block!important;
+}
+.app-shell.is-admin .loan-interest-consolidation{
+  width:100%;
+  min-width:0;
+}
+.app-shell.is-admin .loan-interest-consolidation>.panel-head{
+  width:100%;
+}
+.app-shell.is-admin .loan-interest-grid{
+  width:100%;
+  min-width:0;
+}
+@media(max-width:620px){
+  .app-shell.is-admin .loan-interest-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  .app-shell.is-admin .loan-interest-grid>div{
+    min-width:0;
+  }
+  .app-shell.is-admin .loan-interest-grid strong{
+    overflow-wrap:normal;
+    word-break:normal;
+    font-size:18px;
+  }
+}
+@media(max-width:420px){
+  .app-shell.is-admin .loan-interest-grid{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+}
