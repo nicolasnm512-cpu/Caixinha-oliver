@@ -135,6 +135,9 @@ Deno.serve(async(req:Request)=>{
     let member=candidates[0]?.p||null;
     const amount=parseMoney(text);
     const month=refMonth(text);
+    let actionType:string|null=null;
+    let payload:any={};
+    let preview="";
 
     const explicit=explicitDate(text);
 
@@ -197,9 +200,9 @@ Deno.serve(async(req:Request)=>{
       if(!explicit)return json({error:"Informe a data de vencimento. Ex.: 'Gerar cotas de outubro de 2026 vencimento 20/10/2026'."},400);
       actionType="generate_month_contributions"; payload={reference_month:month,due_date:explicit};
       preview="Gerar as cotas de "+ptDate(month)+" com vencimento em "+ptDate(explicit)+"? Confirmar?";
-    }else 
+    }
 
-    if(/\b(consulta|consultar|ver|situacao|resumo|quanto|saldo)\b/.test(n)&&member){
+    if(!actionType&&/\b(consulta|consultar|ver|situacao|resumo|quanto|saldo)\b/.test(n)&&member){
       const year=new Date().getFullYear();
       const [{data:credit},{data:loans},{data:balances}]=await Promise.all([
         service.from("member_credit_summary").select("*").eq("member_id",member.id).maybeSingle(),
@@ -213,9 +216,6 @@ Deno.serve(async(req:Request)=>{
       return json({answer:`${member.full_name}: cotas confirmadas ${money(paid)}; rendimento ${money(yieldValue)}; empréstimos em aberto ${money(debt)}; limite disponível ${money(Number(credit?.available_credit||0))}.`,intent:"consult_member"});
     }
 
-    let actionType:string|null=null;
-    let payload:any={};
-    let preview="";
       const yieldChange=/\b(retir|retira|retirar|retirou|retire|retirada|abater|abate|abatimento|descontar|desconta|redistribuir|ratear|transferir)\b/.test(n)
       && /\b(juros|juro|rendimento|rendimentos|lucro|lucros)\b/.test(n);
     const scheduleChange=/(?:cota|cotas).*(?:a partir|passar a|reduzir|diminuir|retirar|alterar|ficar com)/
