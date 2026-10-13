@@ -163,6 +163,74 @@
       </header>
 
       <section id="dashboard" class="page active-page">
+
+        <section id="adminPremiumV18" class="admin-premium-v18 admin-only">
+          <div class="adm18-header">
+            <div class="adm18-brand">
+              <img src="/assets/oliver-logo.svg" alt="OLIVER">
+              <div><h1>OLIVER <span>Administração</span></h1><p>Painel administrativo financeiro</p></div>
+            </div>
+            <span class="adm18-role">♛ Administrador</span>
+          </div>
+
+          <section class="adm18-welcome">
+            <div><small id="adm18Greeting">Olá</small><h2 id="adm18Name">Administrador</h2><p>Visão geral da OLIVER Caixinha e do que precisa da sua atenção.</p></div>
+            <div id="adm18Date" class="adm18-date"></div>
+          </section>
+
+          <div class="adm18-grid">
+            <button class="adm18-card cash" data-adm18-go="admin"><span class="icon">◉</span><span>Caixa disponível</span><strong id="adm18Cash">R$ 0,00</strong><small>Saldo atual disponível</small></button>
+            <button class="adm18-card" data-adm18-go="loans"><span class="icon">↗</span><span>Total emprestado</span><strong id="adm18Loan">R$ 0,00</strong><small>Capital em contratos ativos</small></button>
+            <button class="adm18-card" data-adm18-go="payments"><span class="icon">↑</span><span>Entradas confirmadas</span><strong id="adm18Income">R$ 0,00</strong><small>Cotas, rifas, passeios e recebimentos</small></button>
+            <button class="adm18-card alert" data-adm18-go="admin"><span class="icon">!</span><span>Pendências</span><strong id="adm18Pending">0</strong><small id="adm18PendingText">Nenhuma ação pendente</small></button>
+          </div>
+
+          <section class="adm18-section">
+            <div class="adm18-section-head"><div><h3>▥ Visão financeira</h3><p>Entradas, saídas, empréstimos, caixa e juros em uma única leitura.</p></div><button type="button" data-adm18-go="admin">Detalhes</button></div>
+            <div class="adm18-chart"><div class="adm18-chart-bars">
+              <div class="adm18-baritem"><div class="adm18-value" id="adm18v0">R$ 0,00</div><div class="adm18-barbox"><div class="adm18-bar" id="adm18b0"></div></div><div class="adm18-label">Entradas</div></div>
+              <div class="adm18-baritem"><div class="adm18-value" id="adm18v1">R$ 0,00</div><div class="adm18-barbox"><div class="adm18-bar" id="adm18b1"></div></div><div class="adm18-label">Saídas</div></div>
+              <div class="adm18-baritem"><div class="adm18-value" id="adm18v2">R$ 0,00</div><div class="adm18-barbox"><div class="adm18-bar" id="adm18b2"></div></div><div class="adm18-label">Emprestado</div></div>
+              <div class="adm18-baritem"><div class="adm18-value" id="adm18v3">R$ 0,00</div><div class="adm18-barbox"><div class="adm18-bar" id="adm18b3"></div></div><div class="adm18-label">Caixa</div></div>
+              <div class="adm18-baritem"><div class="adm18-value" id="adm18v4">R$ 0,00</div><div class="adm18-barbox"><div class="adm18-bar" id="adm18b4"></div></div><div class="adm18-label">Juros</div></div>
+            </div></div>
+          </section>
+
+          <section class="adm18-section">
+            <div class="adm18-section-head"><div><h3>⚠ Atenção agora</h3><p>Somente itens que podem exigir ação administrativa.</p></div><button type="button" data-adm18-go="admin">Ver central</button></div>
+            <div class="adm18-attention">
+              <button class="adm18-attn" data-adm18-go="payments"><span class="row"><span>▤</span><span id="adm18Receipts" class="adm18-badge">0</span></span><b>Comprovantes</b><small>Aguardando validação</small></button>
+              <button class="adm18-attn" data-adm18-go="admin"><span class="row"><span>↗</span><span id="adm18Requests" class="adm18-badge">0</span></span><b>Empréstimos aguardando</b><small>Análise e aprovação</small></button>
+              <button class="adm18-attn" data-adm18-go="members"><span class="row"><span>◎</span><span class="adm18-badge">↻</span></span><b>Cadastro dos cotistas</b><small>Acesso, dados e situação individual</small></button>
+              <button class="adm18-attn" data-adm18-go="payments"><span class="row"><span>▣</span><span class="adm18-badge">Mês</span></span><b>Cotas e vencimentos</b><small>Conferência do período</small></button>
+            </div>
+          </section>
+
+          <section class="adm18-section">
+            <div class="adm18-section-head"><div><h3>⚡ Ações rápidas</h3><p>Todas as funções existentes continuam disponíveis.</p></div></div>
+            <div class="adm18-actions">
+              <button class="adm18-action" data-adm18-go="members"><span><i>◎</i>Cotistas</span><b>›</b></button>
+              <button class="adm18-action" data-adm18-go="payments"><span><i>▤</i>Comprovantes</span><b>›</b></button>
+              <button class="adm18-action" data-adm18-go="loans"><span><i>↗</i>Empréstimos</span><b>›</b></button>
+              <button class="adm18-action" data-adm18-go="activities"><span><i>★</i>Rifas e passeios</span><b>›</b></button>
+              <button class="adm18-action" data-adm18-go="admin"><span><i>▥</i>Rendimentos</span><b>›</b></button>
+              <button class="adm18-action" data-adm18-go="admin"><span><i>▣</i>Relatórios e controles</span><b>›</b></button>
+            </div>
+          </section>
+
+          <section class="adm18-ai">
+            <div class="orb">🤖</div><div><h3>Oliver ADM</h3><p>Consultas e operações administrativas com confirmação.</p></div><button id="adm18OpenAi" type="button">Conversar agora ›</button>
+          </section>
+
+          <nav class="adm18-mobile-nav">
+            <button class="active" data-adm18-go="dashboard"><i>⌂</i>Início</button>
+            <button data-adm18-go="members"><i>◎</i>Cotistas</button>
+            <button data-adm18-go="loans"><i>↗</i>Empréstimos</button>
+            <button data-adm18-go="activities"><i>★</i>Eventos</button>
+            <button data-adm18-go="admin"><i>⚙</i>Mais</button>
+          </nav>
+        </section>
+
         <article class="home-profile-card">
           <div class="home-profile-copy">
             <span id="homeGreeting" class="home-greeting">Bom dia</span>
