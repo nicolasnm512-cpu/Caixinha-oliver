@@ -1661,3 +1661,57 @@
     padding-bottom:10px!important;
   }
 }
+
+
+/* ===== v18.9 • correção real da rolagem no detalhe do cotista ===== */
+.is-admin .modal{
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  overflow:hidden!important;
+  padding:10px 8px!important;
+}
+.is-admin .modal-card{
+  width:min(760px,100%)!important;
+  height:auto!important;
+  max-height:calc(100dvh - 20px)!important;
+  margin:0 auto!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+  scroll-padding-bottom:160px!important;
+}
+.is-admin .member-detail-modal{
+  min-height:min-content!important;
+  padding-bottom:165px!important;
+}
+.is-admin .member-detail-actions{
+  margin-bottom:0!important;
+}
+.is-admin .member-detail-actions::after{
+  content:""!important;
+  display:block!important;
+  grid-column:1/-1!important;
+  height:8px!important;
+}
+
+@media(max-width:720px){
+  .is-admin .modal{
+    padding:6px!important;
+  }
+  .is-admin .modal-card{
+    max-height:calc(100dvh - 12px)!important;
+    border-radius:18px!important;
+    scrollbar-width:thin!important;
+  }
+  .is-admin .member-detail-modal{
+    padding-bottom:175px!important;
+  }
+}
+
+@media(max-width:430px){
+  .is-admin .member-detail-modal{
+    padding-bottom:185px!important;
+  }
+}
