@@ -16,7 +16,7 @@
   radial-gradient(circle at 90% 4%,rgba(216,171,85,.08),transparent 26rem),
   linear-gradient(180deg,#090b0e 0%,#0d1014 100%);
 }
-.is-admin #dashboard.active-page>.topbar{display:none!important}
+.is-admin:has(#dashboard.active-page) .topbar{display:none!important}
 .is-admin #dashboard>.home-profile-card{display:none!important}
 .is-admin #dashboard>.member-summary-grid{position:absolute!important;left:-99999px!important;width:1px!important;height:1px!important;overflow:hidden!important}
 .is-admin .admin-premium-home{display:block!important;max-width:1220px;margin:0 auto;padding:8px 0 28px;color:var(--adm-text)}
