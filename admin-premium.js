@@ -153,15 +153,26 @@
     $('#admOpenAssistant')?.addEventListener('click',openAdm);
   }
 
+  function syncGreeting(){
+    const greeting=hourGreeting();
+    const hg=$('#homeGreeting');
+    if(hg && hg.textContent!==greeting) hg.textContent=greeting;
+  }
+
+  function setText(el,value){
+    if(el && el.textContent!==String(value)) el.textContent=String(value);
+  }
+
   function sync(){
+    syncGreeting();
     if(!isAdminSession()) return;
     build();
     const name=$('#sidebarName')?.textContent?.trim()||'Administrador';
     const greeting=hourGreeting();
-    if($('#admGreeting')) $('#admGreeting').textContent=greeting;
-    if($('#admName')) $('#admName').textContent=name;
-    if($('#admDate')) $('#admDate').textContent=formatNow();
-    if($('#admLiveTime')) $('#admLiveTime').textContent='Atualizado • '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    setText($('#admGreeting'),greeting);
+    setText($('#admName'),name);
+    setText($('#admDate'),formatNow());
+    setText($('#admLiveTime'),'Atualizado • '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
 
     const cash=moneyText('#homeCashAvailable');
     const loan=moneyText('#homeLoanNegative');
@@ -169,13 +180,13 @@
     const requests=numberText('#homePendingRequests');
     const receipts=numberText('#homePendingReceipts');
     const pending=requests+receipts;
-    if($('#admCash')) $('#admCash').textContent=cash;
-    if($('#admLoan')) $('#admLoan').textContent=loan.replace(/^[-−]\s*/,'');
-    if($('#admIncome')) $('#admIncome').textContent=income;
-    if($('#admPending')) $('#admPending').textContent=String(pending);
-    if($('#admPendingText')) $('#admPendingText').textContent=pending?pending+' item(ns) para resolver':'Nenhuma ação pendente';
-    if($('#admReceiptCount')) $('#admReceiptCount').textContent=String(receipts);
-    if($('#admRequestCount')) $('#admRequestCount').textContent=String(requests);
+    setText($('#admCash'),cash);
+    setText($('#admLoan'),loan.replace(/^[-−]\s*/,''));
+    setText($('#admIncome'),income);
+    setText($('#admPending'),String(pending));
+    setText($('#admPendingText'),pending?pending+' item(ns) para resolver':'Nenhuma ação pendente');
+    setText($('#admReceiptCount'),String(receipts));
+    setText($('#admRequestCount'),String(requests));
 
     const chartTexts=[
       moneyText('#chartIncomeLabel')||income,
@@ -188,17 +199,17 @@
     const max=Math.max(...values,1);
     values.forEach((v,i)=>{
       const val=$('#admChartValue'+i),bar=$('#admChartBar'+i);
-      if(val) val.textContent=chartTexts[i]||'R$ 0,00';
-      if(bar) bar.style.height=Math.max(8,Math.round(v/max*100))+'%';
+      setText(val,chartTexts[i]||'R$ 0,00');
+      if(bar){
+        const h=Math.max(8,Math.round(v/max*100))+'%';
+        if(bar.style.height!==h) bar.style.height=h;
+      }
     });
 
-    // Saudação dinâmica também na área do cotista, sem alterar o restante do layout.
-    const hg=$('#homeGreeting');
-    if(hg) hg.textContent=greeting.replace(/^Olá,\s*/,'');
   }
 
   const observer=new MutationObserver(()=>sync());
-  observer.observe(document.body,{subtree:true,attributes:true,childList:true,characterData:true});
+  observer.observe(document.body,{subtree:true,attributes:true,attributeFilter:['class']});
   setInterval(sync,30000);
   setTimeout(sync,250);
 })();
