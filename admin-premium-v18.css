@@ -338,3 +338,178 @@
 @media(max-width:430px){
   .is-admin #loans .kpi-grid.mini{grid-template-columns:1fr!important}
 }
+
+/* v18.2 — home visível + contratos compactos + Oliver ADM premium */
+
+/* A regra antiga esconde qualquer section.admin-only que não seja a página ativa.
+   Esta exceção mantém o dashboard premium visível dentro da página dashboard. */
+.is-admin #dashboard.active-page #adminPremiumV18{
+  display:block!important;
+}
+
+/* Contratos: remover caixas brancas internas e reduzir altura */
+.is-admin #loans .loan-cards{
+  gap:12px!important;
+}
+.is-admin #loans .loan-card{
+  background:linear-gradient(180deg,#15191e,#101318)!important;
+  border:1px solid rgba(215,169,78,.20)!important;
+  border-radius:18px!important;
+  padding:16px!important;
+  color:var(--adm18-text)!important;
+  box-shadow:0 12px 28px rgba(0,0,0,.18)!important;
+}
+.is-admin #loans .loan-card-head h4,
+.is-admin #loans .loan-card .big,
+.is-admin #loans .loan-meta b{
+  color:#f5f2eb!important;
+}
+.is-admin #loans .loan-card-head p,
+.is-admin #loans .loan-card span,
+.is-admin #loans .loan-meta span{
+  color:#9fa7b1!important;
+}
+.is-admin #loans .loan-meta{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+  margin-top:12px!important;
+}
+.is-admin #loans .loan-meta>div{
+  background:#0c1014!important;
+  color:var(--adm18-text)!important;
+  border:1px solid rgba(215,169,78,.14)!important;
+  border-radius:12px!important;
+  padding:10px 11px!important;
+  min-height:64px!important;
+}
+.is-admin #loans .progress{
+  background:#262c33!important;
+  margin:12px 0!important;
+}
+.is-admin #loans .progress i{
+  background:linear-gradient(90deg,#b57b29,#efcb77)!important;
+}
+.is-admin #loans .loan-tabs,
+.is-admin #loans .loan-tab-switch,
+.is-admin #loans .loan-filter-tabs{
+  background:#0e1216!important;
+  border-color:rgba(215,169,78,.18)!important;
+  color:#d5dae1!important;
+}
+.is-admin #loans .loan-interest-consolidation{
+  padding:16px!important;
+}
+.is-admin #loans .loan-interest-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+.is-admin #loans .loan-interest-grid>div{
+  min-height:78px!important;
+  padding:11px!important;
+  border-radius:12px!important;
+}
+.is-admin #loans .loan-interest-grid strong{
+  font-size:18px!important;
+}
+
+/* Oliver ADM: totalmente integrado ao tema premium */
+.is-admin .admin-agent-panel{
+  border:1px solid rgba(215,169,78,.35)!important;
+  background:#0e1216!important;
+  box-shadow:0 26px 70px rgba(0,0,0,.55)!important;
+}
+.is-admin .admin-agent-head{
+  background:linear-gradient(135deg,#19150e,#0c0f13)!important;
+  border-bottom:1px solid rgba(215,169,78,.18)!important;
+}
+.is-admin .admin-agent-head strong{color:var(--adm18-gold2)!important}
+.is-admin .admin-agent-head span{color:#9ea6b1!important}
+.is-admin .admin-agent-messages{
+  background:#0b0e12!important;
+}
+.is-admin .admin-agent-msg{
+  background:#151a20!important;
+  border-color:rgba(215,169,78,.15)!important;
+  color:#eceef1!important;
+}
+.is-admin .admin-agent-msg.user{
+  background:linear-gradient(180deg,#d5a94e,#ae7726)!important;
+  color:#171006!important;
+  border-color:rgba(240,205,130,.34)!important;
+}
+.is-admin .admin-agent-msg.error{
+  background:#2a1616!important;
+  border-color:#6e3232!important;
+  color:#ffd5d1!important;
+}
+.is-admin .admin-agent-msg.success{
+  background:#122419!important;
+  border-color:#2e6540!important;
+  color:#c9f5d5!important;
+}
+.is-admin .admin-agent-quick{
+  background:#0e1216!important;
+  border-top-color:rgba(215,169,78,.15)!important;
+}
+.is-admin .admin-agent-quick button{
+  background:#151a20!important;
+  color:#e8c979!important;
+  border-color:rgba(215,169,78,.24)!important;
+}
+.is-admin .admin-agent-form{
+  background:#0e1216!important;
+  border-top-color:rgba(215,169,78,.15)!important;
+}
+.is-admin .admin-agent-form textarea{
+  background:#090c10!important;
+  color:#f4f4f2!important;
+  border-color:rgba(215,169,78,.24)!important;
+}
+.is-admin .admin-agent-form textarea::placeholder{color:#7f8791!important}
+.is-admin .admin-agent-note{
+  background:#0e1216!important;
+  color:#858d97!important;
+  border-top:1px solid rgba(215,169,78,.10)!important;
+}
+.is-admin .admin-agent-fab{
+  border:1px solid rgba(215,169,78,.30)!important;
+  background:linear-gradient(180deg,#15191d,#0c0f12)!important;
+  box-shadow:0 14px 38px rgba(0,0,0,.42)!important;
+}
+
+/* Inputs e elementos claros restantes dentro do ADM */
+.is-admin .simulation,
+.is-admin .personal-summary>div,
+.is-admin .credit-box,
+.is-admin .yield-event-history,
+.is-admin .yield-preview{
+  background:#0c1014!important;
+  color:#e8eaed!important;
+  border-color:rgba(215,169,78,.16)!important;
+}
+.is-admin .loan-card .badge,
+.is-admin .badge{
+  box-shadow:none!important;
+}
+
+@media(max-width:720px){
+  .is-admin #adminPremiumV18{
+    padding-top:4px!important;
+  }
+  .is-admin #loans .loan-meta{
+    grid-template-columns:1fr 1fr!important;
+  }
+  .is-admin .admin-agent-panel{
+    bottom:96px!important;
+    max-height:calc(100dvh - 130px)!important;
+  }
+  .is-admin .admin-agent-fab{
+    bottom:92px!important;
+  }
+}
+@media(max-width:430px){
+  .is-admin #loans .loan-meta{
+    grid-template-columns:1fr!important;
+  }
+}
