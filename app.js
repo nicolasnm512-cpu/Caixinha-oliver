@@ -743,12 +743,23 @@ async function renderMembers(){
       <div><span>Empréstimos abertos</span><b>${brl.format(totalDebt)}</b><small>saldo em aberto</small></div>
       <div><span>Total acumulado</span><b>${brl.format(totalAccumulated)}</b><small>visão consolidada</small></div>
     </div>
+    <div class="member-premium-toolbar">
+      <label class="member-search-box">
+        <span>⌕</span>
+        <input id="memberPremiumSearch" type="search" placeholder="Buscar cotista" autocomplete="off">
+      </label>
+      <div class="member-filter-chips" role="group" aria-label="Filtro de cotistas">
+        <button class="active" data-member-filter="all">Todos</button>
+        <button data-member-filter="active">Ativos</button>
+        <button data-member-filter="pending">Pendentes</button>
+      </div>
+    </div>
     <div class="member-premium-list">
       ${rows.map(({m,mc,debt,snap,yr,credit})=>{
         const paid=Number(snap?.contributions_paid||0);
         const accumulated=Number(yr?.estimated_year_end_total||0);
         const monthOk=mc?.status==='confirmed';
-        return `<article class="member-premium-card">
+        return `<article class="member-premium-card" data-member-name="${safe(String(m.full_name||'').toLowerCase())}" data-member-active="${m.active?'1':'0'}" data-member-pending="${monthOk?'0':'1'}">
           <div class="member-premium-head">
             <div class="member-premium-id">${String(m.cotista_number||'').padStart(2,'0')}</div>
             <div class="member-premium-name">
@@ -769,7 +780,38 @@ async function renderMembers(){
           </div>
         </article>`;
       }).join('')}
+    </div>
+    <div id="memberPremiumEmpty" class="member-premium-empty" hidden>
+      <b>Nenhum cotista encontrado</b>
+      <span>Ajuste a busca ou o filtro.</span>
     </div>`;
+
+  const memberSearch=qs('#memberPremiumSearch');
+  const memberFilters=[...document.querySelectorAll('[data-member-filter]')];
+  const memberCards=[...document.querySelectorAll('#members .member-premium-card')];
+  let memberFilter='all';
+  const applyMemberView=()=>{
+    const term=(memberSearch?.value||'').trim().toLowerCase();
+    let visible=0;
+    memberCards.forEach(card=>{
+      const matchesName=!term||card.dataset.memberName.includes(term);
+      const matchesFilter=
+        memberFilter==='all'||
+        (memberFilter==='active'&&card.dataset.memberActive==='1')||
+        (memberFilter==='pending'&&card.dataset.memberPending==='1');
+      const show=matchesName&&matchesFilter;
+      card.classList.toggle('member-hidden',!show);
+      if(show)visible++;
+    });
+    const empty=qs('#memberPremiumEmpty');
+    if(empty)empty.hidden=visible!==0;
+  };
+  memberSearch?.addEventListener('input',applyMemberView);
+  memberFilters.forEach(btn=>btn.addEventListener('click',()=>{
+    memberFilter=btn.dataset.memberFilter||'all';
+    memberFilters.forEach(b=>b.classList.toggle('active',b===btn));
+    applyMemberView();
+  }));
   window.__membersCsv=rows.map(r=>r.m);
 }
 
