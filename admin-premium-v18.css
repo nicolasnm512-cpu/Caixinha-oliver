@@ -261,3 +261,80 @@
   .adm18-grid{grid-template-columns:1fr}
   .adm18-actions{grid-template-columns:1fr}
 }
+
+/* v18.1 — integração real com a estrutura existente */
+.is-admin #dashboard>.home-quick-card{display:none!important}
+.is-admin .kpi,
+.is-admin .loan-interest-grid>div,
+.is-admin .activity-tabs,
+.is-admin .activity-tab,
+.is-admin .trip-details>div,
+.is-admin .trip-progress-grid>div,
+.is-admin .event-fund-progress,
+.is-admin .trip-fund-progress,
+.is-admin .yield-tool-card,
+.is-admin .rule-stage-card,
+.is-admin .payment-settings-preview,
+.is-admin .interest-policy-note,
+.is-admin .member-detail-card{
+  background:linear-gradient(180deg,#15191e,#101318)!important;
+  color:var(--adm18-text)!important;
+  border-color:rgba(215,169,78,.18)!important;
+  box-shadow:none!important;
+}
+.is-admin .kpi strong,
+.is-admin .loan-interest-grid strong,
+.is-admin .activity-tab,
+.is-admin .activity-tab span,
+.is-admin .activity-card b,
+.is-admin .activity-card strong{
+  color:var(--adm18-text)!important;
+}
+.is-admin .kpi-label,
+.is-admin .kpi span,
+.is-admin .loan-interest-grid span,
+.is-admin .loan-interest-grid small,
+.is-admin .activity-card small,
+.is-admin .activity-card p{
+  color:var(--adm18-muted)!important;
+}
+.is-admin .activity-tab.active{
+  background:linear-gradient(180deg,#dcb25f,#ad792a)!important;
+  color:#161006!important;
+}
+.is-admin .activity-tab.active span,
+.is-admin .activity-tab.active b{color:#161006!important}
+.is-admin .activity-card .activity-collapse-toggle{
+  background:transparent!important;
+  color:var(--adm18-text)!important;
+}
+.is-admin .admin-page-title{padding:16px 18px!important;border-radius:20px!important}
+.is-admin .panel,
+.is-admin .admin-fold{border-radius:20px!important}
+.is-admin .table-wrap{border-radius:16px!important}
+.is-admin .home-quick-card{border-color:rgba(215,169,78,.18)!important}
+.adm18-global-nav{display:none}
+
+@media(max-width:720px){
+  .is-admin .sidebar{display:none!important}
+  .is-admin .main{margin-left:0!important;width:100%!important;padding-left:14px!important;padding-right:14px!important}
+  .is-admin .adm18-mobile-nav{display:none!important}
+  .is-admin .adm18-global-nav{
+    display:grid!important;position:fixed;z-index:120;left:10px;right:10px;bottom:8px;
+    grid-template-columns:repeat(5,1fr);padding:7px 4px calc(7px + env(safe-area-inset-bottom));
+    border:1px solid rgba(215,169,78,.24);border-radius:20px;background:rgba(8,10,13,.97);
+    backdrop-filter:blur(18px);box-shadow:0 10px 42px rgba(0,0,0,.55)
+  }
+  .is-admin .adm18-global-nav button{
+    border:0;background:transparent;color:#929aa5;display:grid;place-items:center;gap:2px;
+    font-size:9px;padding:6px 1px
+  }
+  .is-admin .adm18-global-nav button i{font-style:normal;font-size:18px}
+  .is-admin .adm18-global-nav button.active{color:#edc66a}
+  .is-admin #loans .kpi-grid.mini{grid-template-columns:1fr 1fr!important;gap:10px!important}
+  .is-admin #loans .kpi{min-height:126px!important;padding:16px!important}
+  .is-admin #loans .kpi strong{font-size:20px!important;overflow-wrap:anywhere}
+}
+@media(max-width:430px){
+  .is-admin #loans .kpi-grid.mini{grid-template-columns:1fr!important}
+}
