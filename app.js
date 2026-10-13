@@ -732,15 +732,44 @@ async function renderMembers(){
   });
   window.__memberAdminData=Object.fromEntries(rows.map(r=>[r.m.id,r]));
 
-  qs('#membersTable').innerHTML=`<table class="data-table member-admin-table compact-members"><thead><tr><th>#</th><th>Cotista</th><th>Pago no ano</th><th>Empréstimo aberto</th><th>Total acumulado</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(({m,mc,debt,snap,yr,credit})=>`<tr>
-    <td>${m.cotista_number?String(m.cotista_number).padStart(2,'0'):'ADM'}</td>
-    <td><b>${safe(m.full_name)}</b><small>${m.cotista_number?'Cotista':'Administrador'}</small></td>
-    <td>${m.cotista_number?(snap?brl.format(Number(snap.contributions_paid||0)):'—'):'—'}</td>
-    <td class="${debt>0?'amount out':''}">${m.cotista_number&&debt>0?brl.format(-debt):brl.format(0)}</td>
-    <td>${m.cotista_number&&yr?brl.format(Number(yr.estimated_year_end_total||0)):'—'}</td>
-    <td>${m.active?statusBadge('active'):statusBadge('cancelled')}</td>
-    <td>${m.cotista_number?`<button class="outline-btn tiny" onclick="openMemberAdminDetails('${m.id}')">Ver</button>`:'—'}</td>
-  </tr>`).join('')}</tbody></table>`;
+  const activeCount=rows.filter(r=>r.m.active).length;
+  const totalPaid=rows.reduce((sum,r)=>sum+Number(r.snap?.contributions_paid||0),0);
+  const totalDebt=rows.reduce((sum,r)=>sum+Number(r.debt||0),0);
+  const totalAccumulated=rows.reduce((sum,r)=>sum+Number(r.yr?.estimated_year_end_total||0),0);
+  qs('#membersTable').innerHTML=`
+    <div class="member-premium-summary">
+      <div><span>Cotistas ativos</span><b>${activeCount}</b><small>de ${rows.length} cadastrados</small></div>
+      <div><span>Pago no ano</span><b>${brl.format(totalPaid)}</b><small>cotas confirmadas</small></div>
+      <div><span>Empréstimos abertos</span><b>${brl.format(totalDebt)}</b><small>saldo em aberto</small></div>
+      <div><span>Total acumulado</span><b>${brl.format(totalAccumulated)}</b><small>visão consolidada</small></div>
+    </div>
+    <div class="member-premium-list">
+      ${rows.map(({m,mc,debt,snap,yr,credit})=>{
+        const paid=Number(snap?.contributions_paid||0);
+        const accumulated=Number(yr?.estimated_year_end_total||0);
+        const monthOk=mc?.status==='confirmed';
+        return `<article class="member-premium-card">
+          <div class="member-premium-head">
+            <div class="member-premium-id">${String(m.cotista_number||'').padStart(2,'0')}</div>
+            <div class="member-premium-name">
+              <span>COTISTA</span>
+              <h4>${safe(m.full_name)}</h4>
+              <small>${safe(m.email||'E-mail não cadastrado')}</small>
+            </div>
+            <div class="member-premium-status">${m.active?statusBadge('active'):statusBadge('cancelled')}</div>
+          </div>
+          <div class="member-premium-money">
+            <div><span>Pago no ano</span><b>${brl.format(paid)}</b></div>
+            <div><span>Empréstimo aberto</span><b class="${debt>0?'danger':''}">${brl.format(debt)}</b></div>
+            <div><span>Total acumulado</span><b>${brl.format(accumulated)}</b></div>
+          </div>
+          <div class="member-premium-foot">
+            <div class="member-month-state ${monthOk?'ok':'pending'}"><i></i><span>${monthOk?'Mês atual confirmado':'Mês atual pendente'}</span></div>
+            <button class="member-open-btn" onclick="openMemberAdminDetails('${m.id}')">Abrir cotista <span>›</span></button>
+          </div>
+        </article>`;
+      }).join('')}
+    </div>`;
   window.__membersCsv=rows.map(r=>r.m);
 }
 
