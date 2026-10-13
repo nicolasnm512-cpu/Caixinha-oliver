@@ -1715,3 +1715,57 @@
     padding-bottom:185px!important;
   }
 }
+
+
+/* ===== v18.10 • modal do cotista respeitando a navegação flutuante ===== */
+@media(max-width:720px){
+  body:has(#modal:not(.hidden)) .is-admin .modal{
+    padding:6px 8px 106px!important;
+    overflow:hidden!important;
+  }
+
+  body:has(#modal:not(.hidden)) .is-admin .modal-card{
+    width:100%!important;
+    max-height:calc(100dvh - 118px)!important;
+    margin:0 auto!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain!important;
+    -webkit-overflow-scrolling:touch!important;
+    scroll-padding-bottom:28px!important;
+  }
+
+  body:has(#modal:not(.hidden)) .is-admin .member-detail-modal{
+    padding-bottom:26px!important;
+  }
+
+  body:has(#modal:not(.hidden)) .is-admin .member-detail-actions{
+    padding-bottom:12px!important;
+  }
+
+  /* O Oliver ADM não deve cobrir ações do cotista enquanto o detalhe está aberto. */
+  body:has(#modal:not(.hidden)) .admin-agent-fab,
+  body:has(#modal:not(.hidden)) .admin-agent-panel,
+  body:has(#modal:not(.hidden)) .chatbot-fab,
+  body:has(#modal:not(.hidden)) .chatbot-panel{
+    display:none!important;
+  }
+
+  /* A navegação aprovada continua flutuando acima do fundo, sem vazamento de conteúdo. */
+  body:has(#modal:not(.hidden)) .adm18-global-nav{
+    z-index:220!important;
+    isolation:isolate!important;
+    overflow:hidden!important;
+    background:#080a0d!important;
+  }
+
+  body:has(#modal:not(.hidden)) #modal{
+    z-index:180!important;
+  }
+}
+
+@media(max-width:430px){
+  body:has(#modal:not(.hidden)) .is-admin .modal-card{
+    max-height:calc(100dvh - 122px)!important;
+  }
+}
