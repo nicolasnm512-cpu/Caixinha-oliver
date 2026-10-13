@@ -1632,3 +1632,32 @@
     min-height:40px!important;
   }
 }
+
+
+/* ===== v18.8 • detalhe do cotista com barra flutuante preservada ===== */
+.is-admin .modal{
+  align-items:flex-start!important;
+  overflow-y:auto!important;
+  padding:16px 12px 118px!important;
+  overscroll-behavior:contain!important;
+}
+.is-admin .modal-card{
+  margin:auto!important;
+  max-height:none!important;
+  overflow:visible!important;
+  width:min(760px,100%)!important;
+}
+.is-admin .member-detail-modal{
+  padding-bottom:18px!important;
+}
+@media(max-width:720px){
+  .is-admin .modal{
+    padding:10px 8px 128px!important;
+  }
+  .is-admin .modal-card{
+    border-radius:18px!important;
+  }
+  .is-admin .member-detail-modal{
+    padding-bottom:10px!important;
+  }
+}
