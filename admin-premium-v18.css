@@ -2162,3 +2162,282 @@
     grid-template-columns:repeat(4,minmax(0,1fr))!important;
   }
 }
+
+
+/* ===== v18.14 • modais premium reais + fluxo simplificado ===== */
+#modal .modal-card:has(.member-detail-v2),
+#modal .modal-card:has(.premium-trip-manager){
+  background:linear-gradient(180deg,#12161b,#0a0e12)!important;
+  color:#eef0f2!important;
+  border:1px solid rgba(215,169,78,.18)!important;
+  box-shadow:0 28px 70px rgba(0,0,0,.48)!important;
+}
+
+#modal .modal-card:has(.member-detail-v2) .modal-close,
+#modal .modal-card:has(.premium-trip-manager) .modal-close{
+  background:#11161b!important;
+  color:#e9c873!important;
+  border:1px solid rgba(215,169,78,.20)!important;
+  z-index:4!important;
+}
+
+#modal .member-detail-v2{
+  color:#eef0f2!important;
+}
+#modal .member-detail-hero{
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:space-between!important;
+  gap:12px!important;
+  padding:4px 0 14px!important;
+  border-bottom:1px solid rgba(215,169,78,.12)!important;
+}
+#modal .member-detail-hero h3{
+  margin:4px 0 3px!important;
+  color:#f5f1e8!important;
+  font-size:20px!important;
+}
+#modal .member-detail-hero p{
+  margin:0!important;
+  color:#7f8791!important;
+  font-size:9px!important;
+}
+#modal .member-detail-main{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+  margin-top:12px!important;
+}
+#modal .member-detail-main>div{
+  min-height:86px!important;
+  padding:12px!important;
+  border-radius:14px!important;
+  background:#090d11!important;
+  border:1px solid rgba(215,169,78,.10)!important;
+}
+#modal .member-detail-main span,
+#modal .member-more-grid span{
+  display:block!important;
+  color:#7d858f!important;
+  font-size:8px!important;
+}
+#modal .member-detail-main b{
+  display:block!important;
+  margin-top:7px!important;
+  color:#efcd78!important;
+  font-size:17px!important;
+}
+#modal .member-detail-main small,
+#modal .member-more-grid small{
+  display:block!important;
+  margin-top:4px!important;
+  color:#69717a!important;
+  font-size:8px!important;
+}
+#modal .member-month-line{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+  margin-top:8px!important;
+  padding:11px 12px!important;
+  border-radius:12px!important;
+  background:#0b0f13!important;
+  border:1px solid rgba(215,169,78,.10)!important;
+}
+#modal .member-month-line span{color:#818994!important;font-size:9px!important}
+#modal .member-month-line b{font-size:10px!important}
+#modal .member-month-line.ok b{color:#76d59a!important}
+#modal .member-month-line.pending b{color:#e7c56e!important}
+
+#modal .member-more-details{
+  margin-top:8px!important;
+  border-radius:13px!important;
+  border:1px solid rgba(215,169,78,.10)!important;
+  background:#0a0e12!important;
+  overflow:hidden!important;
+}
+#modal .member-more-details summary{
+  min-height:50px!important;
+  padding:11px 12px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  cursor:pointer!important;
+  list-style:none!important;
+  color:#e9c873!important;
+  font-size:9px!important;
+  font-weight:900!important;
+}
+#modal .member-more-details summary::-webkit-details-marker{display:none!important}
+#modal .member-more-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:6px!important;
+  padding:0 10px 10px!important;
+}
+#modal .member-more-grid>div{
+  min-height:62px!important;
+  padding:9px!important;
+  border-radius:10px!important;
+  background:#080c10!important;
+  border:1px solid rgba(255,255,255,.05)!important;
+}
+#modal .member-more-grid b{
+  display:block!important;
+  margin-top:5px!important;
+  color:#edf0f2!important;
+  font-size:11px!important;
+}
+
+#modal .member-actions-v2{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:7px!important;
+  margin-top:10px!important;
+  padding-bottom:calc(125px + env(safe-area-inset-bottom))!important;
+}
+#modal .member-actions-v2 button{
+  min-height:42px!important;
+  border-radius:11px!important;
+  font-size:9px!important;
+}
+
+/* Trip manager: these selectors intentionally omit .is-admin because modal sits outside app shell */
+#modal .premium-trip-manager{
+  color:#eef0f2!important;
+}
+#modal .premium-trip-manager .trip-manager-summary{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:7px!important;
+  margin:12px 0!important;
+}
+#modal .premium-trip-manager .trip-manager-summary>div{
+  min-height:74px!important;
+  padding:10px!important;
+  border-radius:12px!important;
+  background:#090d11!important;
+  border:1px solid rgba(215,169,78,.10)!important;
+}
+#modal .premium-trip-manager .trip-manager-summary span{display:block!important;color:#7f8791!important;font-size:7.5px!important;text-transform:uppercase!important;font-weight:900!important}
+#modal .premium-trip-manager .trip-manager-summary b{display:block!important;margin-top:5px!important;color:#efcd78!important;font-size:14px!important}
+#modal .premium-trip-manager .trip-manager-summary small{display:block!important;margin-top:3px!important;color:#68717a!important;font-size:7.5px!important}
+
+#modal .premium-trip-manager .trip-manager-section{
+  margin-top:8px!important;
+  border-radius:13px!important;
+  background:#0a0e12!important;
+  border:1px solid rgba(215,169,78,.10)!important;
+  overflow:hidden!important;
+}
+#modal .premium-trip-manager .trip-manager-section>summary{
+  min-height:52px!important;
+  padding:11px 12px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  list-style:none!important;
+  cursor:pointer!important;
+}
+#modal .premium-trip-manager .trip-manager-section>summary::-webkit-details-marker{display:none!important}
+#modal .premium-trip-manager .trip-manager-section>summary b{display:block!important;color:#eeeae2!important;font-size:11px!important}
+#modal .premium-trip-manager .trip-manager-section>summary small{display:block!important;margin-top:2px!important;color:#737b84!important;font-size:8px!important}
+
+#modal .premium-trip-manager .bus-assign-box,
+#modal .premium-trip-manager .bus-due-box{
+  background:#080c10!important;
+  border:1px solid rgba(215,169,78,.08)!important;
+  color:#eef0f2!important;
+}
+#modal .premium-trip-manager input,
+#modal .premium-trip-manager select{
+  background:#0d1217!important;
+  color:#eef0f2!important;
+  border:1px solid rgba(215,169,78,.13)!important;
+}
+
+#modal .premium-trip-manager .trip-member-list{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:7px!important;
+  padding:0 10px 10px!important;
+}
+#modal .premium-trip-manager .trip-member-card{
+  padding:11px!important;
+  border-radius:13px!important;
+  background:#080c10!important;
+  border:1px solid rgba(215,169,78,.09)!important;
+}
+#modal .premium-trip-manager .trip-member-head{
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:space-between!important;
+  gap:8px!important;
+}
+#modal .premium-trip-manager .trip-member-head h4{
+  margin:3px 0 0!important;
+  color:#f3f0e9!important;
+  font-size:12px!important;
+}
+#modal .premium-trip-manager .trip-member-seats{margin-top:9px!important}
+#modal .premium-trip-manager .trip-member-seats>span{display:block!important;color:#7d858f!important;font-size:8px!important;margin-bottom:5px!important}
+#modal .premium-trip-manager .number-chips{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:4px!important;
+}
+#modal .premium-trip-manager .number-chips>b{
+  min-width:31px!important;height:31px!important;display:grid!important;place-items:center!important;
+  border-radius:9px!important;font-size:9px!important
+}
+#modal .premium-trip-manager .number-chips>b.paid{background:#11231a!important;color:#7fe0a4!important;border:1px solid rgba(95,213,139,.25)!important}
+#modal .premium-trip-manager .number-chips>b.assigned{background:#211b10!important;color:#efcd78!important;border:1px solid rgba(215,169,78,.22)!important}
+#modal .premium-trip-manager .trip-linked-numbers{
+  margin-top:8px!important;
+  padding-top:8px!important;
+  border-top:1px solid rgba(255,255,255,.05)!important;
+}
+#modal .premium-trip-manager .trip-linked-numbers summary{
+  color:#d8b45f!important;
+  font-size:8px!important;
+}
+#modal .premium-trip-manager .trip-member-foot{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:7px!important;
+  margin-top:9px!important;
+  padding-top:8px!important;
+  border-top:1px solid rgba(255,255,255,.05)!important;
+}
+#modal .premium-trip-manager .trip-member-foot .primary-btn{
+  min-height:34px!important;
+  padding:7px 9px!important;
+  border-radius:9px!important;
+  font-size:8px!important;
+}
+
+@media(max-width:720px){
+  #modal .modal-card:has(.member-detail-v2),
+  #modal .modal-card:has(.premium-trip-manager){
+    max-height:calc(100dvh - 116px)!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+  }
+  #modal .member-detail-main{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  #modal .member-detail-main>div{min-height:78px!important;padding:10px!important}
+  #modal .member-detail-main b{font-size:14px!important}
+  #modal .member-actions-v2{grid-template-columns:1fr!important}
+  #modal .premium-trip-manager .trip-manager-summary{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  #modal .premium-trip-manager .trip-member-list{
+    grid-template-columns:1fr!important;
+  }
+  #modal .premium-trip-manager{
+    padding-bottom:calc(130px + env(safe-area-inset-bottom))!important;
+  }
+}
