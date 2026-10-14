@@ -825,30 +825,42 @@ window.openMemberAdminDetails=id=>{
   const customLimit=credit?.loan_limit_override==null?null:Number(credit.loan_limit_override);
   const annualPaid=Number(snap?.contributions_paid||0);
   const interestRecorded=Number(snap?.interest_recorded||0);
-  const chartMax=Math.max(1,annualPaid,debt,interestRecorded,effectiveLimit);
-  const pct=v=>Math.max(v>0?4:0,Math.round(Number(v||0)/chartMax*100));
-  openModal(`<div class="member-detail-modal">
-    <div class="panel-head"><div><span class="eyebrow">COTISTA ${String(m.cotista_number||'').padStart(2,'0')}</span><h3>${safe(m.full_name)}</h3><p>${safe(m.email||'Sem e-mail')}</p></div>${m.active?statusBadge('active'):statusBadge('cancelled')}</div>
-    <div class="member-detail-grid">
-      <div><span>Cotas pagas ${now.getFullYear()}</span><b>${snap?.paid_share_units??'—'}</b></div>
-      <div><span>Total em cotas</span><b>${snap?brl.format(Number(snap.contributions_paid||0)):'—'}</b></div>
-      <div><span>Mês atual</span><b>${mc?.status==='confirmed'?brl.format(Number(mc.amount_paid||0)):'Pendente'}</b></div>
-      <div><span>Empréstimo aberto</span><b>${debt>0?brl.format(debt):brl.format(0)}</b></div>
-      <div><span>Empréstimos no ano</span><b>${snap?brl.format(Number(snap.loan_principal_year||0)):'—'}</b></div>
-      <div><span>Juros registrados</span><b>${snap?brl.format(Number(snap.interest_recorded||0)):'—'}</b></div>
-      <div><span>Limite automático</span><b>${brl.format(autoLimit)}</b></div>
-      <div><span>Limite válido</span><b>${brl.format(effectiveLimit)}</b><small>${customLimit==null?'Automático':'Personalizado pelo ADM'}</small></div>
-      <div><span>Crédito disponível</span><b>${brl.format(availableLimit)}</b></div>
-      <div class="wide"><span>Total acumulado atual</span><b>${yr?brl.format(Number(yr.estimated_year_end_total||0)):'—'}</b></div>
+  const totalAccumulated=Number(yr?.estimated_year_end_total||0);
+  const monthPaid=mc?.status==='confirmed';
+
+  openModal(`<div class="member-detail-modal member-detail-v2">
+    <div class="member-detail-hero">
+      <div>
+        <span class="eyebrow">COTISTA ${String(m.cotista_number||'').padStart(2,'0')}</span>
+        <h3>${safe(m.full_name)}</h3>
+        <p>${safe(m.email||'Sem e-mail')}</p>
+      </div>
+      ${m.active?statusBadge('active'):statusBadge('cancelled')}
     </div>
-    <div class="member-mini-chart">
-      <h4>Resumo visual</h4>
-      <div><span>Cotas pagas</span><i><b style="width:${pct(annualPaid)}%"></b></i><strong>${brl.format(annualPaid)}</strong></div>
-      <div><span>Empréstimo aberto</span><i><b style="width:${pct(debt)}%"></b></i><strong>${brl.format(debt)}</strong></div>
-      <div><span>Juros registrados</span><i><b style="width:${pct(interestRecorded)}%"></b></i><strong>${brl.format(interestRecorded)}</strong></div>
-      <div><span>Limite de crédito</span><i><b style="width:${pct(effectiveLimit)}%"></b></i><strong>${brl.format(effectiveLimit)}</strong></div>
+
+    <div class="member-detail-main">
+      <div><span>Total acumulado</span><b>${brl.format(totalAccumulated)}</b><small>posição atual</small></div>
+      <div><span>Crédito disponível</span><b>${brl.format(availableLimit)}</b><small>limite válido ${brl.format(effectiveLimit)}</small></div>
+      <div><span>Cotas pagas ${now.getFullYear()}</span><b>${brl.format(annualPaid)}</b><small>${snap?.paid_share_units??'—'} cota(s)</small></div>
+      <div><span>Empréstimo aberto</span><b>${brl.format(debt)}</b><small>${debt>0?'saldo atual':'sem saldo em aberto'}</small></div>
     </div>
-    <div class="member-detail-actions">
+
+    <div class="member-month-line ${monthPaid?'ok':'pending'}">
+      <span>Mês atual</span>
+      <b>${monthPaid?'Confirmado':'Pendente'}</b>
+    </div>
+
+    <details class="member-more-details">
+      <summary><span>Mais detalhes financeiros</span><b>⌄</b></summary>
+      <div class="member-more-grid">
+        <div><span>Juros registrados</span><b>${brl.format(interestRecorded)}</b></div>
+        <div><span>Empréstimos no ano</span><b>${snap?brl.format(Number(snap.loan_principal_year||0)):'—'}</b></div>
+        <div><span>Limite automático</span><b>${brl.format(autoLimit)}</b></div>
+        <div><span>Limite válido</span><b>${brl.format(effectiveLimit)}</b><small>${customLimit==null?'Automático':'Personalizado pelo ADM'}</small></div>
+      </div>
+    </details>
+
+    <div class="member-detail-actions member-actions-v2">
       <button class="primary-btn" onclick="editMemberCreditLimit('${m.id}')">Editar limite</button>
       <button class="outline-btn" onclick="toggleMemberAccess('${m.id}',${m.active?'false':'true'});closeModal()">${m.active?'Desativar acesso':'Ativar acesso'}</button>
       <button class="outline-btn" onclick="resetMemberPassword('${m.id}')">Redefinir senha</button>
