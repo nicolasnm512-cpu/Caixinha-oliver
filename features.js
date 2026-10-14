@@ -295,6 +295,33 @@
     }
 
     const allActs=acts||[];
+    if(isAdmin()){
+      const activeEvents=allActs.filter(a=>!['closed','cancelled'].includes(String(a.status||'').toLowerCase())).length;
+      const receivedTotal=entries.reduce((sum,e)=>sum+Number(e.amount_paid||0),0);
+      const expectedTotal=allActs.reduce((sum,a)=>{
+        if(a.type==='draw'){
+          const cfg=Array.isArray(a.raffle_configs)?a.raffle_configs[0]:a.raffle_configs;
+          const total=Number(cfg?.total_numbers||100)*Number(cfg?.number_price||a.unit_price||0);
+          return sum+total;
+        }
+        if(a.type==='trip'){
+          const cfg=Array.isArray(a.trip_configs)?a.trip_configs[0]:a.trip_configs;
+          const total=Number(cfg?.total_seats||0)*Number(cfg?.seat_price||a.unit_price||0);
+          return sum+total;
+        }
+        return sum+Number(a.target_amount||0);
+      },0);
+      const expensesTotal=activityExpenses.reduce((sum,e)=>sum+Number(e.amount||0),0);
+      const pendingTotal=Math.max(0,expectedTotal-receivedTotal);
+      const activeEl=document.querySelector('#activityPremiumActive');
+      const receivedEl=document.querySelector('#activityPremiumReceived');
+      const pendingEl=document.querySelector('#activityPremiumPending');
+      const expensesEl=document.querySelector('#activityPremiumExpenses');
+      if(activeEl)activeEl.textContent=String(activeEvents);
+      if(receivedEl)receivedEl.textContent=brl.format(receivedTotal);
+      if(pendingEl)pendingEl.textContent=brl.format(pendingTotal);
+      if(expensesEl)expensesEl.textContent=brl.format(expensesTotal);
+    }
     const allCount=document.querySelector('#allActivityCount');
     const drawCount=document.querySelector('#drawActivityCount');
     const tripCount=document.querySelector('#tripActivityCount');
