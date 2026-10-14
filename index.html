@@ -461,6 +461,12 @@
 
       <section id="activities" class="page">
         <div class="panel-head standalone"><div><h3>Rifas e passeios</h3><p>Escolha o tipo de evento para ver arrecadação, prêmios, números ou poltronas.</p></div><div class="panel-actions admin-only"><button class="primary-btn small" id="newActivityBtn">Nova rifa</button><button class="outline-btn" id="newTripBtn">Novo passeio</button></div></div>
+        <div id="activityPremiumSummary" class="activity-premium-summary admin-only" aria-label="Resumo financeiro dos eventos">
+          <div><span>Eventos ativos</span><b id="activityPremiumActive">0</b><small>rifas e passeios em andamento</small></div>
+          <div><span>Recebido</span><b id="activityPremiumReceived">R$ 0,00</b><small>pagamentos confirmados</small></div>
+          <div><span>A receber</span><b id="activityPremiumPending">R$ 0,00</b><small>saldo previsto dos eventos</small></div>
+          <div><span>Saídas</span><b id="activityPremiumExpenses">R$ 0,00</b><small>prêmios e despesas registradas</small></div>
+        </div>
         <div id="activityTabs" class="activity-tabs" role="tablist" aria-label="Filtrar eventos">
           <button type="button" class="activity-tab active" data-activity-filter="all" aria-selected="true"><span>Todos</span><b id="allActivityCount">0</b></button>
           <button type="button" class="activity-tab" data-activity-filter="draw" aria-selected="false"><span>Rifas</span><b id="drawActivityCount">0</b></button>
