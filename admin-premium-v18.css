@@ -1813,3 +1813,44 @@
     padding-bottom:calc(170px + env(safe-area-inset-bottom))!important;
   }
 }
+
+
+/* ===== v18.12 • Eventos premium ===== */
+.is-admin #activities .panel-head.standalone{
+  padding:18px!important;margin-bottom:12px!important;border-radius:20px!important;
+  background:linear-gradient(145deg,#171b20,#0d1014)!important;
+  border:1px solid rgba(215,169,78,.16)!important;
+}
+.is-admin #activities .panel-head.standalone h3{color:#fff0c5!important;font-size:20px!important}
+.is-admin #activities .panel-head.standalone p{color:#9199a3!important;font-size:10px!important}
+.is-admin #activities .activity-premium-summary{
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:10px!important;margin-bottom:12px!important
+}
+.is-admin #activities .activity-premium-summary>div{
+  min-height:102px!important;padding:14px!important;border-radius:16px!important;
+  background:linear-gradient(180deg,#15191e,#0d1115)!important;
+  border:1px solid rgba(215,169,78,.14)!important;
+  display:flex!important;flex-direction:column!important;justify-content:center!important
+}
+.is-admin #activities .activity-premium-summary span{color:#89919a!important;font-size:8.5px!important;font-weight:900!important;text-transform:uppercase!important}
+.is-admin #activities .activity-premium-summary b{margin-top:7px!important;color:#efcd78!important;font-size:19px!important}
+.is-admin #activities .activity-premium-summary small{margin-top:5px!important;color:#737b84!important;font-size:8.5px!important}
+.is-admin #activities .activity-tabs{
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:6px!important;padding:4px!important;margin-bottom:12px!important;border-radius:14px!important;
+  background:#0c1014!important;border:1px solid rgba(215,169,78,.13)!important
+}
+.is-admin #activities .activity-tab{min-height:44px!important;border-radius:10px!important;background:transparent!important;border:0!important;color:#89919b!important}
+.is-admin #activities .activity-tab.active{background:linear-gradient(180deg,#221c11,#101419)!important;color:#efcd78!important;box-shadow:inset 0 0 0 1px rgba(215,169,78,.18)!important}
+.is-admin #activities .activity-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
+.is-admin #activities .activity-card{
+  border-radius:20px!important;overflow:hidden!important;
+  background:linear-gradient(155deg,#151a20,#0c1014)!important;
+  border:1px solid rgba(215,169,78,.14)!important
+}
+.is-admin #activities .activity-cover{min-height:46px!important;padding:11px 14px!important;background:linear-gradient(90deg,#18140d,#101419)!important;border-bottom:1px solid rgba(215,169,78,.12)!important}
+.is-admin #activities .activity-cover>span{color:#d8b45f!important;font-size:8px!important;font-weight:900!important;letter-spacing:.12em!important}
+.is-admin #activities .activity-body{padding:14px!important}
+.is-admin #activities .activity-body h4{margin:0 0 4px!important;color:#f3f0e9!important;font-size:15px!important}
+.is-admin #activities .activity-body>p{margin:0 0 11px!important;color:#818995!important;font-size:9.5px!important}
