@@ -1854,3 +1854,50 @@
 .is-admin #activities .activity-body{padding:14px!important}
 .is-admin #activities .activity-body h4{margin:0 0 4px!important;color:#f3f0e9!important;font-size:15px!important}
 .is-admin #activities .activity-body>p{margin:0 0 11px!important;color:#818995!important;font-size:9.5px!important}
+
+.is-admin #activities .trip-details>div,
+.is-admin #activities .trip-progress-grid>div{
+  min-height:62px!important;padding:9px 10px!important;border-radius:11px!important;
+  background:#090d11!important;border:1px solid rgba(215,169,78,.10)!important
+}
+.is-admin #activities .trip-details span,
+.is-admin #activities .trip-progress-grid span{color:#7e8791!important;font-size:8px!important}
+.is-admin #activities .trip-details b,
+.is-admin #activities .trip-progress-grid b{margin-top:5px!important;color:#eef0f2!important;font-size:11px!important}
+.is-admin #activities .event-fund-progress,
+.is-admin #activities .trip-fund-progress,
+.is-admin #activities .event-expense-summary{
+  margin-top:10px!important;padding:11px!important;border-radius:13px!important;
+  background:#0a0e12!important;border:1px solid rgba(215,169,78,.10)!important
+}
+.is-admin #activities .trip-progress-bar{height:6px!important;margin:10px 0 7px!important;background:#242a31!important}
+.is-admin #activities .trip-progress-bar i{background:linear-gradient(90deg,#a66f24,#efcb77)!important}
+.is-admin #activities .raffle-open-btn,
+.is-admin #activities .event-expense-summary button{min-height:40px!important;border-radius:11px!important;font-size:9px!important}
+.is-admin .bus-admin-tools{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+.is-admin .bus-assign-box,
+.is-admin .bus-due-box,
+.is-admin .raffle-finance,
+.is-admin .prize-board{
+  background:#0a0e12!important;border:1px solid rgba(215,169,78,.11)!important;
+  border-radius:14px!important;padding:12px!important
+}
+.is-admin .bus-admin-modal .table-wrap{margin-top:10px!important;background:#090d11!important;border:1px solid rgba(215,169,78,.10)!important}
+@media(max-width:900px){
+  .is-admin #activities .activity-premium-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .is-admin #activities .activity-grid{grid-template-columns:minmax(0,1fr)!important}
+}
+@media(max-width:720px){
+  .is-admin #activities .panel-head.standalone{padding:14px!important}
+  .is-admin #activities .panel-head.standalone .panel-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%!important;margin-top:10px!important}
+  .is-admin #activities .activity-premium-summary{gap:8px!important}
+  .is-admin #activities .activity-premium-summary>div{min-height:86px!important;padding:12px!important}
+  .is-admin #activities .activity-premium-summary b{font-size:16px!important}
+  .is-admin #activities .activity-tabs{position:sticky!important;top:6px!important;z-index:8!important;backdrop-filter:blur(14px)!important}
+  .is-admin #activities .activity-card{border-radius:18px!important}
+  .is-admin #activities .trip-details,
+  .is-admin #activities .trip-progress-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .is-admin #activities .trip-progress-grid>div:nth-child(3){grid-column:1/-1!important}
+  .is-admin .bus-admin-tools{grid-template-columns:minmax(0,1fr)!important}
+  .is-admin .bus-admin-modal .table-wrap{overflow-x:auto!important;-webkit-overflow-scrolling:touch!important}
+}
