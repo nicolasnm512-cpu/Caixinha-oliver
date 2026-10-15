@@ -2441,3 +2441,116 @@
     padding-bottom:calc(130px + env(safe-area-inset-bottom))!important;
   }
 }
+
+
+/* ===== v18.15 • acabamento final de contraste ===== */
+
+/* Eventos: remover blocos brancos residuais */
+.is-admin #activities .event-expense-summary>div{
+  background:#090d11!important;
+  color:#eef0f2!important;
+  border:1px solid rgba(215,169,78,.10)!important;
+  border-radius:11px!important;
+  padding:10px!important;
+}
+.is-admin #activities .event-expense-summary>div span{
+  color:#7f8791!important;
+}
+.is-admin #activities .event-expense-summary>div b{
+  color:#f1ede5!important;
+}
+.is-admin #activities .event-expense-summary>div:nth-child(2) b{
+  color:#efcd78!important;
+}
+
+/* Detalhe do cotista: ações secundárias no mesmo tema */
+#modal .member-actions-v2 .outline-btn{
+  background:#0d1217!important;
+  color:#e7c979!important;
+  border:1px solid rgba(215,169,78,.18)!important;
+}
+#modal .member-actions-v2 .outline-btn:hover{
+  background:#131920!important;
+}
+#modal .member-actions-v2 .primary-btn{
+  background:linear-gradient(180deg,#d9ad4d,#b98323)!important;
+  color:#171006!important;
+}
+
+/* Inputs e anexos administrativos/member dentro do tema premium */
+.is-admin input,
+.is-admin select,
+.is-admin textarea{
+  background:#0c1116!important;
+  color:#eef0f2!important;
+  border-color:rgba(215,169,78,.16)!important;
+}
+.is-admin input::placeholder,
+.is-admin textarea::placeholder{
+  color:#69717b!important;
+}
+
+/* Campos de comprovante */
+.is-admin #payments .panel,
+.is-admin #payments .receipt-upload-card,
+.is-admin #payments .receipt-form,
+.is-admin #payments .payment-card{
+  background:linear-gradient(180deg,#14191e,#0d1115)!important;
+  color:#eef0f2!important;
+  border-color:rgba(215,169,78,.14)!important;
+}
+.is-admin #payments label{
+  color:#88919b!important;
+}
+.is-admin #payments input,
+.is-admin #payments select,
+.is-admin #payments textarea{
+  background:#090d11!important;
+  color:#eef0f2!important;
+}
+.is-admin #payments input[type="file"]{
+  background:#090d11!important;
+  color:#d9dde2!important;
+}
+.is-admin #payments input[type="file"]::file-selector-button{
+  background:#161b21!important;
+  color:#e7c979!important;
+  border:1px solid rgba(215,169,78,.18)!important;
+  border-radius:9px!important;
+  padding:7px 10px!important;
+  margin-right:10px!important;
+}
+
+/* Pix / caixas claras residuais */
+.is-admin .pix-copy,
+.is-admin .pix-box,
+.is-admin .payment-settings-preview,
+.is-admin .receipt-reference-box{
+  background:#0a0e12!important;
+  color:#eef0f2!important;
+  border-color:rgba(215,169,78,.12)!important;
+}
+.is-admin .pix-copy code,
+.is-admin .pix-box code{
+  color:#efcd78!important;
+}
+
+/* modais premium: evitar qualquer herança branca residual */
+#modal .modal-card:has(.member-detail-v2) button.outline-btn,
+#modal .modal-card:has(.premium-trip-manager) button.outline-btn{
+  background:#0d1217!important;
+  color:#e7c979!important;
+  border-color:rgba(215,169,78,.18)!important;
+}
+
+@media(max-width:720px){
+  .is-admin #activities .event-expense-summary{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:7px!important;
+  }
+  .is-admin #activities .event-expense-summary>button,
+  .is-admin #activities .event-expense-summary>details{
+    grid-column:1/-1!important;
+  }
+}
