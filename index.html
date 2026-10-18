@@ -199,8 +199,8 @@
           <section class="adm18-section">
             <div class="adm18-section-head"><div><h3>⚠ Atenção agora</h3><p>Somente itens que podem exigir ação administrativa.</p></div><button type="button" data-adm18-go="admin">Ver central</button></div>
             <div class="adm18-attention">
-              <button class="adm18-attn" data-adm18-go="payments"><span class="row"><span>▤</span><span id="adm18Receipts" class="adm18-badge">0</span></span><b>Comprovantes</b><small>Aguardando validação</small></button>
-              <button class="adm18-attn" data-adm18-go="admin"><span class="row"><span>↗</span><span id="adm18Requests" class="adm18-badge">0</span></span><b>Empréstimos aguardando</b><small>Análise e aprovação</small></button>
+              <button class="adm18-attn" data-adm18-go="payments" data-adm18-focus="receipts"><span class="row"><span>▤</span><span id="adm18Receipts" class="adm18-badge">0</span></span><b>Comprovantes</b><small>Aguardando validação</small></button>
+              <button class="adm18-attn" data-adm18-go="admin" data-adm18-focus="pending-loans"><span class="row"><span>↗</span><span id="adm18Requests" class="adm18-badge">0</span></span><b>Empréstimos aguardando</b><small>Análise e aprovação</small></button>
               <button class="adm18-attn" data-adm18-go="members"><span class="row"><span>◎</span><span class="adm18-badge">↻</span></span><b>Cadastro dos cotistas</b><small>Acesso, dados e situação individual</small></button>
               <button class="adm18-attn" data-adm18-go="payments"><span class="row"><span>▣</span><span class="adm18-badge">Mês</span></span><b>Cotas e vencimentos</b><small>Conferência do período</small></button>
             </div>
@@ -213,8 +213,8 @@
               <button class="adm18-action" data-adm18-go="payments"><span><i>▤</i>Comprovantes</span><b>›</b></button>
               <button class="adm18-action" data-adm18-go="loans"><span><i>↗</i>Empréstimos</span><b>›</b></button>
               <button class="adm18-action" data-adm18-go="activities"><span><i>★</i>Rifas e passeios</span><b>›</b></button>
-              <button class="adm18-action" data-adm18-go="admin"><span><i>▥</i>Rendimentos</span><b>›</b></button>
-              <button class="adm18-action" data-adm18-go="admin"><span><i>▣</i>Relatórios e controles</span><b>›</b></button>
+              <button class="adm18-action" data-adm18-go="admin" data-adm18-focus="interest"><span><i>▥</i>Rendimentos</span><b>›</b></button>
+              <button class="adm18-action" data-adm18-go="admin" data-adm18-focus="integrity"><span><i>▣</i>Relatórios e controles</span><b>›</b></button>
             </div>
           </section>
 
@@ -529,12 +529,43 @@
           <div><span class="eyebrow">ADMINISTRAÇÃO</span><h3>Central de controle</h3><p>O essencial primeiro. Abra os detalhes somente quando precisar.</p></div>
         </div>
 
-        <details class="admin-fold" open>
+        <section class="admin-smart-hub" id="adminSmartHub">
+          <div class="admin-smart-head">
+            <div><span class="eyebrow">CENTRAL INTELIGENTE</span><h3>O que precisa da sua atenção</h3><p>Toque em um bloco e vá direto para a ação certa.</p></div>
+            <button id="adminHealthRefresh" class="outline-btn tiny" type="button">Validar agora</button>
+          </div>
+          <div class="admin-smart-grid">
+            <button type="button" data-admin-focus="pending-loans">
+              <span class="smart-icon">↗</span><div><small>Empréstimos</small><b id="adminSmartLoanCount">0 pendentes</b><em>Analisar solicitações</em></div><i>›</i>
+            </button>
+            <button type="button" data-admin-focus="receipts">
+              <span class="smart-icon">▤</span><div><small>Comprovantes</small><b id="adminSmartReceiptCount">0 pendentes</b><em>Conferir pagamentos</em></div><i>›</i>
+            </button>
+            <button type="button" data-admin-focus="interest">
+              <span class="smart-icon">▥</span><div><small>Rendimentos</small><b id="adminSmartInterestStatus">Auditar juros</b><em>Distribuição e ajustes</em></div><i>›</i>
+            </button>
+            <button type="button" data-admin-focus="integrity" id="adminHealthCard">
+              <span class="smart-icon">✓</span><div><small>Validador</small><b id="adminHealthStatus">Verificando…</b><em id="adminHealthCaption">Financeiro, operações e interface</em></div><i>›</i>
+            </button>
+          </div>
+          <div class="admin-health-panel" id="adminHealthPanel">
+            <div class="admin-health-head"><div><b>Validação da caixinha</b><small>Leitura automática. Nenhuma correção é aplicada sozinha.</small></div><span id="adminHealthBadge" class="badge neutral">Aguardando</span></div>
+            <div class="admin-health-grid">
+              <div id="healthLoans"><span>Empréstimos</span><b>—</b><small>Conferindo contratos e parcelas</small></div>
+              <div id="healthActivities"><span>Eventos</span><b>—</b><small>Conferindo valores pagos</small></div>
+              <div id="healthInterest"><span>Juros compartilhados</span><b>—</b><small>Conferindo fechamento dos lotes</small></div>
+              <div id="healthInterface"><span>Interface</span><b>—</b><small>Conferindo componentes críticos</small></div>
+            </div>
+            <div id="adminHealthIssues" class="admin-health-issues hidden"></div>
+          </div>
+        </section>
+
+        <details class="admin-fold" id="adminPendingFold" open>
           <summary><div><b>Pendências</b><small>Solicitações de empréstimo aguardando decisão</small></div><span class="badge warning" id="pendingCount">0 pendentes</span></summary>
           <div class="admin-fold-body"><div id="adminRequests" class="stack-list"></div></div>
         </details>
 
-        <details class="admin-fold">
+        <details class="admin-fold" id="adminTransactionFold">
           <summary><div><b>Novo lançamento</b><small>Entrada, saída ou ajuste manual</small></div><span>＋</span></summary>
           <div class="admin-fold-body">
             <form id="transactionForm" class="inline-form admin-inline-clean">
@@ -548,7 +579,7 @@
           </div>
         </details>
 
-        <details class="admin-fold">
+        <details class="admin-fold" id="adminSettingsFold">
           <summary><div><b>Regras e configurações</b><small>Cota, juros, limite e Pix</small></div><span>⚙</span></summary>
           <div class="admin-fold-body">
             <form id="settingsForm" class="form-grid compact-settings">
@@ -581,7 +612,7 @@
           </div>
         </details>
 
-        <details class="admin-fold">
+        <details class="admin-fold" id="adminCommunicationFold">
           <summary><div><b>Comunicação</b><small>Enviar aviso aos cotistas</small></div><span>✉</span></summary>
           <div class="admin-fold-body">
             <form id="broadcastForm" class="form-grid compact-settings">
@@ -594,7 +625,7 @@
           </div>
         </details>
 
-        <details class="admin-fold">
+        <details class="admin-fold" id="adminAuditFold">
           <summary><div><b>Auditoria e histórico</b><small>Chatbot e agente financeiro</small></div><span>▾</span></summary>
           <div class="admin-fold-body">
             <div class="admin-audit-grid">
