@@ -1031,6 +1031,17 @@ window.openAdminFocus=function(target){
   }
   if(target==='pending-loans'){goAdmin('#adminPendingFold');return}
   if(target==='interest'){goAdmin('#adminAuditFold');setTimeout(()=>adminFocusElement(qs('#yieldManagement')),220);return}
+  if(target==='interest-entry'){
+    goAdmin('#adminTransactionFold');
+    setTimeout(()=>{
+      if(qs('#transactionType'))qs('#transactionType').value='income';
+      if(qs('#transactionCategory'))qs('#transactionCategory').value='interest';
+      if(qs('#transactionDescription')&&!qs('#transactionDescription').value)qs('#transactionDescription').value='Juros recebidos';
+      adminFocusElement(qs('#transactionForm'));
+      qs('#transactionAmount')?.focus();
+    },220);
+    return;
+  }
   if(target==='settings'){goAdmin('#adminSettingsFold');return}
   if(target==='transactions'){goAdmin('#adminTransactionFold');return}
   if(target==='integrity'){goAdmin('#adminHealthPanel');return}
@@ -1093,10 +1104,19 @@ window.runAdminHealth=async function(){
 
     const interestIssues=[];
     (batches||[]).forEach(b=>{
-      const gross=Number(b.gross_amount||0),fee=Number(b.admin_fee_amount||0),net=Number(b.net_distributable_amount||0),real=Number(b.real_share_pool||0),virtual=Number(b.virtual_share_amount||0),adm=Number(b.admin_total_amount||0);
-      if(Math.abs((fee+net)-gross)>.03)interestIssues.push('Lote '+String(b.id).slice(0,8)+' não fecha bruto = taxa + líquido.');
-      if(Math.abs((real+virtual)-net)>.03)interestIssues.push('Lote '+String(b.id).slice(0,8)+' não fecha cotistas + cota virtual.');
-      if(Math.abs((fee+virtual)-adm)>.03)interestIssues.push('Lote '+String(b.id).slice(0,8)+' não fecha total da administração.');
+      const gross=Number(b.gross_amount||0);
+      if(b.admin_fee_amount!=null&&b.net_distributable_amount!=null){
+        const fee=Number(b.admin_fee_amount),net=Number(b.net_distributable_amount);
+        if(Math.abs((fee+net)-gross)>.03)interestIssues.push('Lote '+String(b.id).slice(0,8)+' não fecha bruto = taxa + líquido.');
+      }
+      if(b.real_share_pool!=null&&b.virtual_share_amount!=null&&b.net_distributable_amount!=null){
+        const real=Number(b.real_share_pool),virtual=Number(b.virtual_share_amount),net=Number(b.net_distributable_amount);
+        if(Math.abs((real+virtual)-net)>.03)interestIssues.push('Lote '+String(b.id).slice(0,8)+' não fecha cotistas + cota virtual.');
+      }
+      if(b.admin_total_amount!=null&&b.admin_fee_amount!=null&&b.virtual_share_amount!=null){
+        const fee=Number(b.admin_fee_amount),virtual=Number(b.virtual_share_amount),adm=Number(b.admin_total_amount);
+        if(Math.abs((fee+virtual)-adm)>.03)interestIssues.push('Lote '+String(b.id).slice(0,8)+' não fecha total da administração.');
+      }
     });
     issues.push(...interestIssues);
     adminHealthSet('#healthInterest',interestIssues.length?'Atenção':'OK',interestIssues.length===0,interestIssues.length?interestIssues.length+' lote(s) para revisar':'Lotes de juros fechando matematicamente');
