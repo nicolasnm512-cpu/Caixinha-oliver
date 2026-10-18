@@ -996,6 +996,157 @@ function updateInterestPolicyPreview(){
   box.innerHTML=`<span>Exemplo com R$ 1.000,00 de juros: taxa ADM <b>${brl.format(1000*fee/100)}</b> • saldo para divisão <b>${brl.format(1000*(1-fee/100))}</b> • +${virtual} cota(s) virtual(is) apenas na divisão.</span>`;
 }
 
+
+function adminHealthSet(selector,title,ok,detail){
+  const el=qs(selector); if(!el)return;
+  const b=el.querySelector('b'),sm=el.querySelector('small');
+  el.classList.toggle('health-ok',!!ok);
+  el.classList.toggle('health-warn',!ok);
+  if(b)b.textContent=title;
+  if(sm)sm.textContent=detail;
+}
+
+function adminFocusElement(el){
+  if(!el)return;
+  el.classList.add('admin-focus-pulse');
+  el.scrollIntoView({behavior:'smooth',block:'start'});
+  setTimeout(()=>el.classList.remove('admin-focus-pulse'),1400);
+}
+
+window.openAdminFocus=function(target){
+  if(!isAdmin())return;
+  const goAdmin=(selector)=>{
+    navigate('admin');
+    setTimeout(()=>{
+      const el=qs(selector);
+      if(el?.tagName==='DETAILS')el.open=true;
+      adminFocusElement(el);
+      if(target==='integrity')window.runAdminHealth?.();
+    },120);
+  };
+  if(target==='receipts'){
+    navigate('payments');
+    setTimeout(()=>adminFocusElement(qs('#paymentHistory')?.closest('.panel')||qs('#paymentHistory')),120);
+    return;
+  }
+  if(target==='pending-loans'){goAdmin('#adminPendingFold');return}
+  if(target==='interest'){goAdmin('#adminAuditFold');setTimeout(()=>adminFocusElement(qs('#yieldManagement')),220);return}
+  if(target==='settings'){goAdmin('#adminSettingsFold');return}
+  if(target==='transactions'){goAdmin('#adminTransactionFold');return}
+  if(target==='integrity'){goAdmin('#adminHealthPanel');return}
+  navigate('admin');
+};
+
+window.runAdminHealth=async function(){
+  if(!isAdmin())return;
+  const status=qs('#adminHealthStatus'),caption=qs('#adminHealthCaption'),badge=qs('#adminHealthBadge'),issuesBox=qs('#adminHealthIssues');
+  if(status)status.textContent='Verificando…';
+  if(caption)caption.textContent='Cruzando números e interface';
+  if(badge){badge.textContent='Validando';badge.className='badge warning'}
+  const issues=[];
+  try{
+    const [
+      {data:loans,error:loanErr},
+      {data:installments,error:instErr},
+      {data:entries,error:entryErr},
+      {data:seats,error:seatErr},
+      {data:batches,error:batchErr},
+      {count:pendingReceipts,error:receiptErr},
+      {count:pendingRequests,error:reqErr}
+    ]=await Promise.all([
+      db.from('loans').select('id,principal_amount,interest_amount,total_contract_amount,outstanding_amount,status'),
+      db.from('loan_installments').select('id,loan_id,principal_amount,interest_amount,total_amount,amount_paid,status'),
+      db.from('activity_entries').select('id,activity_id,member_id,amount_due,amount_paid,status'),
+      db.from('trip_seats').select('activity_id,seat_number,member_id,status,paid_at'),
+      db.from('interest_distribution_batches').select('id,gross_amount,admin_fee_amount,net_distributable_amount,real_share_pool,virtual_share_amount,admin_total_amount,source_kind').order('created_at',{ascending:false}).limit(50),
+      db.from('payment_receipts').select('id',{count:'exact',head:true}).eq('status','pending'),
+      db.from('loan_requests').select('id',{count:'exact',head:true}).in('status',['pending','under_review'])
+    ]);
+    for(const err of [loanErr,instErr,entryErr,seatErr,batchErr,receiptErr,reqErr]) if(err)throw err;
+
+    const loanIssues=[];
+    (loans||[]).forEach(l=>{
+      const principal=Number(l.principal_amount||0),interest=Number(l.interest_amount||0),total=Number(l.total_contract_amount||0),out=Number(l.outstanding_amount||0);
+      if(Math.abs((principal+interest)-total)>.02)loanIssues.push('Contrato '+String(l.id).slice(0,8)+' com total diferente de principal + juros.');
+      if(out<-.02||out>total+.02)loanIssues.push('Contrato '+String(l.id).slice(0,8)+' com saldo fora do limite do contrato.');
+    });
+    (installments||[]).forEach(i=>{
+      const principal=Number(i.principal_amount||0),interest=Number(i.interest_amount||0),total=Number(i.total_amount||0),paid=Number(i.amount_paid||0);
+      if(Math.abs((principal+interest)-total)>.02)loanIssues.push('Parcela '+String(i.id).slice(0,8)+' com composição inconsistente.');
+      if(paid<-.02||paid>total+.02)loanIssues.push('Parcela '+String(i.id).slice(0,8)+' com valor pago fora do total.');
+    });
+    issues.push(...loanIssues);
+    adminHealthSet('#healthLoans',loanIssues.length?'Atenção':'OK',loanIssues.length===0,loanIssues.length?loanIssues.length+' divergência(s) encontrada(s)':'Contratos e parcelas fechando corretamente');
+
+    const eventIssues=[];
+    (entries||[]).forEach(e=>{
+      const due=Number(e.amount_due||0),paid=Number(e.amount_paid||0);
+      if(due<-.02||paid<-.02||paid>due+.02)eventIssues.push('Evento '+String(e.activity_id).slice(0,8)+' com pagamento fora do valor devido.');
+      if(e.status==='confirmed'&&Math.abs(paid-due)>.02)eventIssues.push('Evento confirmado sem quitação integral.');
+    });
+    (seats||[]).forEach(seat=>{
+      if(seat.status==='paid'&&(!seat.member_id||!seat.paid_at))eventIssues.push('Poltrona '+seat.seat_number+' marcada paga sem vínculo completo.');
+      if(seat.status==='assigned'&&!seat.member_id)eventIssues.push('Poltrona '+seat.seat_number+' atribuída sem cotista.');
+    });
+    issues.push(...eventIssues);
+    adminHealthSet('#healthActivities',eventIssues.length?'Atenção':'OK',eventIssues.length===0,eventIssues.length?eventIssues.length+' divergência(s) encontrada(s)':'Pagamentos e poltronas consistentes');
+
+    const interestIssues=[];
+    (batches||[]).forEach(b=>{
+      const gross=Number(b.gross_amount||0),fee=Number(b.admin_fee_amount||0),net=Number(b.net_distributable_amount||0),real=Number(b.real_share_pool||0),virtual=Number(b.virtual_share_amount||0),adm=Number(b.admin_total_amount||0);
+      if(Math.abs((fee+net)-gross)>.03)interestIssues.push('Lote '+String(b.id).slice(0,8)+' não fecha bruto = taxa + líquido.');
+      if(Math.abs((real+virtual)-net)>.03)interestIssues.push('Lote '+String(b.id).slice(0,8)+' não fecha cotistas + cota virtual.');
+      if(Math.abs((fee+virtual)-adm)>.03)interestIssues.push('Lote '+String(b.id).slice(0,8)+' não fecha total da administração.');
+    });
+    issues.push(...interestIssues);
+    adminHealthSet('#healthInterest',interestIssues.length?'Atenção':'OK',interestIssues.length===0,interestIssues.length?interestIssues.length+' lote(s) para revisar':'Lotes de juros fechando matematicamente');
+
+    if(qs('#adminSmartLoanCount'))qs('#adminSmartLoanCount').textContent=String(pendingRequests||0)+' pendente'+(pendingRequests===1?'':'s');
+    if(qs('#adminSmartReceiptCount'))qs('#adminSmartReceiptCount').textContent=String(pendingReceipts||0)+' pendente'+(pendingReceipts===1?'':'s');
+    if(qs('#adminSmartInterestStatus'))qs('#adminSmartInterestStatus').textContent=interestIssues.length?'Revisar '+interestIssues.length:'Juros consistentes';
+
+    requestAnimationFrame(()=>{
+      const adminPage=qs('#admin');
+      const critical=['#adminSmartHub','#adminPendingFold','#adminTransactionFold','#adminSettingsFold','#adminAuditFold','#yieldManagement'];
+      const missing=critical.filter(sel=>!qs(sel));
+      let overflow=0;
+      if(adminPage?.classList.contains('active-page')){
+        adminPage.querySelectorAll('.admin-smart-hub,.admin-fold,.admin-subpanel,.yield-tool-card').forEach(el=>{
+          if(el.scrollWidth>el.clientWidth+6)overflow++;
+        });
+      }
+      const layoutIssues=[...missing.map(x=>'Componente administrativo ausente: '+x)];
+      if(overflow)layoutIssues.push(overflow+' bloco(s) com possível estouro horizontal.');
+      issues.push(...layoutIssues);
+      adminHealthSet('#healthInterface',layoutIssues.length?'Atenção':'OK',layoutIssues.length===0,layoutIssues.length?layoutIssues.length+' ponto(s) para revisar':'Componentes críticos carregados sem estouro detectado');
+
+      const total=issues.length;
+      if(status)status.textContent=total?total+' alerta'+(total===1?'':'s'):'Tudo consistente';
+      if(caption)caption.textContent=total?'Abra o validador para revisar':'Financeiro, operações e interface validados';
+      if(badge){badge.textContent=total?'Revisar':'100% OK';badge.className='badge '+(total?'warning':'success')}
+      if(issuesBox){
+        issuesBox.classList.toggle('hidden',!total);
+        issuesBox.innerHTML=total?'<b>Pontos encontrados</b>'+issues.slice(0,12).map(x=>'<p>• '+safe(x)+'</p>').join(''):'';
+      }
+      const card=qs('#adminHealthCard');
+      card?.classList.toggle('has-warning',!!total);
+    });
+  }catch(err){
+    if(status)status.textContent='Falha na validação';
+    if(caption)caption.textContent='Não foi possível concluir a leitura';
+    if(badge){badge.textContent='Indisponível';badge.className='badge danger'}
+    if(issuesBox){issuesBox.classList.remove('hidden');issuesBox.innerHTML='<p>'+safe(err.message||'Erro ao executar validador.')+'</p>'}
+  }
+};
+
+document.addEventListener('click',e=>{
+  const target=e.target.closest('[data-admin-focus]');
+  if(!target)return;
+  e.preventDefault();
+  window.openAdminFocus?.(target.dataset.adminFocus);
+});
+qs('#adminHealthRefresh')?.addEventListener('click',()=>window.runAdminHealth?.());
+
 async function renderAdmin(){
   if(!isAdmin())return;
   qs('#settingShare').value=state.settings?.monthly_share_amount??100;
@@ -1020,6 +1171,7 @@ async function renderAdmin(){
   const {data:tx}=await db.from('fund_transactions').select('*').order('transaction_date',{ascending:false}).limit(20);
   qs('#adminTransactions').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th>Valor</th></tr></thead><tbody>${(tx||[]).map(t=>`<tr><td>${formatDate(t.transaction_date)}</td><td>${t.direction==='income'?'Entrada':'Saída'}</td><td>${safe(t.category)}</td><td>${safe(t.description)}</td><td class="amount ${t.direction==='income'?'in':'out'}">${t.direction==='income'?'+':'−'} ${brl.format(Number(t.amount))}</td></tr>`).join('')}</tbody></table>`;
   enhanceResponsiveTables(qs('#adminTransactions'));
+  window.runAdminHealth?.();
 }
 
 window.approveRequest=async id=>{const def=new Date();def.setMonth(def.getMonth()+1);const due=prompt('Primeiro vencimento (AAAA-MM-DD):',def.toISOString().slice(0,10));if(!due)return;const {error}=await db.rpc('admin_approve_loan_request',{p_request_id:id,p_first_due_date:due});if(error){toast(error.message);return}await renderAll();toast('Empréstimo aprovado e parcelas criadas.')};
