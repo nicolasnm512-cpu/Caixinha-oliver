@@ -3014,3 +3014,115 @@
     max-height:340px!important;
   }
 }
+
+
+/* ===== vencimentos automáticos ===== */
+.is-admin #admin .admin-due-panel{
+  margin-top:10px!important;
+  padding:12px!important;
+  border-radius:14px!important;
+  background:#080c10!important;
+  border:1px solid rgba(215,169,78,.10)!important;
+}
+.is-admin #admin .admin-due-panel.has-overdue{
+  border-color:rgba(232,181,76,.28)!important;
+}
+.is-admin #admin .admin-due-head{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+}
+.is-admin #admin .admin-due-head b{
+  display:block!important;
+  color:#f1ede5!important;
+  font-size:11px!important;
+}
+.is-admin #admin .admin-due-head small{
+  display:block!important;
+  margin-top:3px!important;
+  color:#707984!important;
+  font-size:8px!important;
+}
+.is-admin #admin .admin-due-grid{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:7px!important;
+  margin-top:10px!important;
+}
+.is-admin #admin .admin-due-grid>button{
+  min-height:78px!important;
+  padding:10px!important;
+  display:grid!important;
+  grid-template-columns:30px minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:8px!important;
+  text-align:left!important;
+  border-radius:11px!important;
+  border:1px solid rgba(255,255,255,.05)!important;
+  background:#0d1217!important;
+  color:#eef0f2!important;
+}
+.is-admin #admin .admin-due-grid>button>span{
+  width:30px!important;height:30px!important;
+  display:grid!important;place-items:center!important;
+  border-radius:9px!important;
+  background:#17130c!important;
+  color:#efcd78!important;
+  font-size:13px!important;
+}
+.is-admin #admin .admin-due-grid small{
+  display:block!important;
+  color:#7f8791!important;
+  font-size:7px!important;
+  text-transform:uppercase!important;
+  font-weight:900!important;
+}
+.is-admin #admin .admin-due-grid b{
+  display:block!important;
+  margin-top:3px!important;
+  color:#f0ece5!important;
+  font-size:15px!important;
+}
+.is-admin #admin .admin-due-grid em{
+  display:block!important;
+  margin-top:2px!important;
+  color:#6f7882!important;
+  font-size:7px!important;
+  font-style:normal!important;
+}
+.is-admin #admin .admin-due-grid .due-overdue b{
+  color:#efc96d!important;
+}
+.is-admin #admin .admin-due-foot{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:7px!important;
+  margin-top:8px!important;
+}
+.is-admin #admin .admin-due-foot>span{
+  padding:8px 9px!important;
+  border-radius:9px!important;
+  background:#0b1015!important;
+  color:#747d87!important;
+  font-size:7.5px!important;
+}
+.is-admin #admin .admin-due-foot b{
+  display:block!important;
+  margin-top:3px!important;
+  color:#dfe3e7!important;
+  font-size:10px!important;
+}
+.is-admin #admin .admin-due-panel.due-load-error:after{
+  content:"Não foi possível carregar os vencimentos agora.";
+  display:block;
+  margin-top:8px;
+  color:#efc96d;
+  font-size:8px;
+}
+@media(max-width:720px){
+  .is-admin #admin .admin-due-grid,
+  .is-admin #admin .admin-due-foot{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
