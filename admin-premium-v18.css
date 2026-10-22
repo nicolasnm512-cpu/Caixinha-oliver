@@ -2864,3 +2864,153 @@
   }
   .is-admin #admin .admin-smart-grid>button{min-height:76px!important}
 }
+
+
+/* ===== v18.18 • acabamento final do ADM ===== */
+.is-admin #admin .rule-stage-card{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+.is-admin #admin .rule-stage-card>div{
+  min-height:92px!important;
+  padding:12px!important;
+  border-radius:13px!important;
+  background:#090d11!important;
+  border:1px solid rgba(215,169,78,.11)!important;
+  color:#eef0f2!important;
+}
+.is-admin #admin .rule-stage-card span{
+  display:block!important;
+  color:#7f8791!important;
+  font-size:8px!important;
+}
+.is-admin #admin .rule-stage-card b{
+  display:block!important;
+  margin-top:7px!important;
+  color:#efcd78!important;
+  font-size:14px!important;
+}
+.is-admin #admin .rule-stage-card small{
+  display:block!important;
+  margin-top:4px!important;
+  color:#747d87!important;
+  font-size:8px!important;
+  line-height:1.35!important;
+}
+
+.is-admin #admin .agent-stats{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+.is-admin #admin .agent-stats>div{
+  min-height:84px!important;
+  padding:12px!important;
+  border-radius:13px!important;
+  background:#090d11!important;
+  border:1px solid rgba(215,169,78,.10)!important;
+  color:#eef0f2!important;
+}
+.is-admin #admin .agent-stats small{
+  display:block!important;
+  color:#7f8791!important;
+  font-size:8px!important;
+}
+.is-admin #admin .agent-stats b{
+  display:block!important;
+  margin-top:7px!important;
+  color:#efcd78!important;
+  font-size:18px!important;
+}
+
+.is-admin #admin .admin-subpanel,
+.is-admin #admin .yield-tool-card{
+  background:#090d11!important;
+  border:1px solid rgba(215,169,78,.10)!important;
+}
+.is-admin #admin .yield-management{
+  margin-top:10px!important;
+  border-top:1px solid rgba(215,169,78,.10)!important;
+  padding-top:10px!important;
+}
+.is-admin #admin .yield-management-head{
+  margin-bottom:8px!important;
+}
+.is-admin #admin .yield-management-head h4{
+  color:#f1ede5!important;
+  font-size:12px!important;
+}
+.is-admin #admin .yield-management-head p{
+  color:#747d87!important;
+  font-size:8.5px!important;
+}
+.is-admin #admin .yield-management-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+.is-admin #admin .yield-tool-card{
+  border-radius:13px!important;
+  padding:12px!important;
+}
+.is-admin #admin .yield-tool-card h5{
+  color:#f0ece4!important;
+  font-size:11px!important;
+}
+.is-admin #admin .yield-tool-card p{
+  color:#737c86!important;
+  font-size:8px!important;
+}
+.is-admin #admin .yield-tool-wide{
+  grid-column:1/-1!important;
+}
+.is-admin #admin .yield-preview,
+.is-admin #admin .yield-event-history,
+.is-admin #admin .yield-audit-list{
+  background:#080c10!important;
+  color:#dfe3e7!important;
+  border-color:rgba(215,169,78,.09)!important;
+}
+.is-admin #admin .yield-preview{
+  max-height:220px!important;
+  overflow:auto!important;
+}
+.is-admin #admin #chatbotAdminHistory{
+  max-height:360px!important;
+  overflow:auto!important;
+}
+.is-admin #admin #agentEventsTable,
+.is-admin #admin #interestDistributionAudit{
+  max-height:420px!important;
+  overflow:auto!important;
+}
+
+@media(max-width:720px){
+  .is-admin #admin .rule-stage-card{
+    grid-template-columns:1fr!important;
+  }
+  .is-admin #admin .agent-stats{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+  .is-admin #admin .agent-stats>div{
+    min-height:70px!important;
+    padding:10px!important;
+  }
+  .is-admin #admin .agent-stats b{
+    font-size:15px!important;
+  }
+  .is-admin #admin .yield-management-grid{
+    grid-template-columns:1fr!important;
+  }
+  .is-admin #admin .yield-tool-wide{
+    grid-column:auto!important;
+  }
+  .is-admin #admin #chatbotAdminHistory{
+    max-height:300px!important;
+  }
+  .is-admin #admin #agentEventsTable,
+  .is-admin #admin #interestDistributionAudit{
+    max-height:340px!important;
+  }
+}
