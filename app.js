@@ -1064,6 +1064,35 @@ window.openAdminFocus=function(target){
   navigate('admin');
 };
 
+
+window.renderAdminDueSummary=async function(){
+  if(!isAdmin()||!qs('#adminDuePanel'))return;
+  try{
+    const {data,error}=await db.rpc('admin_get_due_summary');
+    if(error)throw error;
+    const v=data||{};
+    if(qs('#adminDueLoans'))qs('#adminDueLoans').textContent=String(v.loans||0);
+    if(qs('#adminDueContributions'))qs('#adminDueContributions').textContent=String(v.contributions||0);
+    if(qs('#adminDueTrips'))qs('#adminDueTrips').textContent=String(v.trips||0);
+    if(qs('#adminDueOverdue'))qs('#adminDueOverdue').textContent=String(v.overdue||0);
+    if(qs('#adminDueToday'))qs('#adminDueToday').textContent=String(v.due_today||0);
+    if(qs('#adminDueNext3'))qs('#adminDueNext3').textContent=String(v.next_3_days||0);
+    if(qs('#adminDueAmountNext'))qs('#adminDueAmountNext').textContent=brl.format(Number(v.amount_next_3_days||0));
+    if(qs('#adminDueAmountOverdue'))qs('#adminDueAmountOverdue').textContent=brl.format(Number(v.amount_overdue||0));
+    qs('#adminDuePanel')?.classList.toggle('has-overdue',Number(v.overdue||0)>0);
+  }catch(err){
+    if(qs('#adminDuePanel'))qs('#adminDuePanel').classList.add('due-load-error');
+  }
+};
+
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('[data-due-jump]');
+  if(!btn)return;
+  e.preventDefault();
+  const page=btn.dataset.dueJump;
+  if(page==='loans'||page==='payments'||page==='activities')navigate(page);
+});
+
 window.runAdminHealth=async function(){
   if(!isAdmin())return;
   const status=qs('#adminHealthStatus'),caption=qs('#adminHealthCaption'),badge=qs('#adminHealthBadge'),issuesBox=qs('#adminHealthIssues');
@@ -1208,6 +1237,7 @@ async function renderAdmin(){
   qs('#adminTransactions').innerHTML=`<table class="data-table"><thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th>Valor</th></tr></thead><tbody>${(tx||[]).map(t=>`<tr><td>${formatDate(t.transaction_date)}</td><td>${t.direction==='income'?'Entrada':'Saída'}</td><td>${safe(t.category)}</td><td>${safe(t.description)}</td><td class="amount ${t.direction==='income'?'in':'out'}">${t.direction==='income'?'+':'−'} ${brl.format(Number(t.amount))}</td></tr>`).join('')}</tbody></table>`;
   enhanceResponsiveTables(qs('#adminTransactions'));
   window.runAdminHealth?.();
+  window.renderAdminDueSummary?.();
 }
 
 window.approveRequest=async id=>{const def=new Date();def.setMonth(def.getMonth()+1);const due=prompt('Primeiro vencimento (AAAA-MM-DD):',def.toISOString().slice(0,10));if(!due)return;const {error}=await db.rpc('admin_approve_loan_request',{p_request_id:id,p_first_due_date:due});if(error){toast(error.message);return}await renderAll();toast('Empréstimo aprovado e parcelas criadas.')};
