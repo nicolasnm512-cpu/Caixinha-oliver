@@ -18,7 +18,7 @@
 
   <!-- stable-redeploy-20261012 -->
   <!-- admin-premium-preview-v18-base -->
-  <link rel="stylesheet" href="/admin-premium-v18.css?v=20261022-preview-v18-18" />
+  <link rel="stylesheet" href="/admin-premium-v18.css?v=20261022-due-reminders-v1" />
 </head>
 <body>
   <div id="toast" class="toast" aria-live="polite"></div>
@@ -548,6 +548,25 @@
               <span class="smart-icon">✓</span><div><small>Validador</small><b id="adminHealthStatus">Verificando…</b><em id="adminHealthCaption">Financeiro, operações e interface</em></div><i>›</i>
             </button>
           </div>
+          <section class="admin-due-panel" id="adminDuePanel">
+            <div class="admin-due-head">
+              <div><b>Vencimentos próximos</b><small>Atualização automática diária para cota, empréstimo e passeio.</small></div>
+              <span class="badge success">Automático</span>
+            </div>
+            <div class="admin-due-grid">
+              <button type="button" data-due-jump="loans"><span>↗</span><div><small>Empréstimos</small><b id="adminDueLoans">0</b><em>até 3 dias</em></div></button>
+              <button type="button" data-due-jump="payments"><span>◉</span><div><small>Cotas</small><b id="adminDueContributions">0</b><em>até 3 dias</em></div></button>
+              <button type="button" data-due-jump="activities"><span>★</span><div><small>Passeios</small><b id="adminDueTrips">0</b><em>até 3 dias</em></div></button>
+              <button type="button" class="due-overdue"><span>!</span><div><small>Atrasados</small><b id="adminDueOverdue">0</b><em>exigem atenção</em></div></button>
+            </div>
+            <div class="admin-due-foot">
+              <span>Vencem hoje <b id="adminDueToday">0</b></span>
+              <span>Próximos 3 dias <b id="adminDueNext3">0</b></span>
+              <span>Valor próximo <b id="adminDueAmountNext">R$ 0,00</b></span>
+              <span>Valor atrasado <b id="adminDueAmountOverdue">R$ 0,00</b></span>
+            </div>
+          </section>
+
           <div class="admin-health-panel" id="adminHealthPanel">
             <div class="admin-health-head"><div><b>Validação da caixinha</b><small>Leitura automática. Nenhuma correção é aplicada sozinha.</small></div><span id="adminHealthBadge" class="badge neutral">Aguardando</span></div>
             <div class="admin-health-grid">
@@ -771,7 +790,7 @@
   <div id="modal" class="modal hidden"><div class="modal-card"><button id="closeModal" class="modal-close">×</button><div id="modalContent"></div></div></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
   <script src="/config.js?v=20261007-mobile-hotfix-v16"></script>
-  <script src="/app.js?v=20261022-preview-v18-18"></script>
+  <script src="/app.js?v=20261022-due-reminders-v1"></script>
   <script src="/features.js?v=20261014-preview-v18-13"></script>
   <script src="/admin-agent.js?v=20261007-mobile-hotfix-v16"></script>
   <script src="/yield-management.js?v=20261007-mobile-hotfix-v16"></script>
