@@ -17,6 +17,8 @@
   <link rel="stylesheet" href="/feature-overrides.css?v=20261007-mobile-hotfix-v16" />
 
   <!-- stable-redeploy-20261012 -->
+  <!-- admin-premium-preview-v18-base -->
+  <link rel="stylesheet" href="/admin-premium-v18.css?v=20261022-preview-v18-18" />
 </head>
 <body>
   <div id="toast" class="toast" aria-live="polite"></div>
@@ -161,6 +163,74 @@
       </header>
 
       <section id="dashboard" class="page active-page">
+
+        <section id="adminPremiumV18" class="admin-premium-v18 admin-only">
+          <div class="adm18-header">
+            <div class="adm18-brand">
+              <img src="/assets/oliver-logo.svg" alt="OLIVER">
+              <div><h1>OLIVER <span>Administração</span></h1><p>Painel administrativo financeiro</p></div>
+            </div>
+            <span class="adm18-role">♛ Administrador</span>
+          </div>
+
+          <section class="adm18-welcome">
+            <div><small id="adm18Greeting">Olá</small><h2 id="adm18Name">Administrador</h2><p>Visão geral da OLIVER Caixinha e do que precisa da sua atenção.</p></div>
+            <div id="adm18Date" class="adm18-date"></div>
+          </section>
+
+          <div class="adm18-grid">
+            <button class="adm18-card cash" data-adm18-go="admin"><span class="icon">◉</span><span>Caixa disponível</span><strong id="adm18Cash">R$ 0,00</strong><small>Saldo atual disponível</small></button>
+            <button class="adm18-card" data-adm18-go="loans"><span class="icon">↗</span><span>Total emprestado</span><strong id="adm18Loan">R$ 0,00</strong><small>Capital em contratos ativos</small></button>
+            <button class="adm18-card" data-adm18-go="payments"><span class="icon">↑</span><span>Entradas confirmadas</span><strong id="adm18Income">R$ 0,00</strong><small>Cotas, rifas, passeios e recebimentos</small></button>
+            <button class="adm18-card alert" data-adm18-go="admin"><span class="icon">!</span><span>Pendências</span><strong id="adm18Pending">0</strong><small id="adm18PendingText">Nenhuma ação pendente</small></button>
+          </div>
+
+          <section class="adm18-section">
+            <div class="adm18-section-head"><div><h3>▥ Visão financeira</h3><p>Entradas, saídas, empréstimos, caixa e juros em uma única leitura.</p></div><button type="button" data-adm18-go="admin">Detalhes</button></div>
+            <div class="adm18-chart"><div class="adm18-chart-bars">
+              <div class="adm18-baritem"><div class="adm18-value" id="adm18v0">R$ 0,00</div><div class="adm18-barbox"><div class="adm18-bar" id="adm18b0"></div></div><div class="adm18-label">Entradas</div></div>
+              <div class="adm18-baritem"><div class="adm18-value" id="adm18v1">R$ 0,00</div><div class="adm18-barbox"><div class="adm18-bar" id="adm18b1"></div></div><div class="adm18-label">Saídas</div></div>
+              <div class="adm18-baritem"><div class="adm18-value" id="adm18v2">R$ 0,00</div><div class="adm18-barbox"><div class="adm18-bar" id="adm18b2"></div></div><div class="adm18-label">Emprestado</div></div>
+              <div class="adm18-baritem"><div class="adm18-value" id="adm18v3">R$ 0,00</div><div class="adm18-barbox"><div class="adm18-bar" id="adm18b3"></div></div><div class="adm18-label">Caixa</div></div>
+              <div class="adm18-baritem"><div class="adm18-value" id="adm18v4">R$ 0,00</div><div class="adm18-barbox"><div class="adm18-bar" id="adm18b4"></div></div><div class="adm18-label">Juros</div></div>
+            </div></div>
+          </section>
+
+          <section class="adm18-section">
+            <div class="adm18-section-head"><div><h3>⚠ Atenção agora</h3><p>Somente itens que podem exigir ação administrativa.</p></div><button type="button" data-adm18-go="admin">Ver central</button></div>
+            <div class="adm18-attention">
+              <button class="adm18-attn" data-adm18-go="payments" data-adm18-focus="receipts"><span class="row"><span>▤</span><span id="adm18Receipts" class="adm18-badge">0</span></span><b>Comprovantes</b><small>Aguardando validação</small></button>
+              <button class="adm18-attn" data-adm18-go="admin" data-adm18-focus="pending-loans"><span class="row"><span>↗</span><span id="adm18Requests" class="adm18-badge">0</span></span><b>Empréstimos aguardando</b><small>Análise e aprovação</small></button>
+              <button class="adm18-attn" data-adm18-go="members"><span class="row"><span>◎</span><span class="adm18-badge">↻</span></span><b>Cadastro dos cotistas</b><small>Acesso, dados e situação individual</small></button>
+              <button class="adm18-attn" data-adm18-go="payments"><span class="row"><span>▣</span><span class="adm18-badge">Mês</span></span><b>Cotas e vencimentos</b><small>Conferência do período</small></button>
+            </div>
+          </section>
+
+          <section class="adm18-section">
+            <div class="adm18-section-head"><div><h3>⚡ Ações rápidas</h3><p>Todas as funções existentes continuam disponíveis.</p></div></div>
+            <div class="adm18-actions">
+              <button class="adm18-action" data-adm18-go="members"><span><i>◎</i>Cotistas</span><b>›</b></button>
+              <button class="adm18-action" data-adm18-go="payments"><span><i>▤</i>Comprovantes</span><b>›</b></button>
+              <button class="adm18-action" data-adm18-go="loans"><span><i>↗</i>Empréstimos</span><b>›</b></button>
+              <button class="adm18-action" data-adm18-go="activities"><span><i>★</i>Rifas e passeios</span><b>›</b></button>
+              <button class="adm18-action" data-adm18-go="admin" data-adm18-focus="interest"><span><i>▥</i>Rendimentos</span><b>›</b></button>
+              <button class="adm18-action" data-adm18-go="admin" data-adm18-focus="integrity"><span><i>▣</i>Relatórios e controles</span><b>›</b></button>
+            </div>
+          </section>
+
+          <section class="adm18-ai">
+            <div class="orb">🤖</div><div><h3>Oliver ADM</h3><p>Consultas e operações administrativas com confirmação.</p></div><button id="adm18OpenAi" type="button">Conversar agora ›</button>
+          </section>
+
+          <nav class="adm18-mobile-nav">
+            <button class="active" data-adm18-go="dashboard"><i>⌂</i>Início</button>
+            <button data-adm18-go="members"><i>◎</i>Cotistas</button>
+            <button data-adm18-go="loans"><i>↗</i>Empréstimos</button>
+            <button data-adm18-go="activities"><i>★</i>Eventos</button>
+            <button data-adm18-go="admin"><i>⚙</i>Mais</button>
+          </nav>
+        </section>
+
         <article class="home-profile-card">
           <div class="home-profile-copy">
             <span id="homeGreeting" class="home-greeting">Bom dia</span>
@@ -391,6 +461,12 @@
 
       <section id="activities" class="page">
         <div class="panel-head standalone"><div><h3>Rifas e passeios</h3><p>Escolha o tipo de evento para ver arrecadação, prêmios, números ou poltronas.</p></div><div class="panel-actions admin-only"><button class="primary-btn small" id="newActivityBtn">Nova rifa</button><button class="outline-btn" id="newTripBtn">Novo passeio</button></div></div>
+        <div id="activityPremiumSummary" class="activity-premium-summary admin-only" aria-label="Resumo financeiro dos eventos">
+          <div><span>Eventos ativos</span><b id="activityPremiumActive">0</b><small>rifas e passeios em andamento</small></div>
+          <div><span>Recebido</span><b id="activityPremiumReceived">R$ 0,00</b><small>pagamentos confirmados</small></div>
+          <div><span>A receber</span><b id="activityPremiumPending">R$ 0,00</b><small>saldo previsto dos eventos</small></div>
+          <div><span>Saídas</span><b id="activityPremiumExpenses">R$ 0,00</b><small>prêmios e despesas registradas</small></div>
+        </div>
         <div id="activityTabs" class="activity-tabs" role="tablist" aria-label="Filtrar eventos">
           <button type="button" class="activity-tab active" data-activity-filter="all" aria-selected="true"><span>Todos</span><b id="allActivityCount">0</b></button>
           <button type="button" class="activity-tab" data-activity-filter="draw" aria-selected="false"><span>Rifas</span><b id="drawActivityCount">0</b></button>
@@ -453,12 +529,43 @@
           <div><span class="eyebrow">ADMINISTRAÇÃO</span><h3>Central de controle</h3><p>O essencial primeiro. Abra os detalhes somente quando precisar.</p></div>
         </div>
 
-        <details class="admin-fold" open>
+        <section class="admin-smart-hub" id="adminSmartHub">
+          <div class="admin-smart-head">
+            <div><span class="eyebrow">CENTRAL INTELIGENTE</span><h3>O que precisa da sua atenção</h3><p>Toque em um bloco e vá direto para a ação certa.</p></div>
+            <button id="adminHealthRefresh" class="outline-btn tiny" type="button">Validar agora</button>
+          </div>
+          <div class="admin-smart-grid">
+            <button type="button" data-admin-focus="pending-loans">
+              <span class="smart-icon">↗</span><div><small>Empréstimos</small><b id="adminSmartLoanCount">0 pendentes</b><em>Analisar solicitações</em></div><i>›</i>
+            </button>
+            <button type="button" data-admin-focus="receipts">
+              <span class="smart-icon">▤</span><div><small>Comprovantes</small><b id="adminSmartReceiptCount">0 pendentes</b><em>Conferir pagamentos</em></div><i>›</i>
+            </button>
+            <button type="button" data-admin-focus="interest-entry">
+              <span class="smart-icon">▥</span><div><small>Juros compartilhados</small><b id="adminSmartInterestStatus">Lançar juros</b><em>Entrada + distribuição automática</em></div><i>›</i>
+            </button>
+            <button type="button" data-admin-focus="integrity" id="adminHealthCard">
+              <span class="smart-icon">✓</span><div><small>Validador</small><b id="adminHealthStatus">Verificando…</b><em id="adminHealthCaption">Financeiro, operações e interface</em></div><i>›</i>
+            </button>
+          </div>
+          <div class="admin-health-panel" id="adminHealthPanel">
+            <div class="admin-health-head"><div><b>Validação da caixinha</b><small>Leitura automática. Nenhuma correção é aplicada sozinha.</small></div><span id="adminHealthBadge" class="badge neutral">Aguardando</span></div>
+            <div class="admin-health-grid">
+              <div id="healthLoans"><span>Empréstimos</span><b>—</b><small>Conferindo contratos e parcelas</small></div>
+              <div id="healthActivities"><span>Eventos</span><b>—</b><small>Conferindo valores pagos</small></div>
+              <div id="healthInterest"><span>Juros compartilhados</span><b>—</b><small>Conferindo fechamento dos lotes</small></div>
+              <div id="healthInterface"><span>Interface</span><b>—</b><small>Conferindo componentes críticos</small></div>
+            </div>
+            <div id="adminHealthIssues" class="admin-health-issues hidden"></div>
+          </div>
+        </section>
+
+        <details class="admin-fold" id="adminPendingFold" open>
           <summary><div><b>Pendências</b><small>Solicitações de empréstimo aguardando decisão</small></div><span class="badge warning" id="pendingCount">0 pendentes</span></summary>
           <div class="admin-fold-body"><div id="adminRequests" class="stack-list"></div></div>
         </details>
 
-        <details class="admin-fold">
+        <details class="admin-fold" id="adminTransactionFold">
           <summary><div><b>Novo lançamento</b><small>Entrada, saída ou ajuste manual</small></div><span>＋</span></summary>
           <div class="admin-fold-body">
             <form id="transactionForm" class="inline-form admin-inline-clean">
@@ -472,7 +579,7 @@
           </div>
         </details>
 
-        <details class="admin-fold">
+        <details class="admin-fold" id="adminSettingsFold">
           <summary><div><b>Regras e configurações</b><small>Cota, juros, limite e Pix</small></div><span>⚙</span></summary>
           <div class="admin-fold-body">
             <form id="settingsForm" class="form-grid compact-settings">
@@ -505,7 +612,7 @@
           </div>
         </details>
 
-        <details class="admin-fold">
+        <details class="admin-fold" id="adminCommunicationFold">
           <summary><div><b>Comunicação</b><small>Enviar aviso aos cotistas</small></div><span>✉</span></summary>
           <div class="admin-fold-body">
             <form id="broadcastForm" class="form-grid compact-settings">
@@ -518,7 +625,7 @@
           </div>
         </details>
 
-        <details class="admin-fold">
+        <details class="admin-fold" id="adminAuditFold">
           <summary><div><b>Auditoria e histórico</b><small>Chatbot e agente financeiro</small></div><span>▾</span></summary>
           <div class="admin-fold-body">
             <div class="admin-audit-grid">
@@ -595,6 +702,14 @@
         </details>
       </section>
     </main>
+
+      <nav id="adm18GlobalNav" class="adm18-global-nav admin-only" aria-label="Navegação premium do administrador">
+        <button class="active" data-adm18-go="dashboard"><i>⌂</i>Início</button>
+        <button data-adm18-go="members"><i>◎</i>Cotistas</button>
+        <button data-adm18-go="loans"><i>↗</i>Contratos</button>
+        <button data-adm18-go="activities"><i>★</i>Eventos</button>
+        <button data-adm18-go="admin"><i>⚙</i>Mais</button>
+      </nav>
   </div>
 
   <button id="chatbotFab" class="chatbot-fab hidden" type="button" aria-label="Abrir assistente">
@@ -656,9 +771,10 @@
   <div id="modal" class="modal hidden"><div class="modal-card"><button id="closeModal" class="modal-close">×</button><div id="modalContent"></div></div></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
   <script src="/config.js?v=20261007-mobile-hotfix-v16"></script>
-  <script src="/app.js?v=20261007-mobile-hotfix-v16"></script>
-  <script src="/features.js?v=20261007-mobile-hotfix-v16"></script>
+  <script src="/app.js?v=20261022-preview-v18-18"></script>
+  <script src="/features.js?v=20261014-preview-v18-13"></script>
   <script src="/admin-agent.js?v=20261007-mobile-hotfix-v16"></script>
   <script src="/yield-management.js?v=20261007-mobile-hotfix-v16"></script>
+  <script src="/admin-premium-v18.js?v=20261013-preview-v18-3"></script>
 </body>
 </html>

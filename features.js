@@ -295,6 +295,33 @@
     }
 
     const allActs=acts||[];
+    if(isAdmin()){
+      const activeEvents=allActs.filter(a=>!['closed','cancelled'].includes(String(a.status||'').toLowerCase())).length;
+      const receivedTotal=entries.reduce((sum,e)=>sum+Number(e.amount_paid||0),0);
+      const expectedTotal=allActs.reduce((sum,a)=>{
+        if(a.type==='draw'){
+          const cfg=Array.isArray(a.raffle_configs)?a.raffle_configs[0]:a.raffle_configs;
+          const total=Number(cfg?.total_numbers||100)*Number(cfg?.number_price||a.unit_price||0);
+          return sum+total;
+        }
+        if(a.type==='trip'){
+          const cfg=Array.isArray(a.trip_configs)?a.trip_configs[0]:a.trip_configs;
+          const total=Number(cfg?.total_seats||0)*Number(cfg?.seat_price||a.unit_price||0);
+          return sum+total;
+        }
+        return sum+Number(a.target_amount||0);
+      },0);
+      const expensesTotal=activityExpenses.reduce((sum,e)=>sum+Number(e.amount||0),0);
+      const pendingTotal=Math.max(0,expectedTotal-receivedTotal);
+      const activeEl=document.querySelector('#activityPremiumActive');
+      const receivedEl=document.querySelector('#activityPremiumReceived');
+      const pendingEl=document.querySelector('#activityPremiumPending');
+      const expensesEl=document.querySelector('#activityPremiumExpenses');
+      if(activeEl)activeEl.textContent=String(activeEvents);
+      if(receivedEl)receivedEl.textContent=brl.format(receivedTotal);
+      if(pendingEl)pendingEl.textContent=brl.format(pendingTotal);
+      if(expensesEl)expensesEl.textContent=brl.format(expensesTotal);
+    }
     const allCount=document.querySelector('#allActivityCount');
     const drawCount=document.querySelector('#drawActivityCount');
     const tripCount=document.querySelector('#tripActivityCount');
@@ -484,17 +511,52 @@
         }).filter(x=>x.own.length);
         const available=(seats||[]).filter(s=>s.status==='available');
 
-        openModal('<div class="bus-admin-modal">'+
-          '<div class="panel-head"><div><span class="eyebrow">PASSEIO DE ÔNIBUS</span><h3>'+safe(activity.title)+'</h3><p>'+Number(cfg.total_seats)+' poltronas • '+brl.format(Number(cfg.seat_price))+' por assento • '+Number(cfg.seats_per_share)+' assento(s) por cota como referência.</p></div></div>'+
-          prizeHtml+
-          '<div class="bus-admin-tools">'+
-            '<div class="bus-assign-box"><h4>Atribuir poltronas exatas</h4><div class="form-grid two"><label>Cotista<select id="tripAssignMember">'+(members||[]).map(m=>'<option value="'+m.id+'">'+String(m.cotista_number).padStart(2,'0')+' • '+safe(m.full_name)+'</option>').join('')+'</select></label><label>Poltronas<input id="tripAssignSeats" placeholder="Ex.: 6, 7"></label></div><button id="tripAssignBtn" class="primary-btn" type="button">Atribuir poltronas</button><small>Disponíveis: '+(available.map(s=>s.seat_number).join(', ')||'nenhuma')+'</small></div>'+
-            '<div class="bus-due-box"><h4>Data limite de pagamento</h4><div class="form-grid two"><label>Vencimento<input id="tripManageDue" type="date" value="'+safe(activity.payment_due_date||'')+'"></label><div class="form-action-end"><button id="tripSaveDueBtn" class="outline-btn" type="button">Salvar vencimento</button></div></div><small>Em caso de saldo após essa data, será aplicada somente a regra vigente do exercício.</small></div>'+
+        const assignedCount=(seats||[]).filter(x=>x.member_id).length;
+        const paidCount=(seats||[]).filter(x=>x.status==='paid').length;
+        const freeCount=(seats||[]).filter(x=>x.status==='available').length;
+        const receivedAmount=(seats||[]).filter(x=>x.status==='paid').reduce((sum,x)=>sum+Number(x.seat_price||0),0);
+        const pendingAmount=(seats||[]).filter(x=>x.member_id&&x.status!=='paid').reduce((sum,x)=>sum+Number(x.seat_price||0),0);
+
+        openModal('<div class="bus-admin-modal premium-trip-manager">'+
+          '<div class="trip-manager-head">'+
+            '<div><span class="eyebrow">PASSEIO DE ÔNIBUS</span><h3>'+safe(activity.title)+'</h3><p>'+Number(cfg.total_seats)+' poltronas • '+brl.format(Number(cfg.seat_price))+' por assento</p></div>'+
           '</div>'+
-          '<div class="table-wrap"><table class="data-table"><thead><tr><th>Cotista</th><th>Poltronas</th><th>Números vinculados</th><th>Total</th><th>Status</th><th>Ação</th></tr></thead><tbody>'+
-            grouped.map(g=>'<tr><td><b>'+safe(g.m.full_name)+'</b></td><td><div class="number-chips">'+g.own.map(s=>'<span class="'+s.status+'">'+String(s.seat_number).padStart(2,'0')+'</span>').join('')+'</div></td><td><div class="raffle-seat-pairs">'+g.own.map(s=>(s.raffle_number_1||s.raffle_number_2)?'<span>P'+s.seat_number+': N'+String(s.raffle_number_1||'—').padStart(2,'0')+' / N'+String(s.raffle_number_2||'—').padStart(2,'0')+'</span>':'').join('')+'</div></td><td>'+brl.format(g.total)+'</td><td>'+statusBadge(g.paid?'confirmed':'pending')+'</td><td>'+(g.paid?'—':'<button class="primary-btn tiny" onclick="confirmTripMember(\''+activityId+'\',\''+g.m.id+'\')">Confirmar pagamento</button>')+'</td></tr>').join('')+
-          '</tbody></table></div>'+
-          '<div class="bus-seat-map"><h4>Mapa das poltronas</h4><div class="bus-seat-grid">'+(seats||[]).map(s=>{const owner=s.member_id?memberMap[s.member_id]?.full_name:'';return '<div class="bus-seat '+s.status+'" title="'+safe(owner||'Disponível')+'"><b>'+String(s.seat_number).padStart(2,'0')+'</b><small>'+safe(owner||'Livre')+'</small></div>'}).join('')+'</div></div>'+
+          '<div class="trip-manager-summary">'+
+            '<div><span>Atribuídas</span><b>'+assignedCount+'</b><small>de '+Number(cfg.total_seats)+'</small></div>'+
+            '<div><span>Disponíveis</span><b>'+freeCount+'</b><small>livres agora</small></div>'+
+            '<div><span>Recebido</span><b>'+brl.format(receivedAmount)+'</b><small>'+paidCount+' poltrona(s) paga(s)</small></div>'+
+            '<div><span>Pendente</span><b>'+brl.format(pendingAmount)+'</b><small>aguardando confirmação</small></div>'+
+          '</div>'+
+          '<details class="trip-manager-section" open>'+
+            '<summary><span><b>Gerenciar poltronas</b><small>Atribuição e vencimento</small></span><i>⌄</i></summary>'+
+            '<div class="trip-manager-section-body">'+
+              '<div class="bus-admin-tools">'+
+                '<div class="bus-assign-box"><h4>Atribuir poltronas</h4><div class="form-grid two"><label>Cotista<select id="tripAssignMember">'+(members||[]).map(m=>'<option value="'+m.id+'">'+String(m.cotista_number).padStart(2,'0')+' • '+safe(m.full_name)+'</option>').join('')+'</select></label><label>Poltronas<input id="tripAssignSeats" placeholder="Ex.: 6, 7"></label></div><button id="tripAssignBtn" class="primary-btn" type="button">Atribuir</button><small>Disponíveis: '+(available.map(s=>s.seat_number).join(', ')||'nenhuma')+'</small></div>'+
+                '<div class="bus-due-box"><h4>Vencimento</h4><div class="form-grid two"><label>Data limite<input id="tripManageDue" type="date" value="'+safe(activity.payment_due_date||'')+'"></label><div class="form-action-end"><button id="tripSaveDueBtn" class="outline-btn" type="button">Salvar</button></div></div><small>Data usada para controle dos pagamentos pendentes.</small></div>'+
+              '</div>'+
+            '</div>'+
+          '</details>'+
+          ((prizes||[]).length?'<details class="trip-manager-section"><summary><span><b>Premiações</b><small>'+String((prizes||[]).length)+' prêmio(s) cadastrados</small></span><i>⌄</i></summary><div class="trip-manager-section-body">'+prizeHtml+'</div></details>':'')+
+          '<section class="trip-manager-section trip-payments-section">'+
+            '<div class="trip-manager-static-head"><div><b>Pagamentos dos cotistas</b><small>'+grouped.length+' cotista(s) com poltronas</small></div></div>'+
+            '<div class="trip-member-list">'+
+              grouped.map(g=>{
+                const linked=g.own.filter(s=>s.raffle_number_1||s.raffle_number_2);
+                return '<article class="trip-member-card">'+
+                  '<div class="trip-member-head"><div><span>COTISTA '+String(g.m.cotista_number||'').padStart(2,'0')+'</span><h4>'+safe(g.m.full_name)+'</h4></div>'+statusBadge(g.paid?'confirmed':'pending')+'</div>'+
+                  '<div class="trip-member-seats"><span>Poltronas</span><div class="number-chips">'+g.own.map(s=>'<b class="'+s.status+'">'+String(s.seat_number).padStart(2,'0')+'</b>').join('')+'</div></div>'+
+                  (linked.length?'<details class="trip-linked-numbers"><summary>Ver números vinculados <b>'+linked.length+'</b></summary><div>'+linked.map(s=>'<span><b>P'+s.seat_number+'</b> N'+String(s.raffle_number_1||'—').padStart(2,'0')+' / N'+String(s.raffle_number_2||'—').padStart(2,'0')+'</span>').join('')+'</div></details>':'')+
+                  '<div class="trip-member-foot"><div><span>Total</span><b>'+brl.format(g.total)+'</b></div>'+
+                    (g.paid?'<div class="trip-paid-label">Pagamento confirmado</div>':'<button class="primary-btn tiny" onclick="confirmTripMember(\''+activityId+'\',\''+g.m.id+'\')">Confirmar pagamento</button>')+
+                  '</div>'+
+                '</article>';
+              }).join('')+
+            '</div>'+
+          '</section>'+
+          '<details class="trip-manager-section trip-seat-map-wrap">'+
+            '<summary><span><b>Mapa das poltronas</b><small>'+freeCount+' disponível(is) • '+assignedCount+' atribuída(s)</small></span><i>⌄</i></summary>'+
+            '<div class="trip-manager-section-body"><div class="bus-seat-grid">'+(seats||[]).map(s=>{const owner=s.member_id?memberMap[s.member_id]?.full_name:'';return '<div class="bus-seat '+s.status+'" title="'+safe(owner||'Disponível')+'"><b>'+String(s.seat_number).padStart(2,'0')+'</b><small>'+safe(owner||'Livre')+'</small></div>'}).join('')+'</div></div>'+
+          '</details>'+
         '</div>');
 
         $('#tripAssignBtn').addEventListener('click',async()=>{
