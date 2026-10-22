@@ -34,6 +34,22 @@ function applyRoleExperience(){
   const loanSubtitle=qs('#loanSectionSubtitle');
   if(loanTitle)loanTitle.textContent=isAdmin()?'Contratos de empréstimo':'Meus empréstimos';
   if(loanSubtitle)loanSubtitle.textContent=isAdmin()?'Acompanhe todos os contratos por situação.':'Seus contratos separados por situação.';
+
+  // Camada extra de privacidade no navegador: componentes administrativos
+  // ficam fora da navegação e também inertes para acessos de cotista.
+  qsa('.admin-only').forEach(el=>{
+    if(isAdmin()){
+      el.removeAttribute('aria-hidden');
+      el.inert=false;
+    }else{
+      el.setAttribute('aria-hidden','true');
+      el.inert=true;
+    }
+  });
+  if(!isAdmin()){
+    qs('#adminAgentPanel')?.classList.add('hidden');
+    qs('#adminAgentFab')?.classList.add('hidden');
+  }
 }
 
 function showApp(){qs('#termsView').classList.add('hidden');qs('#firstAccessView').classList.add('hidden');qs('#loginView').classList.add('hidden');qs('#appView').classList.remove('hidden');qs('#appView').classList.toggle('is-admin',isAdmin());qs('#sidebarName').textContent=state.profile?.full_name||state.user?.email||'Usuário';qs('#sidebarRole').textContent=isAdmin()?'Administrador':'Cotista';qs('#sidebarAvatar').textContent=isAdmin()?'AD':`C${state.profile?.cotista_number||'–'}`;applyRoleExperience();navigate('dashboard');renderAll()}
