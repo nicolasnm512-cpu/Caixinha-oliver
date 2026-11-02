@@ -199,8 +199,7 @@
     });
     $('#goReceiptBtn').addEventListener('click',()=>{
       closeModal();
-      navigate('payments');
-      setTimeout(()=>{$('#receiptAmount').value=Number(amount).toFixed(2)},50);
+      window.payActivity(activity.id,'draw',amount);
     });
   }
 
@@ -482,9 +481,12 @@
     navigate('payments');
     setTimeout(async()=>{
       $('#receiptType').value=kind;
-      if(window.refreshReceiptReference)await refreshReceiptReference();
+      await refreshReceiptReference();
       const sel=$('#receiptActivity');
-      if(sel)sel.value='activity:'+activityId;
+      if(!sel||![...sel.options].some(o=>o.value==='activity:'+activityId)){
+        toast('Não encontrei a atividade em aberto para esse comprovante.');return;
+      }
+      sel.value='activity:'+activityId;
       $('#receiptAmount').value=Number(amount||0).toFixed(2);
     },80);
   };
@@ -575,9 +577,10 @@
           toast('Vencimento atualizado.');closeModal();await renderActivities();await openBusTrip(activityId);
         });
       }else{
-        const own=seats||[];
+        const own=(seats||[]).filter(s=>s.member_id===state.user.id);
         const total=own.reduce((s,x)=>s+Number(x.seat_price),0);
-        const allPaid=own.length>0&&own.every(s=>s.status==='paid');
+        const amountPending=own.filter(s=>s.status!=='paid').reduce((sum,s)=>sum+Number(s.seat_price||0),0);
+        const allPaid=own.length>0&&amountPending<=0;
         openModal('<div class="bus-member-modal">'+
           '<div class="panel-head"><div><span class="eyebrow">MEU PASSEIO</span><h3>'+safe(activity.title)+'</h3><p>'+safe(activity.description||'')+'</p></div></div>'+
           prizeHtml+
@@ -651,7 +654,7 @@
           </div>
           ${mine.paid?'<div class="paid-banner">Pagamento confirmado ✅</div>':`<button id="payRafflePixBtn" class="primary-btn full-span" type="button">Pagar ${brl.format(mine.amount)} via Pix</button>`}
         </div>`);
-        $('#payRafflePixBtn')?.addEventListener('click',()=>openPixPayment(activity,mine.amount));
+        $('#payRafflePixBtn')?.addEventListener('click',()=>openPixPayment(activity,mine.numbers.filter(n=>n.status!=='paid').reduce((sum,n)=>sum+Number(n.number_price||0),0)));
       }
     }catch(err){toast(err.message||'Não foi possível abrir a rifa.')}
   };
