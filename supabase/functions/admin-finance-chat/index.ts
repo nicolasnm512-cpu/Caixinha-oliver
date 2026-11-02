@@ -7,7 +7,7 @@ const cors={
   "Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods":"POST, OPTIONS"
 };
-const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,"Content-Type":"application/json"}});
+const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,"Content-Type":"application/json","Cache-Control":"no-store"}});
 const norm=(s:string)=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
 const money=(v:number)=>new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(v);
 const months:any={janeiro:1,jan:1,fevereiro:2,fev:2,marco:3,mar:3,abril:4,abr:4,maio:5,mai:5,junho:6,jun:6,julho:7,jul:7,agosto:8,ago:8,setembro:9,set:9,outubro:10,out:10,novembro:11,nov:11,dezembro:12,dez:12};
@@ -160,9 +160,9 @@ Deno.serve(async(req:Request)=>{
     }else if(/\b(emprestimo|credito)\b/.test(n)&&member&&/\b(aprovar|aceitar|recusar|rejeitar)\b/.test(n)){
       const reject=/\b(recusar|rejeitar)\b/.test(n);
       const {data:reqs}=await service.from("loan_requests")
-        .select("id,requested_amount,status,created_at")
+        .select("id,requested_amount,status,requested_at")
         .eq("member_id",member.id).in("status",["pending","under_review"])
-        .order("created_at",{ascending:false}).limit(1);
+        .order("requested_at",{ascending:false}).limit(1);
       const loanReq=reqs?.[0];
       if(!loanReq)return json({error:"Não há solicitação de empréstimo pendente desse cotista."},400);
       if(reject){
