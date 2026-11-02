@@ -588,7 +588,7 @@
           '<div class="my-bus-seats"><small>Suas poltronas</small><div class="my-number-grid">'+own.map(s=>'<span class="'+s.status+'">'+String(s.seat_number).padStart(2,'0')+'</span>').join('')+'</div></div>'+
           ((own||[]).some(s=>s.raffle_number_1||s.raffle_number_2)?'<div class="my-trip-raffle"><small>Números vinculados às suas poltronas</small>'+own.map(s=>(s.raffle_number_1||s.raffle_number_2)?'<div><b>Poltrona '+s.seat_number+'</b><span>N'+String(s.raffle_number_1||'—').padStart(2,'0')+' • N'+String(s.raffle_number_2||'—').padStart(2,'0')+'</span></div>':'').join('')+'</div>':'')+
           '<div class="my-raffle-total"><span>'+own.length+' assento(s)</span><b>'+brl.format(total)+'</b></div>'+
-          (allPaid?'<div class="paid-banner">Pagamento confirmado ✅</div>':'<button class="primary-btn full-span" onclick="payActivity(\''+activityId+'\',\'trip\','+total+')">Pagar '+brl.format(total)+'</button>')+
+          (allPaid?'<div class="paid-banner">Pagamento confirmado ✅</div>':amountPending>0?'<button class="primary-btn full-span" onclick="payActivity(\''+activityId+'\',\'trip\','+amountPending+')">Pagar '+brl.format(amountPending)+'</button>':'')+
         '</div>');
       }
     }catch(err){toast(err.message||'Não foi possível abrir o passeio.')}
