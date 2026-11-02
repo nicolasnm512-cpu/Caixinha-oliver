@@ -968,6 +968,25 @@ async function renderAdminTripProfitPreview(){
   const membersCents=perShareCents*realShares;
   const adminCents=adminFeeCents+virtualCents;
   if(adminCents+membersCents!==profitCents)throw new Error('Simulação de passeio não fecha.');
+  const loanEl=qs('#adminLoanInterestPreview');
+  if(loanEl){
+    // Empréstimo de R$ 500: R$ 125 juros; R$ 50 ADM; R$ 50 cotas; R$ 25 benefício tomador.
+    // A cota virtual participa dos R$ 50 destinados ao conjunto das cotas.
+    const principalCents=50000,interestCents=12500;
+    const loanAdminFeeCents=5000,borrowerBonusCents=2500,sharedCents=5000;
+    const memberUnitCents=Math.floor(sharedCents/totalShares);
+    const virtualUnitCents=memberUnitCents*virtualShares+(sharedCents-memberUnitCents*totalShares);
+    const memberSharedCents=memberUnitCents*realShares;
+    if(loanAdminFeeCents+borrowerBonusCents+virtualUnitCents+memberSharedCents!==interestCents)
+      throw new Error('Simulação de empréstimo não fecha.');
+    loanEl.textContent='Exemplo de empréstimo de '+brl.format(principalCents/100)+
+      ' (juros '+brl.format(interestCents/100)+'): ADM taxa '+brl.format(loanAdminFeeCents/100)+
+      ' + cota virtual '+brl.format(virtualUnitCents/100)+
+      ' = '+brl.format((loanAdminFeeCents+virtualUnitCents)/100)+
+      '; cada cota real '+brl.format(memberUnitCents/100)+
+      '; tomador recebe mais '+brl.format(borrowerBonusCents/100)+
+      ' além das próprias cotas. Simulação não creditada.';
+  }
   el.textContent='Lucro corrigido: '+brl.format(profitCents/100)+
     ' • Taxa ADM (10%): '+brl.format(adminFeeCents/100)+
     ' • Cota virtual ADM ('+virtualShares+'): '+brl.format(virtualCents/100)+
