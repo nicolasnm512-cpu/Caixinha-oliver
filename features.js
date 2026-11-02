@@ -178,7 +178,7 @@
   }
 
   async function openPixPayment(activity,amount){
-    const {data:settings,error}=await db.from('fund_settings').select('*').eq('id',1).single();
+    const {data:settings,error}=await db.from('fund_settings').select('pix_key,pix_receiver_name,pix_city,fund_name').eq('id',1).single();
     if(error)throw error;
     const code=buildPixPayload(settings,amount,'RIFA'+String(activity.id).replaceAll('-','').slice(0,18));
     openModal(`
@@ -199,8 +199,7 @@
     });
     $('#goReceiptBtn').addEventListener('click',()=>{
       closeModal();
-      navigate('payments');
-      setTimeout(()=>{$('#receiptAmount').value=Number(amount).toFixed(2)},50);
+      window.payActivity(activity.id,'draw',amount);
     });
   }
 
@@ -482,9 +481,12 @@
     navigate('payments');
     setTimeout(async()=>{
       $('#receiptType').value=kind;
-      if(window.refreshReceiptReference)await refreshReceiptReference();
+      await refreshReceiptReference();
       const sel=$('#receiptActivity');
-      if(sel)sel.value='activity:'+activityId;
+      if(!sel||![...sel.options].some(o=>o.value==='activity:'+activityId)){
+        toast('Não encontrei a atividade em aberto para esse comprovante.');return;
+      }
+      sel.value='activity:'+activityId;
       $('#receiptAmount').value=Number(amount||0).toFixed(2);
     },80);
   };
@@ -575,9 +577,10 @@
           toast('Vencimento atualizado.');closeModal();await renderActivities();await openBusTrip(activityId);
         });
       }else{
-        const own=seats||[];
+        const own=(seats||[]).filter(s=>s.member_id===state.user.id);
         const total=own.reduce((s,x)=>s+Number(x.seat_price),0);
-        const allPaid=own.length>0&&own.every(s=>s.status==='paid');
+        const amountPending=own.filter(s=>s.status!=='paid').reduce((sum,s)=>sum+Number(s.seat_price||0),0);
+        const allPaid=own.length>0&&amountPending<=0;
         openModal('<div class="bus-member-modal">'+
           '<div class="panel-head"><div><span class="eyebrow">MEU PASSEIO</span><h3>'+safe(activity.title)+'</h3><p>'+safe(activity.description||'')+'</p></div></div>'+
           prizeHtml+
@@ -585,7 +588,7 @@
           '<div class="my-bus-seats"><small>Suas poltronas</small><div class="my-number-grid">'+own.map(s=>'<span class="'+s.status+'">'+String(s.seat_number).padStart(2,'0')+'</span>').join('')+'</div></div>'+
           ((own||[]).some(s=>s.raffle_number_1||s.raffle_number_2)?'<div class="my-trip-raffle"><small>Números vinculados às suas poltronas</small>'+own.map(s=>(s.raffle_number_1||s.raffle_number_2)?'<div><b>Poltrona '+s.seat_number+'</b><span>N'+String(s.raffle_number_1||'—').padStart(2,'0')+' • N'+String(s.raffle_number_2||'—').padStart(2,'0')+'</span></div>':'').join('')+'</div>':'')+
           '<div class="my-raffle-total"><span>'+own.length+' assento(s)</span><b>'+brl.format(total)+'</b></div>'+
-          (allPaid?'<div class="paid-banner">Pagamento confirmado ✅</div>':'<button class="primary-btn full-span" onclick="payActivity(\''+activityId+'\',\'trip\','+total+')">Pagar '+brl.format(total)+'</button>')+
+          (allPaid?'<div class="paid-banner">Pagamento confirmado ✅</div>':amountPending>0?'<button class="primary-btn full-span" onclick="payActivity(\''+activityId+'\',\'trip\','+amountPending+')">Pagar '+brl.format(amountPending)+'</button>':'')+
         '</div>');
       }
     }catch(err){toast(err.message||'Não foi possível abrir o passeio.')}
@@ -641,6 +644,7 @@
       }else{
         const mine=grouped.find(g=>g.id===state.user.id);
         if(!mine){toast('Nenhum número foi atribuído ao seu cadastro.');return}
+        const rafflePending=mine.numbers.filter(n=>n.status!=='paid').reduce((sum,n)=>sum+Number(n.number_price||0),0);
         openModal(`<div class="quota-raffle-modal member">
           <div class="panel-head"><div><span class="eyebrow">SUA RIFA</span><h3>${safe(activity.title)}</h3><p>Seus números já foram distribuídos conforme a quantidade de cotas.</p></div></div>
           ${prizesHtml}
@@ -649,9 +653,9 @@
             <div class="my-number-grid">${mine.numbers.map(n=>`<span class="${n.status}">${String(n.number).padStart(2,'0')}</span>`).join('')}</div>
             <div class="my-raffle-total"><span>${mine.numbers.length} número(s) × ${brl.format(Number(cfg.number_price))}</span><b>${brl.format(mine.amount)}</b></div>
           </div>
-          ${mine.paid?'<div class="paid-banner">Pagamento confirmado ✅</div>':`<button id="payRafflePixBtn" class="primary-btn full-span" type="button">Pagar ${brl.format(mine.amount)} via Pix</button>`}
+          ${rafflePending<=0?'<div class="paid-banner">Pagamento confirmado ✅</div>':`<button id="payRafflePixBtn" class="primary-btn full-span" type="button">Pagar ${brl.format(rafflePending)} via Pix</button>`}
         </div>`);
-        $('#payRafflePixBtn')?.addEventListener('click',()=>openPixPayment(activity,mine.amount));
+        $('#payRafflePixBtn')?.addEventListener('click',()=>openPixPayment(activity,rafflePending));
       }
     }catch(err){toast(err.message||'Não foi possível abrir a rifa.')}
   };

@@ -8,8 +8,8 @@ const cors={
   "Access-Control-Allow-Methods":"POST, OPTIONS"
 };
 const money=(v:number|string|null|undefined)=>new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(v||0));
-const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,"Content-Type":"application/json"}});
-const normalize=(s:string)=>s.normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase().trim();
+const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,"Content-Type":"application/json","Cache-Control":"no-store"}});
+const normalize=(s:string)=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
 
 const COMMANDS=[
   "Minha cota",
@@ -33,18 +33,22 @@ Deno.serve(async(req:Request)=>{
   if(req.method!=="POST")return json({error:"Método não permitido."},405);
 
   try{
-    const token=(req.headers.get("Authorization")||"").replace(/^Bearer\\s+/i,"").trim();
+    const token=(req.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"").trim();
     if(!token)return json({error:"Sessão inválida."},401);
 
-    const db=createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      {auth:{persistSession:false}}
-    );
-
-    const {data:userData,error:userError}=await db.auth.getUser(token);
+    const url=Deno.env.get("SUPABASE_URL")!;
+    // Privileged client is used only for JWT verification and a scoped audit insert.
+    // Every financial read must run as the authenticated cotista, never as service_role.
+    const service=createClient(url,Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,{auth:{persistSession:false}});
+    const {data:userData,error:userError}=await service.auth.getUser(token);
     const user=userData?.user;
     if(userError||!user)return json({error:"Sessão expirada."},401);
+    if(user.app_metadata?.role==="admin")return json({error:"Use o Oliver ADM para a administração."},403);
+    const anon=Deno.env.get("SUPABASE_ANON_KEY")!;
+    const db=createClient(url,anon,{
+      auth:{persistSession:false,autoRefreshToken:false},
+      global:{headers:{Authorization:`Bearer ${token}`}}
+    });
 
     const body=await req.json();
     const question=String(body?.question||"").trim();
@@ -176,7 +180,7 @@ Deno.serve(async(req:Request)=>{
         :"Você não possui avisos pendentes.";
     }
 
-    await db.from("chatbot_messages").insert({
+    await service.from("chatbot_messages").insert({
       member_id:user.id,question,intent,answer,escalated:!command
     });
 

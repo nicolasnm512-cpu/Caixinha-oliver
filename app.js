@@ -63,7 +63,7 @@ async function loadCore(){
   state.profile=profile;
   if(!profile.active){toast('Seu acesso está desativado.');await db.auth.signOut();showLogin();return}
   const [{data:settings},{data:terms}] = await Promise.all([
-    db.from('fund_settings').select('*').eq('id',1).single(),
+    db.from('fund_settings').select(isAdmin()?'*':'id,fund_name,monthly_share_amount,operation_interest_rate,credit_bonus_percent,max_installments,pix_key,pix_key_type,pix_receiver_name,pix_city,third_party_interest_rate,own_interest_return_percent,collective_interest_return_percent,trip_return_percent,bank_name,bank_code,bank_agency,bank_account,pix_base_payload').eq('id',1).single(),
     db.from('terms_versions').select('*').eq('active',true).single()
   ]);
   state.settings=settings;state.terms=terms;
@@ -944,8 +944,53 @@ window.ignoreAgentEvent=async id=>{
   toast('Lançamento ignorado sem alterar o caixa.');
 };
 
+// A prévia é buscada do backend com JWT de administrador e NUNCA escreve no caixa.
+async function renderAdminTripProfitPreview(){
+  if(!isAdmin())return;
+  const tripEl=qs('#adminTripProfitPreviewBody');
+  const loanEl=qs('#adminLoanInterestPreview');
+  if(!tripEl||!loanEl)return;
+  try{
+    const {data:{session}}=await db.auth.getSession();
+    if(!session?.access_token)throw new Error('Sessão administrativa expirada.');
+    const response=await fetch(`${cfg.supabaseUrl}/functions/v1/admin-finance-chat`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':cfg.supabaseKey,
+        'Authorization':`Bearer ${session.access_token}`},
+      body:JSON.stringify({action:'finance_rules_preview'})
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok||result?.status!=='simulation_only')throw new Error(result?.error||'Prévia indisponível.');
+    const asMoney=cents=>brl.format(Number(cents||0)/100);
+    const t=result.trip,l=result.loan;
+    if(!t||!l)throw new Error('Resposta incompleta da simulação.');
+    if(t.real_total_cents+t.admin_total_cents!==t.profit_cents)
+      throw new Error('A prévia do passeio não fecha.');
+    if(l.real_total_cents+l.admin_total_cents+l.borrower_bonus_cents!==l.interest_cents)
+      throw new Error('A prévia do empréstimo não fecha.');
+    tripEl.textContent='Lucro: '+asMoney(t.profit_cents)+
+      ' • Taxa da ADM: '+asMoney(t.admin_fee_cents)+
+      ' • Cota virtual ('+result.virtual_shares+'): '+asMoney(t.virtual_cents)+
+      ' • Total da ADM: '+asMoney(t.admin_total_cents)+
+      ' • '+result.real_shares+' cotas reais recebem '+asMoney(t.per_real_share_cents)+
+      ' cada (total '+asMoney(t.real_total_cents)+').';
+    loanEl.textContent='Exemplo empréstimo '+asMoney(l.principal_cents)+
+      ' • Juros '+asMoney(l.interest_cents)+
+      ' • Taxa ADM '+asMoney(l.admin_fee_cents)+
+      ' • Virtual ADM '+asMoney(l.virtual_cents)+
+      ' • Total ADM '+asMoney(l.admin_total_cents)+
+      ' • Cada cota real '+asMoney(l.per_real_share_cents)+
+      ' • Benefício exclusivo do tomador '+asMoney(l.borrower_bonus_cents)+
+      ' (além da própria participação coletiva).';
+  }catch(err){
+    tripEl.textContent='Simulação indisponível: '+(err?.message||'não foi possível consultar.');
+    loanEl.textContent='Nenhum rendimento foi alterado.';
+  }
+}
+
 async function renderInterestDistributionAudit(){
   if(!isAdmin()||!qs('#interestDistributionAudit'))return;
+  await renderAdminTripProfitPreview();
   const {data,error}=await db.from('interest_distribution_batches')
     .select('*')
     .order('created_at',{ascending:false})

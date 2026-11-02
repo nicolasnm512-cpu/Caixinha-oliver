@@ -7,7 +7,7 @@ const cors={
   "Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods":"POST, OPTIONS"
 };
-const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,"Content-Type":"application/json"}});
+const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,"Content-Type":"application/json","Cache-Control":"no-store"}});
 const norm=(s:string)=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
 const money=(v:number)=>new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(v);
 const months:any={janeiro:1,jan:1,fevereiro:2,fev:2,marco:3,mar:3,abril:4,abr:4,maio:5,mai:5,junho:6,jun:6,julho:7,jul:7,agosto:8,ago:8,setembro:9,set:9,outubro:10,out:10,novembro:11,nov:11,dezembro:12,dez:12};
@@ -62,6 +62,38 @@ Deno.serve(async(req:Request)=>{
     const anon=Deno.env.get("SUPABASE_ANON_KEY")!;
     const db=createClient(url,anon,{auth:{persistSession:false},global:{headers:{Authorization:`Bearer ${token}`}}});
     const body=await req.json().catch(()=>({}));
+    // Preview for the administration only. No database mutation or distribution.
+    if(body?.action==="finance_rules_preview"){
+      const [{data:profiles,error:profilesError},{data:settings,error:settingsError}]=await Promise.all([
+        service.from("profiles").select("share_count")
+          .eq("active",true).not("cotista_number","is",null).gt("share_count",0),
+        service.from("fund_settings").select("admin_virtual_interest_shares").eq("id",1).single()
+      ]);
+      if(profilesError||settingsError)return json({error:"Não foi possível consultar as cotas para a simulação."},503);
+      const realShares=(profiles||[]).reduce((n:number,p:any)=>n+Number(p.share_count||0),0);
+      const virtualShares=Math.max(1,Math.floor(Number(settings?.admin_virtual_interest_shares??1)));
+      const slots=realShares+virtualShares;
+      if(realShares<=0||!Number.isSafeInteger(slots))return json({error:"Sem cotas válidas para a prévia."},400);
+      const pool=(cents:number)=>{
+        const unit=Math.floor(cents/slots);
+        const rounding=cents-unit*slots;
+        return {per_real_share_cents:unit,virtual_cents:unit*virtualShares+rounding,real_total_cents:unit*realShares};
+      };
+      const trip=pool(121500); // R$ 1.350 - 10% de taxa ADM
+      const loan=pool(5000);   // R$ 500 * 10% de cotas
+      if(trip.real_total_cents+trip.virtual_cents!==121500||loan.real_total_cents+loan.virtual_cents!==5000)
+        return json({error:"Simulação não fecha em centavos."},500);
+      return json({
+        intent:"finance_preview",status:"simulation_only",base:"current_active_shares",
+        real_shares:realShares,virtual_shares:virtualShares,
+        trip:{profit_cents:135000,admin_fee_cents:13500,...trip,
+          admin_total_cents:13500+trip.virtual_cents},
+        loan:{principal_cents:50000,interest_cents:12500,
+          admin_fee_cents:5000,borrower_bonus_cents:2500,...loan,
+          admin_total_cents:5000+loan.virtual_cents}
+      });
+    }
+
 
     if(body?.action==="confirm"&&body?.action_id){
       const {data:pending,error:pendingError}=await db.from("admin_agent_actions")
@@ -160,9 +192,9 @@ Deno.serve(async(req:Request)=>{
     }else if(/\b(emprestimo|credito)\b/.test(n)&&member&&/\b(aprovar|aceitar|recusar|rejeitar)\b/.test(n)){
       const reject=/\b(recusar|rejeitar)\b/.test(n);
       const {data:reqs}=await service.from("loan_requests")
-        .select("id,requested_amount,status,created_at")
+        .select("id,requested_amount,status,requested_at")
         .eq("member_id",member.id).in("status",["pending","under_review"])
-        .order("created_at",{ascending:false}).limit(1);
+        .order("requested_at",{ascending:false}).limit(1);
       const loanReq=reqs?.[0];
       if(!loanReq)return json({error:"Não há solicitação de empréstimo pendente desse cotista."},400);
       if(reject){
