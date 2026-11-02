@@ -944,57 +944,48 @@ window.ignoreAgentEvent=async id=>{
   toast('Lançamento ignorado sem alterar o caixa.');
 };
 
-// Simulação exclusiva da administração: nunca altera rendimentos, empréstimos ou cotas.
+// A prévia é buscada do backend com JWT de administrador e NUNCA escreve no caixa.
 async function renderAdminTripProfitPreview(){
   if(!isAdmin())return;
-  const el=qs('#adminTripProfitPreviewBody');
-  if(!el)return;
-  const {data:profiles,error}=await db.from('profiles')
-    .select('share_count').eq('active',true).not('cotista_number','is',null).gt('share_count',0);
-  if(error){el.textContent='Prévia indisponível: não foi possível consultar as cotas ativas.';return}
-  const realShares=(profiles||[]).reduce((sum,p)=>sum+Number(p.share_count||0),0);
-  const virtualShares=Math.max(1,Math.floor(Number(state.settings?.admin_virtual_interest_shares??1)));
-  const totalShares=realShares+virtualShares;
-  if(realShares<=0||!Number.isFinite(totalShares)){
-    el.textContent='Prévia indisponível: não há cotas reais elegíveis.';return;
-  }
-  // Centavos inteiros: R$ 1.350,00; 10% para ADM; 90% para cotas reais + virtuais.
-  const profitCents=135000;
-  const adminFeeCents=13500;
-  const poolCents=profitCents-adminFeeCents;
-  const perShareCents=Math.floor(poolCents/totalShares);
-  const roundingCents=poolCents-perShareCents*totalShares;
-  const virtualCents=perShareCents*virtualShares+roundingCents;
-  const membersCents=perShareCents*realShares;
-  const adminCents=adminFeeCents+virtualCents;
-  if(adminCents+membersCents!==profitCents)throw new Error('Simulação de passeio não fecha.');
+  const tripEl=qs('#adminTripProfitPreviewBody');
   const loanEl=qs('#adminLoanInterestPreview');
-  if(loanEl){
-    // Empréstimo de R$ 500: R$ 125 juros; R$ 50 ADM; R$ 50 cotas; R$ 25 benefício tomador.
-    // A cota virtual participa dos R$ 50 destinados ao conjunto das cotas.
-    const principalCents=50000,interestCents=12500;
-    const loanAdminFeeCents=5000,borrowerBonusCents=2500,sharedCents=5000;
-    const memberUnitCents=Math.floor(sharedCents/totalShares);
-    const virtualUnitCents=memberUnitCents*virtualShares+(sharedCents-memberUnitCents*totalShares);
-    const memberSharedCents=memberUnitCents*realShares;
-    if(loanAdminFeeCents+borrowerBonusCents+virtualUnitCents+memberSharedCents!==interestCents)
-      throw new Error('Simulação de empréstimo não fecha.');
-    loanEl.textContent='Exemplo de empréstimo de '+brl.format(principalCents/100)+
-      ' (juros '+brl.format(interestCents/100)+'): ADM taxa '+brl.format(loanAdminFeeCents/100)+
-      ' + cota virtual '+brl.format(virtualUnitCents/100)+
-      ' = '+brl.format((loanAdminFeeCents+virtualUnitCents)/100)+
-      '; cada cota real '+brl.format(memberUnitCents/100)+
-      '; tomador recebe mais '+brl.format(borrowerBonusCents/100)+
-      ' além das próprias cotas. Simulação não creditada.';
+  if(!tripEl||!loanEl)return;
+  try{
+    const {data:{session}}=await db.auth.getSession();
+    if(!session?.access_token)throw new Error('Sessão administrativa expirada.');
+    const response=await fetch(`${cfg.supabaseUrl}/functions/v1/admin-finance-chat`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':cfg.supabaseKey,
+        'Authorization':`Bearer ${session.access_token}`},
+      body:JSON.stringify({action:'finance_rules_preview'})
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok||result?.status!=='simulation_only')throw new Error(result?.error||'Prévia indisponível.');
+    const asMoney=cents=>brl.format(Number(cents||0)/100);
+    const t=result.trip,l=result.loan;
+    if(!t||!l)throw new Error('Resposta incompleta da simulação.');
+    if(t.real_total_cents+t.admin_total_cents!==t.profit_cents)
+      throw new Error('A prévia do passeio não fecha.');
+    if(l.real_total_cents+l.admin_total_cents+l.borrower_bonus_cents!==l.interest_cents)
+      throw new Error('A prévia do empréstimo não fecha.');
+    tripEl.textContent='Lucro: '+asMoney(t.profit_cents)+
+      ' • Taxa da ADM: '+asMoney(t.admin_fee_cents)+
+      ' • Cota virtual ('+result.virtual_shares+'): '+asMoney(t.virtual_cents)+
+      ' • Total da ADM: '+asMoney(t.admin_total_cents)+
+      ' • '+result.real_shares+' cotas reais recebem '+asMoney(t.per_real_share_cents)+
+      ' cada (total '+asMoney(t.real_total_cents)+').';
+    loanEl.textContent='Exemplo empréstimo '+asMoney(l.principal_cents)+
+      ' • Juros '+asMoney(l.interest_cents)+
+      ' • Taxa ADM '+asMoney(l.admin_fee_cents)+
+      ' • Virtual ADM '+asMoney(l.virtual_cents)+
+      ' • Total ADM '+asMoney(l.admin_total_cents)+
+      ' • Cada cota real '+asMoney(l.per_real_share_cents)+
+      ' • Benefício exclusivo do tomador '+asMoney(l.borrower_bonus_cents)+
+      ' (além da própria participação coletiva).';
+  }catch(err){
+    tripEl.textContent='Simulação indisponível: '+(err?.message||'não foi possível consultar.');
+    loanEl.textContent='Nenhum rendimento foi alterado.';
   }
-  el.textContent='Lucro corrigido: '+brl.format(profitCents/100)+
-    ' • Taxa ADM (10%): '+brl.format(adminFeeCents/100)+
-    ' • Cota virtual ADM ('+virtualShares+'): '+brl.format(virtualCents/100)+
-    ' • Total ADM: '+brl.format(adminCents/100)+
-    ' • Cotas reais: '+realShares+
-    ' • Projeção por cota real: '+brl.format(perShareCents/100)+
-    ' • Total das cotas reais: '+brl.format(membersCents/100)+
-    '. Base: cotas ativas atuais; conferir cotas vigentes no passeio antes de aprovar qualquer crédito.';
 }
 
 async function renderInterestDistributionAudit(){
