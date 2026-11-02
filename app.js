@@ -944,8 +944,43 @@ window.ignoreAgentEvent=async id=>{
   toast('Lançamento ignorado sem alterar o caixa.');
 };
 
+// Simulação exclusiva da administração: nunca altera rendimentos, empréstimos ou cotas.
+async function renderAdminTripProfitPreview(){
+  if(!isAdmin())return;
+  const el=qs('#adminTripProfitPreviewBody');
+  if(!el)return;
+  const {data:profiles,error}=await db.from('profiles')
+    .select('share_count').eq('active',true).not('cotista_number','is',null).gt('share_count',0);
+  if(error){el.textContent='Prévia indisponível: não foi possível consultar as cotas ativas.';return}
+  const realShares=(profiles||[]).reduce((sum,p)=>sum+Number(p.share_count||0),0);
+  const virtualShares=Math.max(1,Math.floor(Number(state.settings?.admin_virtual_interest_shares??1)));
+  const totalShares=realShares+virtualShares;
+  if(realShares<=0||!Number.isFinite(totalShares)){
+    el.textContent='Prévia indisponível: não há cotas reais elegíveis.';return;
+  }
+  // Centavos inteiros: R$ 1.350,00; 10% para ADM; 90% para cotas reais + virtuais.
+  const profitCents=135000;
+  const adminFeeCents=13500;
+  const poolCents=profitCents-adminFeeCents;
+  const perShareCents=Math.floor(poolCents/totalShares);
+  const roundingCents=poolCents-perShareCents*totalShares;
+  const virtualCents=perShareCents*virtualShares+roundingCents;
+  const membersCents=perShareCents*realShares;
+  const adminCents=adminFeeCents+virtualCents;
+  if(adminCents+membersCents!==profitCents)throw new Error('Simulação de passeio não fecha.');
+  el.textContent='Lucro corrigido: '+brl.format(profitCents/100)+
+    ' • Taxa ADM (10%): '+brl.format(adminFeeCents/100)+
+    ' • Cota virtual ADM ('+virtualShares+'): '+brl.format(virtualCents/100)+
+    ' • Total ADM: '+brl.format(adminCents/100)+
+    ' • Cotas reais: '+realShares+
+    ' • Projeção por cota real: '+brl.format(perShareCents/100)+
+    ' • Total das cotas reais: '+brl.format(membersCents/100)+
+    '. Base: cotas ativas atuais; conferir cotas vigentes no passeio antes de aprovar qualquer crédito.';
+}
+
 async function renderInterestDistributionAudit(){
   if(!isAdmin()||!qs('#interestDistributionAudit'))return;
+  await renderAdminTripProfitPreview();
   const {data,error}=await db.from('interest_distribution_batches')
     .select('*')
     .order('created_at',{ascending:false})
