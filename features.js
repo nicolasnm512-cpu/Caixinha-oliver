@@ -644,6 +644,7 @@
       }else{
         const mine=grouped.find(g=>g.id===state.user.id);
         if(!mine){toast('Nenhum número foi atribuído ao seu cadastro.');return}
+        const rafflePending=mine.numbers.filter(n=>n.status!=='paid').reduce((sum,n)=>sum+Number(n.number_price||0),0);
         openModal(`<div class="quota-raffle-modal member">
           <div class="panel-head"><div><span class="eyebrow">SUA RIFA</span><h3>${safe(activity.title)}</h3><p>Seus números já foram distribuídos conforme a quantidade de cotas.</p></div></div>
           ${prizesHtml}
@@ -652,9 +653,9 @@
             <div class="my-number-grid">${mine.numbers.map(n=>`<span class="${n.status}">${String(n.number).padStart(2,'0')}</span>`).join('')}</div>
             <div class="my-raffle-total"><span>${mine.numbers.length} número(s) × ${brl.format(Number(cfg.number_price))}</span><b>${brl.format(mine.amount)}</b></div>
           </div>
-          ${mine.paid?'<div class="paid-banner">Pagamento confirmado ✅</div>':`<button id="payRafflePixBtn" class="primary-btn full-span" type="button">Pagar ${brl.format(mine.amount)} via Pix</button>`}
+          ${rafflePending<=0?'<div class="paid-banner">Pagamento confirmado ✅</div>':`<button id="payRafflePixBtn" class="primary-btn full-span" type="button">Pagar ${brl.format(rafflePending)} via Pix</button>`}
         </div>`);
-        $('#payRafflePixBtn')?.addEventListener('click',()=>openPixPayment(activity,mine.numbers.filter(n=>n.status!=='paid').reduce((sum,n)=>sum+Number(n.number_price||0),0)));
+        $('#payRafflePixBtn')?.addEventListener('click',()=>openPixPayment(activity,rafflePending));
       }
     }catch(err){toast(err.message||'Não foi possível abrir a rifa.')}
   };
