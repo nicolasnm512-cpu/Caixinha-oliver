@@ -590,7 +590,7 @@
             <form id="transactionForm" class="inline-form admin-inline-clean">
               <select id="transactionType"><option value="income">Entrada</option><option value="expense">Saída</option></select>
               <select id="transactionCategory"><option value="contribution">Cotas</option><option value="interest">Juros</option><option value="draw">Sorteio</option><option value="trip">Passeio</option><option value="loan_release">Liberação de empréstimo</option><option value="loan_payment">Pagamento de empréstimo</option><option value="expense">Despesa</option><option value="adjustment">Ajuste</option><option value="other">Outros</option></select>
-              <input id="transactionDescription" type="text" placeholder="Descrição" required />
+              <label id="transactionMemberField" class="hidden">Cotista do empréstimo<select id="transactionMember"><option value="">Selecione o cotista</option></select></label><input id="transactionDescription" type="text" placeholder="Descrição" required />
               <input id="transactionAmount" type="number" min="0.01" step="0.01" placeholder="Valor" required />
               <button class="primary-btn small" type="submit">Lançar</button>
             </form>
@@ -608,8 +608,8 @@
               <label>Limite adicional (%)<input id="settingCreditBonus" type="number" min="0" step="1" /></label>
               <label>Máximo de parcelas<input id="settingMaxInstallments" type="number" min="1" max="3" step="1" /></label>
               <label>Retorno do passeio (%)<input id="settingTripReturn" type="number" min="0" max="100" step="0.01" placeholder="Definir" /></label>
-              <label>Taxa administrativa do rendimento (%)<input id="settingInterestAdminFee" type="number" min="0" max="100" step="0.01" value="10" /></label>
-              <label>Cotas virtuais de juros do ADM<input id="settingVirtualInterestShares" type="number" min="0" max="20" step="1" value="1" /></label>
+              <label>ADM — 10% do principal<input id="settingInterestAdminFee" type="number" value="10" disabled /></label>
+              <label>Cotas virtuais de rendimento da ADM<input id="settingVirtualInterestShares" type="number" value="1" disabled /></label>
               <div class="interest-policy-note full-span">
                 <b>Regra da administradora</b>
                 <span>A cota virtual não gera mensalidade, aporte ou limite de crédito. Ela recebe uma participação no rateio de juros de empréstimos, lucros das rifas e lucros dos passeios, além da taxa administrativa de 10%.</span>
