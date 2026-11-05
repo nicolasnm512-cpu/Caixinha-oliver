@@ -40,6 +40,16 @@
     addChat('Consultando seus dados...','bot typing');
     const typing=messages.lastElementChild;
     try{
+      const cmd=text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+      if(cmd==='meu rendimento'||cmd==='meu rendimento de juros'){
+        const {data,error}=await db.rpc('get_my_member_dashboard',{p_year:new Date().getFullYear()});
+        if(error)throw error;
+        const balance=Array.isArray(data)?data[0]:data;
+        if(!balance)throw new Error('Saldo indisponível');
+        typing?.remove();
+        addChat('Rendimento registrado em '+new Date().getFullYear()+': '+brl.format(Number(balance.interest_yield||0))+'. Inclui o passeio e os ajustes já creditados.');
+        return;
+      }
       const {data:{session}}=await db.auth.getSession();
       const r=await fetch(`${cfg.supabaseUrl}/functions/v1/cotista-chat`,{
         method:'POST',
