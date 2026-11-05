@@ -178,7 +178,7 @@
   }
 
   async function openPixPayment(activity,amount){
-    const {data:settings,error}=await db.from('fund_settings').select('id,fund_name,pix_key,pix_receiver_name,pix_city').eq('id',1).single();
+    const {data:settings,error}=await db.rpc('get_member_fund_settings');
     if(error)throw error;
     const code=buildPixPayload(settings,amount,'RIFA'+String(activity.id).replaceAll('-','').slice(0,18));
     openModal(`
