@@ -82,7 +82,7 @@ async function loadCore(){
     showFirstAccess();return;
   }
   const [{data:settings},{data:terms}] = await Promise.all([
-    db.from('fund_settings').select(isAdmin()?'*':'id,fund_name,monthly_share_amount,operation_interest_rate,credit_bonus_percent,max_installments,pix_key,pix_key_type,pix_receiver_name,pix_city,third_party_interest_rate,own_interest_return_percent,collective_interest_return_percent,trip_return_percent,bank_name,bank_code,bank_agency,bank_account,pix_base_payload').eq('id',1).single(),
+    (isAdmin()?db.from('fund_settings').select('*').eq('id',1).single():db.rpc('get_member_fund_settings')),
     db.from('terms_versions').select('*').eq('active',true).single()
   ]);
   state.settings=settings;state.terms=terms;
