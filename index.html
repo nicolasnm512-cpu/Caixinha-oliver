@@ -60,17 +60,17 @@
     <div class="login-card first-access-card">
       <span class="eyebrow">PRIMEIRO ACESSO</span>
       <h1>Atualize seu cadastro</h1>
-      <p>Confirme seus dados e crie uma nova senha pessoal antes de acessar o painel.</p>
+      <p>Confirme seus dados e informe seu e-mail pessoal para receber comunicados e recuperar o acesso. A troca de senha é opcional, exceto quando solicitada por segurança.</p>
       <form id="firstAccessForm" class="form-grid single">
         <label>Nome completo<input id="firstAccessName" autocomplete="name" required /></label>
-        <label>E-mail de acesso<input id="firstAccessEmail" type="email" disabled /></label>
+        <label>E-mail pessoal<input id="firstAccessEmail" type="email" autocomplete="email" inputmode="email" required /></label>
         <label>Telefone (opcional)<input id="firstAccessPhone" type="tel" autocomplete="tel" /></label>
-        <label>Nova senha<input id="firstAccessPassword" type="password" minlength="8" autocomplete="new-password" required /></label>
-        <label>Confirmar nova senha<input id="firstAccessPasswordConfirm" type="password" minlength="8" autocomplete="new-password" required /></label>
+        <label>Nova senha (opcional)<input id="firstAccessPassword" type="password" minlength="8" autocomplete="new-password" /></label>
+        <label>Confirmar nova senha<input id="firstAccessPasswordConfirm" type="password" minlength="8" autocomplete="new-password" /></label>
         <button class="primary-btn" type="submit">Salvar e continuar</button>
         <button id="firstAccessLogoutBtn" class="outline-btn" type="button">Sair</button>
       </form>
-      <div class="first-access-security">A senha provisória deixa de valer após a atualização.</div>
+      <div id="firstAccessNotice" class="first-access-security" role="status" aria-live="polite">Ao alterar o e-mail, verifique a caixa de entrada e confirme o endereço antes de concluir o cadastro.</div>
     </div>
   </section>
 
@@ -612,7 +612,7 @@
               <label>Cotas virtuais de juros do ADM<input id="settingVirtualInterestShares" type="number" min="0" max="20" step="1" value="1" /></label>
               <div class="interest-policy-note full-span">
                 <b>Regra da administradora</b>
-                <span>A cota virtual participa somente da divisão dos juros. Ela não gera mensalidade, aporte, limite de crédito, rifa ou passeio. A taxa administrativa é separada e configurável.</span>
+                <span>A cota virtual não gera mensalidade, aporte ou limite de crédito. Ela recebe uma participação no rateio de juros de empréstimos, lucros das rifas e lucros dos passeios, além da taxa administrativa de 10%.</span>
                 <div id="interestPolicyPreview" class="interest-policy-preview"></div>
               </div>
               <label>Nome da caixinha<input id="settingName" type="text" /></label>
@@ -790,7 +790,7 @@
   <div id="modal" class="modal hidden"><div class="modal-card"><button id="closeModal" class="modal-close">×</button><div id="modalContent"></div></div></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
   <script src="/config.js?v=20261007-mobile-hotfix-v16"></script>
-  <script src="/app.js?v=20261022-due-reminders-v1"></script>
+  <script src="/app.js?v=20261104-primeiro-acesso-v1"></script>
   <script src="/features.js?v=20261014-preview-v18-13"></script>
   <script src="/admin-agent.js?v=20261007-mobile-hotfix-v16"></script>
   <script src="/yield-management.js?v=20261007-mobile-hotfix-v16"></script>
