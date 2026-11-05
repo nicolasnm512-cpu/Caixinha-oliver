@@ -21,7 +21,18 @@ function showLogin(){qs('#termsView').classList.add('hidden');qs('#firstAccessVi
 function showTerms(){qs('#loginView').classList.add('hidden');qs('#firstAccessView').classList.add('hidden');qs('#appView').classList.add('hidden');qs('#termsView').classList.remove('hidden');qs('#acceptTermsCheck').checked=false;qs('#acceptTermsBtn').disabled=true;qs('#acceptTermsBtn').classList.add('disabled-btn')}
 function showFirstAccess(){
   qs('#loginView').classList.add('hidden');qs('#termsView').classList.add('hidden');qs('#appView').classList.add('hidden');qs('#firstAccessView').classList.remove('hidden');
-  qs('#firstAccessName').value=state.profile?.full_name||'';qs('#firstAccessEmail').value=state.profile?.email||state.user?.email||'';qs('#firstAccessPhone').value=state.profile?.phone||'';qs('#firstAccessPassword').value='';qs('#firstAccessPasswordConfirm').value='';
+  qs('#firstAccessName').value=state.profile?.full_name||'';
+  qs('#firstAccessEmail').value=state.user?.email||state.profile?.email||'';
+  qs('#firstAccessPhone').value=state.profile?.phone||'';
+  qs('#firstAccessPassword').value='';
+  qs('#firstAccessPasswordConfirm').value='';
+  const required=!!state.profile?.must_change_password;
+  const help=qs('#firstAccessNotice');
+  if(help)help.textContent=required
+    ? 'Por segurança, é necessário cadastrar uma nova senha (mínimo de 8 caracteres). Se trocar o e-mail, confirme a mensagem recebida antes de finalizar.'
+    : 'Você pode manter sua senha atual ou escolher uma nova. Se trocar o e-mail, confirme a mensagem recebida antes de finalizar.';
+  qs('#firstAccessPassword').required=required;
+  qs('#firstAccessPasswordConfirm').required=required;
 }
 function applyRoleExperience(){
   const brandContext=qs('.sidebar-brand span');
@@ -62,6 +73,10 @@ async function loadCore(){
   if(pe||!profile){toast('Perfil não encontrado.');await db.auth.signOut();showLogin();return}
   state.profile=profile;
   if(!profile.active){toast('Seu acesso está desativado.');await db.auth.signOut();showLogin();return}
+  // O formulário já existia, mas nunca era solicitado: só o ADM pode dispensá-lo.
+  if(!isAdmin()&&(profile.must_change_password||!profile.first_access_completed_at)){
+    showFirstAccess();return;
+  }
   const [{data:settings},{data:terms}] = await Promise.all([
     db.from('fund_settings').select('*').eq('id',1).single(),
     db.from('terms_versions').select('*').eq('active',true).single()
@@ -90,19 +105,58 @@ qs('#loginForm').addEventListener('submit',async e=>{
 qs('#togglePassword').addEventListener('click',()=>{const p=qs('#loginPassword');p.type=p.type==='password'?'text':'password';qs('#togglePassword').textContent=p.type==='password'?'Mostrar':'Ocultar'});
 qs('#firstAccessForm').addEventListener('submit',async e=>{
   e.preventDefault();
-  const fullName=qs('#firstAccessName').value.trim(),phone=qs('#firstAccessPhone').value.trim(),password=qs('#firstAccessPassword').value,confirmPassword=qs('#firstAccessPasswordConfirm').value;
+  const fullName=qs('#firstAccessName').value.trim();
+  const email=qs('#firstAccessEmail').value.trim().toLowerCase();
+  const phone=qs('#firstAccessPhone').value.trim();
+  const password=qs('#firstAccessPassword').value;
+  const confirmPassword=qs('#firstAccessPasswordConfirm').value;
+  const passwordRequired=!!state.profile?.must_change_password;
+  const notice=qs('#firstAccessNotice');
   if(fullName.length<2){toast('Informe seu nome.');return}
-  if(password.length<8){toast('A nova senha deve ter ao menos 8 caracteres.');return}
+  if(!email||!qs('#firstAccessEmail').checkValidity()||email.endsWith('.example')){
+    toast('Informe um e-mail pessoal válido, que você possa acessar.');return;
+  }
+  if(passwordRequired&&!password){toast('Por segurança, cadastre uma nova senha.');return}
+  if(password && password.length<8){toast('A nova senha deve ter ao menos 8 caracteres.');return}
   if(password!==confirmPassword){toast('As senhas não conferem.');return}
-  const btn=e.submitter;if(btn){btn.disabled=true;btn.textContent='Atualizando...'}
-  const {error:passError}=await db.auth.updateUser({password});
-  if(passError){if(btn){btn.disabled=false;btn.textContent='Salvar e continuar'}toast(passError.message);return}
-  const {data:updated,error:profileError}=await db.rpc('complete_first_access',{p_full_name:fullName,p_phone:phone||null});
-  if(btn){btn.disabled=false;btn.textContent='Salvar e continuar'}
-  if(profileError){toast(profileError.message);return}
-  state.profile=Array.isArray(updated)?updated[0]:updated;
-  toast('Cadastro atualizado.');
-  await loadCore();
+  const btn=e.submitter;
+  if(btn){btn.disabled=true;btn.textContent='Atualizando...'}
+  try{
+    const currentEmail=String(state.user?.email||'').toLowerCase();
+    if(email!==currentEmail){
+      const {data,error}=await db.auth.updateUser({email},{emailRedirectTo:window.location.origin+window.location.pathname});
+      if(error)throw error;
+      const {data:account,error:accountError}=await db.auth.getUser();
+      if(accountError)throw accountError;
+      if(String(account?.user?.email||'').toLowerCase()!==email){
+        if(notice)notice.textContent='Solicitação enviada ao seu e-mail pessoal. Confirme a alteração pelo link recebido. Depois, volte ao aplicativo e conclua seu cadastro. Se a confirmação exigir acesso ao e-mail provisório, entre em contato com a administração.';
+        toast('Confirme o e-mail pessoal para continuar.');
+        return;
+      }
+      state.user=account.user;
+      await db.auth.refreshSession();
+      const {error:syncError}=await db.rpc('sync_my_email');
+      if(syncError)throw syncError;
+    }
+    if(password){
+      const {data,error}=await db.auth.updateUser({password});
+      if(error)throw error;
+      if(data?.user)state.user=data.user;
+    }
+    const {data:updated,error:profileError}=await db.rpc('complete_first_access',{
+      p_full_name:fullName,p_phone:phone||null
+    });
+    if(profileError)throw profileError;
+    state.profile=Array.isArray(updated)?updated[0]:updated;
+    toast('Cadastro confirmado. Bem-vindo à OLIVER Caixinha.');
+    await loadCore();
+  }catch(err){
+    const message=err?.message||'Não foi possível atualizar seu cadastro.';
+    if(notice)notice.textContent=message;
+    toast(message);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='Salvar e continuar'}
+  }
 });
 qs('#firstAccessLogoutBtn').addEventListener('click',async()=>{await db.auth.signOut();showLogin()});
 qs('#acceptTermsCheck').addEventListener('change',()=>{const ok=qs('#acceptTermsCheck').checked;qs('#acceptTermsBtn').disabled=!ok;qs('#acceptTermsBtn').classList.toggle('disabled-btn',!ok)});
