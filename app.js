@@ -21,7 +21,18 @@ function showLogin(){qs('#termsView').classList.add('hidden');qs('#firstAccessVi
 function showTerms(){qs('#loginView').classList.add('hidden');qs('#firstAccessView').classList.add('hidden');qs('#appView').classList.add('hidden');qs('#termsView').classList.remove('hidden');qs('#acceptTermsCheck').checked=false;qs('#acceptTermsBtn').disabled=true;qs('#acceptTermsBtn').classList.add('disabled-btn')}
 function showFirstAccess(){
   qs('#loginView').classList.add('hidden');qs('#termsView').classList.add('hidden');qs('#appView').classList.add('hidden');qs('#firstAccessView').classList.remove('hidden');
-  qs('#firstAccessName').value=state.profile?.full_name||'';qs('#firstAccessEmail').value=state.profile?.email||state.user?.email||'';qs('#firstAccessPhone').value=state.profile?.phone||'';qs('#firstAccessPassword').value='';qs('#firstAccessPasswordConfirm').value='';
+  qs('#firstAccessName').value=state.profile?.full_name||'';
+  qs('#firstAccessEmail').value=state.user?.email||state.profile?.email||'';
+  qs('#firstAccessPhone').value=state.profile?.phone||'';
+  qs('#firstAccessPassword').value='';
+  qs('#firstAccessPasswordConfirm').value='';
+  const required=!!state.profile?.must_change_password;
+  const help=qs('#firstAccessNotice');
+  if(help)help.textContent=required
+    ? 'Por segurança, é necessário cadastrar uma nova senha (mínimo de 8 caracteres). Se trocar o e-mail, confirme a mensagem recebida antes de finalizar.'
+    : 'Você pode manter sua senha atual ou escolher uma nova. Se trocar o e-mail, confirme a mensagem recebida antes de finalizar.';
+  qs('#firstAccessPassword').required=required;
+  qs('#firstAccessPasswordConfirm').required=required;
 }
 function applyRoleExperience(){
   const brandContext=qs('.sidebar-brand span');
@@ -61,9 +72,17 @@ async function loadCore(){
   const {data:profile,error:pe}=await db.from('profiles').select('*').eq('id',session.user.id).single();
   if(pe||!profile){toast('Perfil não encontrado.');await db.auth.signOut();showLogin();return}
   state.profile=profile;
+  if(state.user?.email&&String(profile.email||'').toLowerCase()!==String(state.user.email).toLowerCase()){
+    const {error:syncError}=await db.rpc('sync_my_email');
+    if(!syncError)state.profile.email=state.user.email;
+  }
   if(!profile.active){toast('Seu acesso está desativado.');await db.auth.signOut();showLogin();return}
+  // O formulário já existia, mas nunca era solicitado: só o ADM pode dispensá-lo.
+  if(!isAdmin()&&(profile.must_change_password||!profile.first_access_completed_at)){
+    showFirstAccess();return;
+  }
   const [{data:settings},{data:terms}] = await Promise.all([
-    db.from('fund_settings').select('*').eq('id',1).single(),
+    (isAdmin()?db.from('fund_settings').select('*').eq('id',1).single():db.rpc('get_member_fund_settings')),
     db.from('terms_versions').select('*').eq('active',true).single()
   ]);
   state.settings=settings;state.terms=terms;
@@ -90,19 +109,58 @@ qs('#loginForm').addEventListener('submit',async e=>{
 qs('#togglePassword').addEventListener('click',()=>{const p=qs('#loginPassword');p.type=p.type==='password'?'text':'password';qs('#togglePassword').textContent=p.type==='password'?'Mostrar':'Ocultar'});
 qs('#firstAccessForm').addEventListener('submit',async e=>{
   e.preventDefault();
-  const fullName=qs('#firstAccessName').value.trim(),phone=qs('#firstAccessPhone').value.trim(),password=qs('#firstAccessPassword').value,confirmPassword=qs('#firstAccessPasswordConfirm').value;
+  const fullName=qs('#firstAccessName').value.trim();
+  const email=qs('#firstAccessEmail').value.trim().toLowerCase();
+  const phone=qs('#firstAccessPhone').value.trim();
+  const password=qs('#firstAccessPassword').value;
+  const confirmPassword=qs('#firstAccessPasswordConfirm').value;
+  const passwordRequired=!!state.profile?.must_change_password;
+  const notice=qs('#firstAccessNotice');
   if(fullName.length<2){toast('Informe seu nome.');return}
-  if(password.length<8){toast('A nova senha deve ter ao menos 8 caracteres.');return}
+  if(!email||!qs('#firstAccessEmail').checkValidity()||email.endsWith('.example')){
+    toast('Informe um e-mail pessoal válido, que você possa acessar.');return;
+  }
+  if(passwordRequired&&!password){toast('Por segurança, cadastre uma nova senha.');return}
+  if(password && password.length<8){toast('A nova senha deve ter ao menos 8 caracteres.');return}
   if(password!==confirmPassword){toast('As senhas não conferem.');return}
-  const btn=e.submitter;if(btn){btn.disabled=true;btn.textContent='Atualizando...'}
-  const {error:passError}=await db.auth.updateUser({password});
-  if(passError){if(btn){btn.disabled=false;btn.textContent='Salvar e continuar'}toast(passError.message);return}
-  const {data:updated,error:profileError}=await db.rpc('complete_first_access',{p_full_name:fullName,p_phone:phone||null});
-  if(btn){btn.disabled=false;btn.textContent='Salvar e continuar'}
-  if(profileError){toast(profileError.message);return}
-  state.profile=Array.isArray(updated)?updated[0]:updated;
-  toast('Cadastro atualizado.');
-  await loadCore();
+  const btn=e.submitter;
+  if(btn){btn.disabled=true;btn.textContent='Atualizando...'}
+  try{
+    const currentEmail=String(state.user?.email||'').toLowerCase();
+    if(email!==currentEmail){
+      const {data,error}=await db.auth.updateUser({email},{emailRedirectTo:window.location.origin+window.location.pathname});
+      if(error)throw error;
+      const {data:account,error:accountError}=await db.auth.getUser();
+      if(accountError)throw accountError;
+      if(String(account?.user?.email||'').toLowerCase()===email){
+        state.user=account.user;
+        const {error:syncError}=await db.rpc('sync_my_email');
+        if(syncError)throw syncError;
+      }else{
+        // Secure email changes can require confirmation. Keep existing login valid:
+        // do not lock members behind an unconfirmed provisional address.
+        if(notice)notice.textContent='Enviamos a confirmação de e-mail, quando disponível. Até confirmar, use o e-mail anterior para entrar. O cadastro e os saldos continuam acessíveis.';
+      }
+    }
+    if(password){
+      const {data,error}=await db.auth.updateUser({password});
+      if(error)throw error;
+      if(data?.user)state.user=data.user;
+    }
+    const {data:updated,error:profileError}=await db.rpc('complete_first_access',{
+      p_full_name:fullName,p_phone:phone||null
+    });
+    if(profileError)throw profileError;
+    state.profile=Array.isArray(updated)?updated[0]:updated;
+    toast('Cadastro confirmado. Bem-vindo à OLIVER Caixinha.');
+    await loadCore();
+  }catch(err){
+    const message=err?.message||'Não foi possível atualizar seu cadastro.';
+    if(notice)notice.textContent=message;
+    toast(message);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='Salvar e continuar'}
+  }
 });
 qs('#firstAccessLogoutBtn').addEventListener('click',async()=>{await db.auth.signOut();showLogin()});
 qs('#acceptTermsCheck').addEventListener('change',()=>{const ok=qs('#acceptTermsCheck').checked;qs('#acceptTermsBtn').disabled=!ok;qs('#acceptTermsBtn').classList.toggle('disabled-btn',!ok)});
@@ -1009,7 +1067,9 @@ function updateInterestPolicyPreview(){
   const virtual=Math.max(0,Math.floor(Number(qs('#settingVirtualInterestShares')?.value||1)));
   const box=qs('#interestPolicyPreview');
   if(!box)return;
-  box.innerHTML=`<span>Exemplo com R$ 1.000,00 de juros: taxa ADM <b>${brl.format(1000*fee/100)}</b> • saldo para divisão <b>${brl.format(1000*(1-fee/100))}</b> • +${virtual} cota(s) virtual(is) apenas na divisão.</span>`;
+  const interestValue=1000,adminFee=interestValue*0.40,collective=interestValue*0.40,borrowerBonus=interestValue*0.20;
+  const realShares=Number(state.settings?.share_count_total||11);
+  box.innerHTML=`<span><b>Nova regra sobre empréstimo a 25%:</b> sobre R$ 1.000,00 de juros recebidos, ADM <b>${brl.format(adminFee)}</b> + <b>1 cota virtual</b>; coletivo <b>${brl.format(collective)}</b> por ${realShares} cotas reais + ${virtual} virtual; bônus do cotista tomador <b>${brl.format(borrowerBonus)}</b>. Cota virtual também entra nos lucros de rifas e passeios.</span>`;
 }
 
 
@@ -1257,8 +1317,8 @@ qs('#settingsForm').addEventListener('submit',async e=>{
     max_installments:Math.min(3,Math.max(1,Number(qs('#settingMaxInstallments').value)||3)),
     third_party_interest_rate:Number(qs('#settingThirdPartyRate').value)||30,
     trip_return_percent:tripReturnRaw===''?null:Number(tripReturnRaw),
-    interest_admin_fee_percent:Math.max(0,Math.min(100,Number(qs('#settingInterestAdminFee')?.value||10))),
-    admin_virtual_interest_shares:Math.max(0,Math.floor(Number(qs('#settingVirtualInterestShares')?.value||1))),
+    interest_admin_fee_percent:10,
+    admin_virtual_interest_shares:1,
     interest_admin_beneficiary_id:state.settings?.interest_admin_beneficiary_id||state.user.id,
     updated_by:state.user.id
   };
@@ -1285,7 +1345,45 @@ qs('#settingsForm').addEventListener('submit',async e=>{
   e.target.closest('details')?.removeAttribute('open');
   toast(interestPolicyPending?'Configurações gerais salvas. Regra de juros preparada para ativação no banco.':'Configurações atualizadas.');
 });
-qs('#transactionForm').addEventListener('submit',async e=>{e.preventDefault();const category=qs('#transactionCategory').value;const direction=qs('#transactionType').value;const {error}=await db.from('fund_transactions').insert({direction,category,description:qs('#transactionDescription').value.trim(),amount:Number(qs('#transactionAmount').value),visibility:'shared',created_by:state.user.id});if(error){toast(error.message);return}e.target.reset();e.target.closest('details')?.removeAttribute('open');await Promise.all([renderAdmin(),renderDashboard(),renderInterestDistributionAudit()]);toast(direction==='income'&&category==='interest'?'Juros lançados e distribuídos automaticamente.':'Lançamento registrado.')});
+async function configureInterestBorrower(){
+  const category=qs('#transactionCategory')?.value,field=qs('#transactionMemberField'),sel=qs('#transactionMember');
+  if(!field||!sel)return;
+  field.classList.toggle('hidden',category!=='interest');
+  sel.required=category==='interest';
+  if(category!=='interest'||sel.options.length>1)return;
+  const {data,error}=await db.from('profiles')
+    .select('id,full_name,cotista_number').eq('active',true)
+    .not('cotista_number','is',null).order('cotista_number');
+  if(error){toast('Não foi possível carregar os cotistas para os juros.');return}
+  for(const m of data||[]){
+    const option=document.createElement('option');
+    option.value=m.id;option.textContent=m.full_name;
+    sel.appendChild(option);
+  }
+}
+qs('#transactionCategory').addEventListener('change',configureInterestBorrower);
+qs('#transactionForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(!isAdmin())return;
+  const category=qs('#transactionCategory').value,direction=qs('#transactionType').value;
+  const memberId=category==='interest'?qs('#transactionMember').value:null;
+  if(category==='interest'&&(!memberId||direction!=='income')){
+    toast('Selecione o cotista tomador e registre uma entrada de juros.');return;
+  }
+  const patch={
+    direction,category,description:qs('#transactionDescription').value.trim(),
+    amount:Number(qs('#transactionAmount').value),
+    visibility:category==='interest'?'admin_only':'shared',
+    member_id:memberId||null,created_by:state.user.id
+  };
+  if(category==='interest')patch.source_key='manual-loan-interest:'+crypto.randomUUID();
+  const {error}=await db.from('fund_transactions').insert(patch);
+  if(error){toast(error.message);return}
+  e.target.reset();qs('#transactionMemberField').classList.add('hidden');
+  e.target.closest('details')?.removeAttribute('open');
+  await Promise.all([renderAdmin(),renderDashboard(),renderInterestDistributionAudit(),renderMembers()]);
+  toast(category==='interest'?'Juros distribuídos pela nova regra 10% + 10% + 5%.':'Lançamento registrado.');
+});
 
 qs('#newActivityBtn').addEventListener('click',()=>{if(!isAdmin()){toast('Somente a administração pode criar atividades.');return}openModal(`<div class="panel-head"><div><h3>Nova atividade</h3><p>Cadastre um sorteio, passeio ou outro evento.</p></div></div><form id="activityForm" class="form-grid"><label>Tipo<select id="actType"><option value="draw">Sorteio</option><option value="trip">Passeio</option><option value="other">Outro</option></select></label><label>Valor<input id="actPrice" type="number" min="0" step="0.01" required></label><label class="full-span">Título<input id="actTitle" required></label><label class="full-span">Descrição<textarea id="actDesc" rows="3"></textarea></label><label>Meta<input id="actGoal" type="number" min="0" step="0.01" value="0"></label><button class="primary-btn full-span" type="submit">Criar atividade</button></form>`)});
 function openModal(html){qs('#modalContent').innerHTML=html;qs('#modal').classList.remove('hidden');enhanceResponsiveTables(qs('#modalContent'));setTimeout(()=>{enhanceResponsiveTables(qs('#modalContent'));const f=qs('#activityForm');if(f)f.addEventListener('submit',async e=>{e.preventDefault();const {error}=await db.from('activities').insert({type:qs('#actType').value,title:qs('#actTitle').value.trim(),description:qs('#actDesc').value.trim()||null,unit_price:Number(qs('#actPrice').value),target_amount:Number(qs('#actGoal').value||0),status:'open',created_by:state.user.id});if(error){toast(error.message);return}closeModal();await renderActivities();toast('Atividade criada.')})},0)}
