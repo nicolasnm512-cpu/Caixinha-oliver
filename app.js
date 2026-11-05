@@ -786,13 +786,14 @@ async function callAdminUsers(payload){
 
 async function renderMembers(){
   if(!isAdmin())return;
-  const [{data:members},{data:contrib},{data:loans},{data:snapshots},{data:annual},{data:credits}] = await Promise.all([
+  const [{data:members},{data:contrib},{data:loans},{data:snapshots},{data:annual},{data:credits},{data:approved}] = await Promise.all([
     db.from('profiles').select('*').order('cotista_number',{ascending:true}),
     db.from('monthly_contributions').select('*').eq('reference_month',currentMonthRef),
     db.from('loans').select('member_id,outstanding_amount,status').in('status',['active','late']),
     db.from('member_year_snapshots').select('*').eq('year',now.getFullYear()),
     db.rpc('admin_get_annual_balances',{p_year:now.getFullYear()}),
-    db.from('member_credit_summary').select('*')
+    db.from('member_credit_summary').select('*'),
+    db.from('approved_member_closings').select('member_id,cotista_number,contributions_paid,raffle_yield,loan_yield,trip_yield,historical_transfer,approved_total').eq('year',now.getFullYear()).order('cotista_number')
   ]);
   window.__membersById=Object.fromEntries((members||[]).map(m=>[m.id,m]));
   const annualMap=Object.fromEntries((annual||[]).map(a=>[a.member_id,a]));
@@ -807,9 +808,39 @@ async function renderMembers(){
   window.__memberAdminData=Object.fromEntries(rows.map(r=>[r.m.id,r]));
 
   const activeCount=rows.filter(r=>r.m.active).length;
-  const totalPaid=rows.reduce((sum,r)=>sum+Number(r.snap?.contributions_paid||0),0);
+  const totalPaid=rows.reduce((sum,r)=>sum+Number(r.yr?.contributions_paid||0),0);
   const totalDebt=rows.reduce((sum,r)=>sum+Number(r.debt||0),0);
   const totalAccumulated=rows.reduce((sum,r)=>sum+Number(r.yr?.estimated_year_end_total||0),0);
+  const approvedRows=approved||[];
+  const approvedTotal=approvedRows.reduce((sum,r)=>sum+Number(r.approved_total||0),0);
+  const approvedById=Object.fromEntries(approvedRows.map(r=>[r.member_id,r]));
+  const approvedBreakdown=approvedRows.length? `
+    <details class="admin-fold" style="margin:1rem 0" open>
+      <summary><div><b>Fechamento aprovado 2026</b><small>Rifas + empréstimos + passeio + transferência histórica • 10% ADM + 1 cota virtual</small></div>
+      <strong>${brl.format(approvedTotal)}</strong></summary>
+      <div class="admin-fold-body" style="overflow-x:auto">
+        <table style="width:100%;min-width:740px;border-collapse:collapse;font-variant-numeric:tabular-nums">
+          <thead><tr><th style="text-align:left">Cotista</th><th>Cotas pagas</th><th>Rifas</th><th>Empréstimos</th><th>Passeio</th><th>Ajuste</th><th>Total aprovado</th></tr></thead>
+          <tbody>${approvedRows.map(x=>{
+            const person=rows.find(r=>r.m.id===x.member_id)?.m;
+            return `<tr><td>${safe(person?.full_name||'Cotista '+x.cotista_number)}</td>
+              <td>${brl.format(Number(x.contributions_paid||0))}</td>
+              <td>${brl.format(Number(x.raffle_yield||0))}</td>
+              <td>${brl.format(Number(x.loan_yield||0))}</td>
+              <td>${brl.format(Number(x.trip_yield||0))}</td>
+              <td>${brl.format(Number(x.historical_transfer||0))}</td>
+              <td><b>${brl.format(Number(x.approved_total||0))}</b></td></tr>`;
+          }).join('')}</tbody>
+          <tfoot><tr><th style="text-align:left">TOTAL</th>
+            <th>${brl.format(approvedRows.reduce((n,r)=>n+Number(r.contributions_paid||0),0))}</th>
+            <th>${brl.format(approvedRows.reduce((n,r)=>n+Number(r.raffle_yield||0),0))}</th>
+            <th>${brl.format(approvedRows.reduce((n,r)=>n+Number(r.loan_yield||0),0))}</th>
+            <th>${brl.format(approvedRows.reduce((n,r)=>n+Number(r.trip_yield||0),0))}</th>
+            <th>${brl.format(approvedRows.reduce((n,r)=>n+Number(r.historical_transfer||0),0))}</th>
+            <th>${brl.format(approvedTotal)}</th></tr></tfoot>
+        </table>
+      </div>
+    </details>`:'';
   qs('#membersTable').innerHTML=`
     <div class="member-premium-summary">
       <div><span>Cotistas ativos</span><b>${activeCount}</b><small>de ${rows.length} cadastrados</small></div>
@@ -817,6 +848,7 @@ async function renderMembers(){
       <div><span>Empréstimos abertos</span><b>${brl.format(totalDebt)}</b><small>saldo em aberto</small></div>
       <div><span>Total acumulado</span><b>${brl.format(totalAccumulated)}</b><small>visão consolidada</small></div>
     </div>
+    ${approvedBreakdown}
     <div class="member-premium-toolbar">
       <label class="member-search-box">
         <span>⌕</span>
@@ -830,7 +862,7 @@ async function renderMembers(){
     </div>
     <div class="member-premium-list">
       ${rows.map(({m,mc,debt,snap,yr,credit})=>{
-        const paid=Number(snap?.contributions_paid||0);
+        const paid=Number(yr?.contributions_paid||0);
         const accumulated=Number(yr?.estimated_year_end_total||0);
         const monthOk=mc?.status==='confirmed';
         return `<article class="member-premium-card" data-member-name="${safe(String(m.full_name||'').toLowerCase())}" data-member-active="${m.active?'1':'0'}" data-member-pending="${monthOk?'0':'1'}">
@@ -897,7 +929,7 @@ window.openMemberAdminDetails=id=>{
   const effectiveLimit=Number(credit?.credit_limit??0);
   const availableLimit=Number(credit?.available_credit??0);
   const customLimit=credit?.loan_limit_override==null?null:Number(credit.loan_limit_override);
-  const annualPaid=Number(snap?.contributions_paid||0);
+  const annualPaid=Number(yr?.contributions_paid||0);
   const interestRecorded=Number(snap?.interest_recorded||0);
   const totalAccumulated=Number(yr?.estimated_year_end_total||0);
   const monthPaid=mc?.status==='confirmed';
