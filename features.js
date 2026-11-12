@@ -367,7 +367,9 @@
           :paid;
         const raffleRemaining=Math.max(0,raffleGross-raffleReceived);
         const raffleProgress=raffleGross>0?Math.min(100,Math.round(raffleReceived/raffleGross*100)):0;
-        const historicalRaffle=raffleCfg.allocation_mode!=='quota_equal';
+        const historicalRaffle=raffleCfg.allocation_mode==='manual';
+        const preassigned=raffleCfg.allocation_mode==='preassigned';
+        const pricePending=preassigned&&rafflePrice===0;
         return '<article class="activity-card raffle-card-v2" data-activity-type="draw">'+
           '<div class="activity-cover sorteio"><span>RIFA • 100 NÚMEROS</span>'+statusBadge(a.status)+'</div>'+
           '<div class="activity-body"><h4>'+safe(a.title)+'</h4><p>'+safe(a.description||'')+'</p>'+
@@ -375,22 +377,22 @@
           (isAdmin()
             ?'<div class="event-fund-progress">'+
               '<div class="trip-progress-grid">'+
-                '<div><span>Total da rifa</span><b>'+brl.format(raffleGross)+'</b><small>'+raffleTotalNumbers+' × '+brl.format(rafflePrice)+'</small></div>'+
+                '<div><span>Total da rifa</span><b>'+(pricePending?'Preço a definir':brl.format(raffleGross))+'</b><small>'+raffleTotalNumbers+' números atribuídos</small></div>'+
                 '<div><span>Recebido</span><b>'+brl.format(raffleReceived)+'</b><small>'+raffleProgress+'% arrecadado</small></div>'+
-                '<div><span>A receber</span><b>'+brl.format(raffleRemaining)+'</b><small>Atualiza com os pagamentos</small></div>'+
+                '<div><span>A receber</span><b>'+(pricePending?'A definir':brl.format(raffleRemaining))+'</b><small>'+(pricePending?'Sem cobrança lançada':'Atualiza com os pagamentos')+'</small></div>'+
               '</div>'+
               '<div class="trip-progress-bar"><i style="width:'+raffleProgress+'%"></i></div>'+
-              '<div class="trip-progress-caption"><span>'+raffleProgress+'% arrecadado</span><span>Distribuição automática por cota</span></div>'+
+              '<div class="trip-progress-caption"><span>'+(pricePending?'Preço ainda não informado':raffleProgress+'% arrecadado')+'</span><span>'+(preassigned?'Números atribuídos pela administração':'Distribuição automática por cota')+'</span></div>'+
             '</div>'
             :'<div class="activity-stats">'+
-              '<div><span>Valor por número</span><b>'+brl.format(rafflePrice)+'</b></div>'+
-              '<div><span>Seu total</span><b>'+brl.format(Number(myEntry?.amount_due||0))+'</b></div>'+
-              '<div><span>Distribuição</span><b>Aleatória por cota</b></div>'+
+              '<div><span>Valor por número</span><b>'+(pricePending?'A definir':brl.format(rafflePrice))+'</b></div>'+
+              '<div><span>Seu total</span><b>'+(pricePending?'A definir':brl.format(Number(myEntry?.amount_due||0)))+'</b></div>'+
+              '<div><span>Distribuição</span><b>'+(preassigned?'Números já atribuídos':'Aleatória por cota')+'</b></div>'+
             '</div>')+
           eventExpenseHtml+
           (historicalRaffle
             ?'<div class="paid-banner historical-raffle-banner">Rifa encerrada • histórico financeiro consolidado</div>'
-            :'<button class="primary-btn raffle-open-btn" onclick="openQuotaRaffle(\''+a.id+'\')">'+(isAdmin()?'Gerenciar rifa':'Ver meus números e pagar')+'</button>')+
+            :'<button class="primary-btn raffle-open-btn" onclick="openQuotaRaffle(\''+a.id+'\')">'+(isAdmin()?'Gerenciar rifa':pricePending?'Ver meus números':'Ver meus números e pagar')+'</button>')+
           '</div></article>';
       }
 
@@ -635,31 +637,33 @@
           paid:own.length>0&&own.every(n=>n.status==='paid')
         };
       });
+      const preassigned=cfg.allocation_mode==='preassigned';
+      const pricePending=preassigned&&Number(cfg.number_price)===0;
       const prizesHtml=`<div class="prize-board">${(prizes||[]).map(p=>`<div class="prize-place p${p.prize_position}"><span>${p.prize_position}º</span><b>${safe(p.prize_label)}</b>${p.prize_value!=null?`<small>${brl.format(Number(p.prize_value))}</small>`:''}</div>`).join('')}</div>`;
 
       if(isAdmin()){
         const gross=numbers.filter(n=>n.status==='paid').reduce((s,n)=>s+Number(n.number_price),0);
         const fee=numbers.filter(n=>n.status==='paid').reduce((s,n)=>s+Number(n.admin_fee_amount),0);
         openModal(`<div class="quota-raffle-modal">
-          <div class="panel-head"><div><span class="eyebrow">100 NÚMEROS • DISTRIBUIÇÃO AUTOMÁTICA</span><h3>${safe(activity.title)}</h3><p>Cada cota recebe a mesma quantidade possível de números. O sistema já fez a divisão automaticamente.</p></div></div>
+          <div class="panel-head"><div><span class="eyebrow">100 NÚMEROS • ${preassigned?'ATRIBUÍDOS PELA ADMINISTRAÇÃO':'DISTRIBUIÇÃO AUTOMÁTICA'}</span><h3>${safe(activity.title)}</h3><p>${preassigned?'Sorteio em 20/12/2026. Os números estão atribuídos; preço e pagamentos ainda não foram registrados.':'Cada cota recebe a mesma quantidade possível de números. O sistema já fez a divisão automaticamente.'}</p></div></div>
           ${prizesHtml}
           <div class="raffle-finance"><div><small>Arrecadado</small><b>${brl.format(gross)}</b></div><div><small>Taxa administrativa</small><b>${brl.format(fee)}</b></div><div><small>Líquido da rifa</small><b>${brl.format(gross-fee)}</b></div></div>
           <div class="quota-distribution-table"><table class="data-table"><thead><tr><th>Cotista</th><th>Cotas</th><th>Números recebidos</th><th>Total</th><th>Status</th><th>Ação</th></tr></thead><tbody>
-          ${grouped.map(g=>`<tr><td><b>${safe(g.full_name)}</b></td><td>${g.share_count}</td><td><div class="number-chips">${g.numbers.map(n=>`<span class="${n.status}">${String(n.number).padStart(2,'0')}</span>`).join('')}</div></td><td>${brl.format(g.amount)}</td><td>${g.paid?statusBadge('confirmed'):statusBadge('pending')}</td><td>${g.paid?'—':`<button class="primary-btn tiny" onclick="confirmQuotaRaffleMember('${activityId}','${g.id}')">Confirmar pagamento</button>`}</td></tr>`).join('')}
+          ${grouped.map(g=>`<tr><td><b>${safe(g.full_name)}</b></td><td>${g.share_count}</td><td><div class="number-chips">${g.numbers.map(n=>`<span class="${n.status}">${String(n.number).padStart(2,'0')}</span>`).join('')}</div></td><td>${pricePending?'A definir':brl.format(g.amount)}</td><td>${pricePending?'Aguardando preço':g.paid?statusBadge('confirmed'):statusBadge('pending')}</td><td>${pricePending||g.paid?'—':`<button class="primary-btn tiny" onclick="confirmQuotaRaffleMember('${activityId}','${g.id}')">Confirmar pagamento</button>`}</td></tr>`).join('')}
           </tbody></table></div>
         </div>`);
       }else{
         const mine=grouped.find(g=>g.id===state.user.id);
         if(!mine){toast('Nenhum número foi atribuído ao seu cadastro.');return}
         openModal(`<div class="quota-raffle-modal member">
-          <div class="panel-head"><div><span class="eyebrow">SUA RIFA</span><h3>${safe(activity.title)}</h3><p>Seus números já foram distribuídos conforme a quantidade de cotas.</p></div></div>
+          <div class="panel-head"><div><span class="eyebrow">SUA RIFA</span><h3>${safe(activity.title)}</h3><p>${preassigned?'Números atribuídos para o sorteio de 20/12/2026.':'Seus números já foram distribuídos conforme a quantidade de cotas.'}</p></div></div>
           ${prizesHtml}
           <div class="my-raffle-box">
             <small>Seus números</small>
             <div class="my-number-grid">${mine.numbers.map(n=>`<span class="${n.status}">${String(n.number).padStart(2,'0')}</span>`).join('')}</div>
-            <div class="my-raffle-total"><span>${mine.numbers.length} número(s) × ${brl.format(Number(cfg.number_price))}</span><b>${brl.format(mine.amount)}</b></div>
+            <div class="my-raffle-total"><span>${mine.numbers.length} número(s) ${pricePending?'• preço a definir':'× '+brl.format(Number(cfg.number_price))}</span><b>${pricePending?'Sem cobrança lançada':brl.format(mine.amount)}</b></div>
           </div>
-          ${mine.paid?'<div class="paid-banner">Pagamento confirmado ✅</div>':`<button id="payRafflePixBtn" class="primary-btn full-span" type="button">Pagar ${brl.format(mine.amount)} via Pix</button>`}
+          ${pricePending?'<div class="paid-banner">Preço a definir. Números reservados, sem pagamento registrado.</div>':mine.paid?'<div class="paid-banner">Pagamento confirmado ✅</div>':`<button id="payRafflePixBtn" class="primary-btn full-span" type="button">Pagar ${brl.format(mine.amount)} via Pix</button>`}
         </div>`);
         $('#payRafflePixBtn')?.addEventListener('click',()=>openPixPayment(activity,mine.amount));
       }
