@@ -10,6 +10,39 @@ const currentMonthLabel = now.toLocaleDateString('pt-BR',{month:'long',year:'num
 const currentMonthRef = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
 const state = { session:null, user:null, profile:null, role:'member', settings:null, terms:null, credit:null };
 
+const OLIVER_EMAIL_CONFIRM_URL='https://caixinha-oliver.vercel.app/';
+function emailChangeErrorMessage(error){
+  const code=String(error?.code||'').toLowerCase();
+  const status=Number(error?.status||0);
+  if(code==='over_email_send_rate_limit'||status===429)
+    return 'O limite de envio dos e-mails de confirmação foi atingido. Evite novas tentativas repetidas. A administração precisa configurar o serviço de e-mail do sistema.';
+  if(code==='email_address_invalid'&&String(state.user?.email||'').toLowerCase().endsWith('.example'))
+    return 'O e-mail inicial da conta é provisório e não recebe mensagens. O Supabase exige confirmação também no e-mail antigo, o que bloqueia a troca. A administração precisa habilitar a confirmação somente no novo e-mail.';
+  if(code==='email_address_not_authorized')
+    return 'O servidor de e-mails ainda não está autorizado a enviar mensagens para este endereço. Solicite a configuração à administração.';
+  if(code==='email_exists'||code==='email_address_exists'||status===422)
+    return 'Este e-mail já pode estar associado a outra conta. Confirme o endereço ou solicite ajuda à administração.';
+  return error?.message||'Não foi possível confirmar a alteração do e-mail.';
+}
+async function requestPersonalEmailChange(nextEmail){
+  const target=String(nextEmail||'').trim().toLowerCase();
+  const current=String(state.user?.email||'').trim().toLowerCase();
+  if(!target||target.endsWith('.example'))throw new Error('Informe um e-mail pessoal válido.');
+  if(target===current)return {pending:false,changed:false};
+  const {error}=await db.auth.updateUser({email:target},{emailRedirectTo:OLIVER_EMAIL_CONFIRM_URL});
+  if(error)throw error;
+  const {data,error:userError}=await db.auth.getUser();
+  if(userError)throw userError;
+  const verified=data?.user;
+  if(!verified)throw new Error('Não foi possível conferir o e-mail no servidor.');
+  state.user=verified;
+  if(String(verified.email||'').toLowerCase()!==target)return {pending:true,changed:false};
+  const {data:synced,error:syncError}=await db.rpc('sync_my_email');
+  if(syncError)throw syncError;
+  if(state.profile)state.profile.email=synced||verified.email;
+  return {pending:false,changed:true};
+}
+
 function qs(s){return document.querySelector(s)}
 function qsa(s){return [...document.querySelectorAll(s)]}
 function toast(msg){const t=qs('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800)}
@@ -68,13 +101,16 @@ function showApp(){qs('#termsView').classList.add('hidden');qs('#firstAccessView
 async function loadCore(){
   const {data:{session}}=await db.auth.getSession();
   if(!session){showLogin();return}
-  state.session=session;state.user=session.user;state.role=session.user.app_metadata?.role==='admin'?'admin':'member';
+  state.session=session;
+  const {data:authInfo,error:authInfoError}=await db.auth.getUser();
+  state.user=!authInfoError&&authInfo?.user?authInfo.user:session.user;
+  state.role=state.user.app_metadata?.role==='admin'?'admin':'member';
   const {data:profile,error:pe}=await db.from('profiles').select('*').eq('id',session.user.id).single();
   if(pe||!profile){toast('Perfil não encontrado.');await db.auth.signOut();showLogin();return}
   state.profile=profile;
   if(state.user?.email&&String(profile.email||'').toLowerCase()!==String(state.user.email).toLowerCase()){
-    const {error:syncError}=await db.rpc('sync_my_email');
-    if(!syncError)state.profile.email=state.user.email;
+    const {data:synced,error:syncError}=await db.rpc('sync_my_email');
+    if(!syncError&&synced)state.profile.email=synced;
   }
   if(!profile.active){toast('Seu acesso está desativado.');await db.auth.signOut();showLogin();return}
   // O formulário já existia, mas nunca era solicitado: só o ADM pode dispensá-lo.
@@ -120,7 +156,7 @@ qs('#firstAccessForm').addEventListener('submit',async e=>{
   if(!email||!qs('#firstAccessEmail').checkValidity()||email.endsWith('.example')){
     toast('Informe um e-mail pessoal válido, que você possa acessar.');return;
   }
-  if(passwordRequired&&!password){toast('Por segurança, cadastre uma nova senha.');return}
+  if(passwordRequired&&!password&&email===String(state.user?.email||'').toLowerCase()){toast('Por segurança, cadastre uma nova senha.');return}
   if(password && password.length<8){toast('A nova senha deve ter ao menos 8 caracteres.');return}
   if(password!==confirmPassword){toast('As senhas não conferem.');return}
   const btn=e.submitter;
@@ -128,18 +164,11 @@ qs('#firstAccessForm').addEventListener('submit',async e=>{
   try{
     const currentEmail=String(state.user?.email||'').toLowerCase();
     if(email!==currentEmail){
-      const {data,error}=await db.auth.updateUser({email},{emailRedirectTo:window.location.origin+window.location.pathname});
-      if(error)throw error;
-      const {data:account,error:accountError}=await db.auth.getUser();
-      if(accountError)throw accountError;
-      if(String(account?.user?.email||'').toLowerCase()===email){
-        state.user=account.user;
-        const {error:syncError}=await db.rpc('sync_my_email');
-        if(syncError)throw syncError;
-      }else{
-        // Secure email changes can require confirmation. Keep existing login valid:
-        // do not lock members behind an unconfirmed provisional address.
-        if(notice)notice.textContent='Enviamos a confirmação de e-mail, quando disponível. Até confirmar, use o e-mail anterior para entrar. O cadastro e os saldos continuam acessíveis.';
+      const outcome=await requestPersonalEmailChange(email);
+      if(outcome.pending){
+        if(notice)notice.textContent='Solicitação recebida. Confirme o link enviado ao seu e-mail pessoal. O cadastro ainda NÃO foi concluído. Depois de confirmar, volte ao aplicativo para concluir o primeiro acesso e, se necessário, trocar a senha.';
+        toast('Pedido registrado. Confirme o e-mail para concluir.');
+        return;
       }
     }
     if(password){
@@ -155,7 +184,7 @@ qs('#firstAccessForm').addEventListener('submit',async e=>{
     toast('Cadastro confirmado. Bem-vindo à OLIVER Caixinha.');
     await loadCore();
   }catch(err){
-    const message=err?.message||'Não foi possível atualizar seu cadastro.';
+    const message=emailChangeErrorMessage(err);
     if(notice)notice.textContent=message;
     toast(message);
   }finally{
