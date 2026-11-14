@@ -847,26 +847,39 @@
     e.preventDefault();
     const email=$('#accountEmail').value.trim().toLowerCase();
     const phone=$('#accountPhone').value.trim();
-    const btn=e.submitter; if(btn){btn.disabled=true;btn.textContent='Salvando...'}
+    const notice=$('#accountEmailNotice');
+    const btn=e.submitter;
+    if(btn){btn.disabled=true;btn.textContent='Salvando...'}
+    if(notice)notice.textContent='';
     try{
+      if(!email||!$('#accountEmail').checkValidity()||email.endsWith('.example')){
+        throw new Error('Informe um e-mail pessoal válido.');
+      }
+      const current=String(state.user?.email||'').toLowerCase();
+      let emailPending=false;
+      if(email!==current){
+        const outcome=await requestPersonalEmailChange(email);
+        emailPending=!!outcome.pending;
+      }
       const {error:phoneError}=await db.rpc('update_my_contact',{p_phone:phone||null});
       if(phoneError)throw phoneError;
-
-      const current=String(state.user?.email||'').toLowerCase();
-      if(email&&email!==current){
-        const {data,error}=await db.auth.updateUser({email});
-        if(error)throw error;
-        if(data?.user?.email&&String(data.user.email).toLowerCase()===email){
-          await db.rpc('sync_my_email');
-        }
-        toast('Dados salvos. Confirme o novo e-mail se receber uma mensagem de verificação.');
-      }else{
-        toast('Dados atualizados.');
-      }
       state.profile.phone=phone||null;
       await renderAccount();
-    }catch(err){toast(err.message||'Não foi possível atualizar os dados.')}
-    finally{if(btn){btn.disabled=false;btn.textContent='Salvar dados de contato'}}
+      if(emailPending){
+        const message='A alteração está aguardando confirmação. Confira o e-mail pessoal e abra o link recebido. Até a confirmação, o login permanece no e-mail anterior. Não solicite repetidamente.';
+        if(notice)notice.textContent=message;
+        toast('Confirme o novo e-mail antes de usá-lo no login.');
+      }else{
+        if(notice)notice.textContent='Dados confirmados e atualizados.';
+        toast('Dados atualizados.');
+      }
+    }catch(err){
+      const message=emailChangeErrorMessage(err);
+      if(notice)notice.textContent=message;
+      toast(message);
+    }finally{
+      if(btn){btn.disabled=false;btn.textContent='Salvar dados de contato'}
+    }
   });
 
   $('#accountPasswordForm')?.addEventListener('submit',async e=>{
