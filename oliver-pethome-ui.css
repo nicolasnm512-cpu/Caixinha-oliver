@@ -1,0 +1,337 @@
+
+/*
+  OLIVER CAIXINHA — Layout institucional inspirado na estrutura visual do PET HOME
+  Referência inspecionada: PetHome Gestão /styles.css, Vercel production 2026-11-09
+  Somente apresentação: sem tabelas, funções de autenticação, negócios ou agentes.
+  Paleta de referência: mint #9ac5b1, cream #f6efdc, orange #dd992c,
+  forest #175353, yellow #f0c45b, light #faf8f2.
+*/
+body.oliver-pethome-ui {
+  --bg:#faf8f2; --card:#fffefb; --ink:#214f49; --muted:#778e84;
+  --line:#e5e7dc; --navy:#175353; --navy2:#285f54;
+  --green:#26846c; --green-soft:#ebf4ed; --yellow:#a87921;
+  --yellow-soft:#fff5de; --red:#b96454; --red-soft:#fff1ed;
+  --blue:#39777a; --blue-soft:#edf5f3;
+  --shadow:0 18px 46px -32px rgba(17,70,60,.29);
+  --radius:18px;
+  font-family:'DM Sans',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:#faf8f2; color:#214f49;
+}
+.oliver-pethome-ui :is(button,input,select,textarea){font-family:inherit}
+.oliver-pethome-ui :is(button,a,input,select,textarea):focus-visible{
+  outline:3px solid rgba(221,153,44,.62);outline-offset:2px;
+}
+.oliver-pethome-ui :is(h1,h2,h3,h4,.sidebar-brand strong,.login-brand strong){
+  font-family:Montserrat,'DM Sans',system-ui,sans-serif;
+  letter-spacing:-.027em;
+}
+.oliver-pethome-ui .login-shell,
+.oliver-pethome-ui .terms-shell{
+  background:
+    radial-gradient(circle at 85% 10%,rgba(154,197,177,.29),transparent 35%),
+    linear-gradient(146deg,#f6efdc,#faf8f2 60%,#eaf2eb);
+  color:#214f49;
+}
+.oliver-pethome-ui .login-brand{color:#175353}
+.oliver-pethome-ui .login-brand strong{color:#175353}
+.oliver-pethome-ui .login-brand span,
+.oliver-pethome-ui .login-brand small{color:#617f71}
+.oliver-pethome-ui .login-logo,
+.oliver-pethome-ui .sidebar-logo{
+  background:#175353;
+  border-radius:16px;
+  padding:6px;
+  box-shadow:0 10px 24px -16px rgba(9,54,49,.44);
+  filter:none;
+}
+.oliver-pethome-ui .login-card,
+.oliver-pethome-ui .terms-card{
+  border-radius:24px;
+  border:1px solid #e4e9de;
+  box-shadow:0 24px 72px -42px rgba(24,76,60,.30);
+  background:#fffefb;
+}
+.oliver-pethome-ui .login-card h1{color:#175353}
+.oliver-pethome-ui .login-card>p{color:#778e84}
+.oliver-pethome-ui .eyebrow{color:#ba7e23;letter-spacing:.12em}
+.oliver-pethome-ui .form-grid label{color:#315e56}
+.oliver-pethome-ui :is(.form-grid input,.form-grid select,.form-grid textarea,.inline-form input,.inline-form select){
+  background:#fffefb;border:1px solid #d8dfd7;
+  border-radius:12px;color:#214f49;min-height:44px;
+}
+.oliver-pethome-ui :is(.form-grid input,.form-grid select,.form-grid textarea,.inline-form input,.inline-form select):focus{
+  border-color:#3e947b;box-shadow:0 0 0 3px rgba(117,176,146,.17);
+}
+.oliver-pethome-ui .first-access-security,
+.oliver-pethome-ui .security-note{
+  border-radius:13px;background:#f0f7ed;border:1px solid #d1e4d2;color:#31594b;
+}
+.oliver-pethome-ui .primary-btn{
+  border-radius:12px!important;background:#175353!important;
+  border:1px solid #175353!important;color:#fffefb!important;
+  box-shadow:0 12px 23px -17px rgba(23,83,83,.64);
+  font-weight:750;
+}
+.oliver-pethome-ui .primary-btn:hover{background:#236865!important}
+.oliver-pethome-ui :is(.secondary-btn,.outline-btn){
+  border-radius:12px;background:#fffefb;border:1px solid #c9dbce;
+  color:#175353;
+}
+.oliver-pethome-ui .link-btn{color:#175353}
+.oliver-pethome-ui .app-shell{background:#faf8f2}
+.oliver-pethome-ui .app-shell .sidebar{
+  background:linear-gradient(164deg,#e9f3ea 0%,#d9eadd 66%,#eff2e9 100%)!important;
+  color:#285f54!important;
+  border-right:1px solid #d8e6da!important;
+  box-shadow:5px 0 22px -23px rgba(23,83,83,.35);
+}
+.oliver-pethome-ui .sidebar-brand{
+  border-bottom:1px solid #c7dccd;
+  min-height:88px;
+  padding-right:4px;
+}
+.oliver-pethome-ui .sidebar-brand strong,
+.oliver-pethome-ui .app-shell.is-admin .sidebar-brand strong{
+  color:#175353!important;
+  font-size:15px!important;
+  font-weight:800;
+}
+.oliver-pethome-ui .sidebar-brand span,
+.oliver-pethome-ui .app-shell.is-admin .sidebar-brand span{
+  color:#657f71!important;
+}
+.oliver-pethome-ui .sidebar nav{gap:6px}
+.oliver-pethome-ui .app-shell .sidebar .nav-item{
+  border-radius:13px!important;border:1px solid transparent!important;
+  color:#315e55!important;background:transparent!important;
+  padding-block:12px;min-height:45px;
+  font-weight:670;
+  transition:background-color .18s ease,border-color .18s ease;
+}
+.oliver-pethome-ui .app-shell .sidebar .nav-item:hover{
+  background:rgba(255,255,255,.55)!important;
+  border-color:rgba(23,83,83,.12)!important;
+}
+.oliver-pethome-ui .app-shell .sidebar .nav-item.active{
+  color:#175353!important;
+  border-color:rgba(23,83,83,.13)!important;
+  background:#fffefb!important;
+  box-shadow:0 8px 24px -16px rgba(23,83,83,.25);
+}
+.oliver-pethome-ui .app-shell .sidebar .nav-item>span{
+  color:#28715f;font-size:20px;line-height:1.05;
+}
+.oliver-pethome-ui .app-shell .sidebar .nav-item.active>span{color:#a67118}
+.oliver-pethome-ui .sidebar-footer{
+  padding-top:12px;
+  border-top:1px solid #c7ddcf;
+}
+.oliver-pethome-ui .sidebar-footer .mini-user b{color:#175353}
+.oliver-pethome-ui .sidebar-footer .mini-user small,
+.oliver-pethome-ui .app-shell.is-admin .mini-user small{color:#728c80!important}
+.oliver-pethome-ui .avatar{
+  background:#175353;color:#fff;
+  border-radius:13px;
+}
+.oliver-pethome-ui .sidebar .ghost-btn{
+  border-radius:12px;
+  border:1px solid #c1d8ca;background:rgba(255,255,255,.55);
+  color:#175353;
+}
+/* Recolhimento do menu altera somente a apresentação, preservando as rotas. */
+.oliver-pethome-ui .sidebar-collapse-btn{
+  border:1px solid #c7ddce;border-radius:11px;
+  min-width:32px;height:32px;flex:0 0 32px;
+  background:#fffefb;color:#175353;
+  cursor:pointer;font-weight:800;font-size:18px;
+}
+.oliver-pethome-ui .sidebar-collapse-btn:hover{background:#f6efdc}
+.oliver-pethome-ui .main{
+  background:radial-gradient(circle at 90% 2%,rgba(154,197,177,.10),transparent 28rem),#faf8f2;
+}
+.oliver-pethome-ui .app-shell.is-admin .main{
+  background:radial-gradient(circle at 90% 2%,rgba(154,197,177,.11),transparent 28rem),#faf8f2!important;
+  color:#214f49!important;
+}
+.oliver-pethome-ui .app-shell .topbar{
+  border-bottom:1px solid #e5e7dc!important;
+  background:transparent!important;
+}
+.oliver-pethome-ui .topbar h2,
+.oliver-pethome-ui .app-shell.is-admin .topbar h2,
+.oliver-pethome-ui .app-shell.is-admin .topbar p,
+.oliver-pethome-ui .app-shell.is-admin .mobile-brand{
+  color:#175353!important;
+}
+.oliver-pethome-ui .topbar p{color:#778e84!important}
+.oliver-pethome-ui .status-dot{color:#397260}
+.oliver-pethome-ui .status-dot i{background:#32a67b}
+.oliver-pethome-ui :is(.panel,.kpi,.home-money-card,.home-quick-card,.activity-card,.loan-card,.member-feed-section,.home-status-pill,.annual-compact-card,.stack-item){
+  border:1px solid #e5e7dc;
+  border-radius:18px;background:#fffefb;
+  box-shadow:0 18px 46px -32px rgba(17,70,60,.21);
+}
+.oliver-pethome-ui :is(.panel-head h3,.home-money-card strong,.kpi strong,.panel h3){color:#175353}
+.oliver-pethome-ui :is(.panel-head p,.kpi-label,.home-money-card small,.home-money-card span){color:#778e84}
+.oliver-pethome-ui .home-money-card{border-top:3px solid #9ac5b1}
+.oliver-pethome-ui .home-money-card.interest{border-top-color:#dd992c}
+.oliver-pethome-ui .home-money-card.cash{border-top-color:#175353}
+.oliver-pethome-ui .home-money-card.negative{border-top-color:#b96454}
+.oliver-pethome-ui .hero-card,
+.oliver-pethome-ui .home-profile-card,
+.oliver-pethome-ui .annual-balance-total{
+  background:linear-gradient(128deg,#175353,#287665)!important;
+  border:1px solid rgba(255,255,255,.11);
+  box-shadow:0 18px 46px -32px rgba(17,70,60,.43);
+  border-radius:22px;
+}
+.oliver-pethome-ui .home-profile-card:after{border-color:rgba(240,196,91,.29)}
+.oliver-pethome-ui .home-profile-card :is(h2,h3,strong),
+.oliver-pethome-ui .hero-card :is(h2,h3,strong){color:#fffefb}
+.oliver-pethome-ui .home-profile-card :is(span,p),
+.oliver-pethome-ui .hero-card p{color:#dff0e7}
+.oliver-pethome-ui .home-profile-card .home-greeting{color:#f4d482}
+.oliver-pethome-ui .member-app-brand{
+  background:linear-gradient(114deg,#e9f3ea,#f6efdc)!important;
+  border-bottom:1px solid #d9e9db!important;
+  color:#175353!important;
+  box-shadow:0 8px 23px -17px rgba(23,83,83,.3)!important;
+}
+.oliver-pethome-ui .member-app-brand-copy :is(strong,span){color:#175353!important}
+.oliver-pethome-ui .member-app-brand-copy img{
+  background:#175353;border-radius:12px;padding:4px;
+}
+.oliver-pethome-ui .member-profile-button{
+  color:#175353;border:1px solid #c2dccb;background:#fffefb;
+}
+.oliver-pethome-ui .member-feed-head button,
+.oliver-pethome-ui .panel-head button{color:#175353}
+.oliver-pethome-ui .table-wrap{
+  border:1px solid #e5e7dc;border-radius:15px;
+  background:#fffefb;overflow-x:auto;
+}
+.oliver-pethome-ui .data-table th{
+  background:#eef4ed!important;color:#305f55!important;
+  font-weight:750!important;letter-spacing:.01em;
+}
+.oliver-pethome-ui .data-table td{
+  background:#fffefb;color:#31544f;border-bottom-color:#e5e7dc;
+}
+.oliver-pethome-ui .data-table tr:hover td{background:#faf8f2}
+.oliver-pethome-ui .badge.success{background:#e7f6ec;color:#256a4c}
+.oliver-pethome-ui .badge.warning{background:#fff2d7;color:#8a601b}
+.oliver-pethome-ui .badge.danger{background:#fff1ed;color:#a85045}
+.oliver-pethome-ui .badge.info{background:#ecf4f3;color:#246765}
+.oliver-pethome-ui .modal-card{
+  background:#fffefb;border:1px solid #e5e7dc;
+  border-radius:22px;box-shadow:0 22px 72px rgba(17,70,60,.17);
+}
+.oliver-pethome-ui :is(.admin-fold,.admin-subpanel,.member-detail-card){
+  border-radius:18px;
+}
+.oliver-pethome-ui .activity-card .activity-cover{border-radius:16px 16px 0 0}
+.oliver-pethome-ui :is(.member-feed-list,.loan-cards,.activity-grid){gap:12px}
+.oliver-pethome-ui .app-shell.is-admin :is(.adm18-header h1,.adm18-brand h1,.adm18-welcome h2,.adm18-section-head h3){
+  color:#175353!important;
+}
+.oliver-pethome-ui .app-shell.is-admin .adm18-header{border-color:#d7e3d9}
+.oliver-pethome-ui .app-shell.is-admin .adm18-brand h1 span{color:#a87921!important}
+.oliver-pethome-ui .app-shell.is-admin .adm18-role{
+  background:#eaf3e9!important;border-color:#d2e3d5!important;color:#175353!important;
+}
+.oliver-pethome-ui .app-shell.is-admin .adm18-welcome{
+  background:linear-gradient(125deg,#f6efdc,#e8f3e9)!important;
+  border:1px solid #e2e4d7!important;border-radius:20px;
+  box-shadow:0 18px 46px -32px rgba(17,70,60,.19)!important;
+}
+.oliver-pethome-ui .app-shell.is-admin .adm18-welcome :is(small,p){color:#5e8173!important}
+.oliver-pethome-ui .app-shell.is-admin .adm18-date{color:#28675b!important}
+.oliver-pethome-ui .app-shell.is-admin :is(.adm18-card,.adm18-section,.adm18-attn,.adm18-action){
+  background:#fffefb!important;border:1px solid #e5e7dc!important;
+  color:#214f49!important;
+  box-shadow:0 18px 46px -32px rgba(17,70,60,.19)!important;
+}
+.oliver-pethome-ui .app-shell.is-admin .adm18-card.cash{
+  background:linear-gradient(130deg,#e1f1e5,#fffefb)!important;
+}
+.oliver-pethome-ui .app-shell.is-admin .adm18-card.alert{
+  background:linear-gradient(130deg,#fff3e3,#fffefb)!important;
+}
+.oliver-pethome-ui .app-shell.is-admin .adm18-card :is(span,strong,small),
+.oliver-pethome-ui .app-shell.is-admin .adm18-section :is(h3,p),
+.oliver-pethome-ui .app-shell.is-admin .adm18-attn :is(b,small),
+.oliver-pethome-ui .app-shell.is-admin .adm18-action :is(span,b){
+  color:#214f49!important;
+}
+.oliver-pethome-ui .app-shell.is-admin .adm18-card strong{font-weight:800;color:#175353!important}
+.oliver-pethome-ui .app-shell.is-admin .adm18-card .icon{
+  background:#e6f2e8!important;color:#175353!important;
+}
+.oliver-pethome-ui .app-shell.is-admin .adm18-section-head button{
+  background:#f5f9f2!important;color:#175353!important;
+  border:1px solid #cfddcf!important;border-radius:11px;
+}
+.oliver-pethome-ui .app-shell.is-admin .adm18-chart{
+  background:linear-gradient(180deg,#f8fbf7,#fffefb)!important;
+  border-color:#e1e9dc!important;
+}
+.oliver-pethome-ui .app-shell.is-admin :is(.adm18-label,.adm18-value){color:#285d55!important}
+.oliver-pethome-ui .app-shell.is-admin .adm18-bar{
+  background:linear-gradient(180deg,#9ac5b1,#175353)!important;
+}
+.oliver-pethome-ui .app-shell.is-admin .adm18-ai{
+  background:linear-gradient(120deg,#e9f3ea,#f6efdc)!important;
+  border:1px solid #dbe5d9!important;color:#175353!important;
+}
+.oliver-pethome-ui .app-shell.is-admin .adm18-ai :is(h3,p){color:#175353!important}
+.oliver-pethome-ui .app-shell.is-admin .adm18-ai button{
+  background:#175353!important;color:#fff!important;
+  border-radius:12px!important;
+}
+.oliver-pethome-ui .app-shell.is-admin :is(.admin-page-title,.panel,.admin-subpanel){
+  border-color:#e5e7dc;
+}
+@media(min-width:761px){
+  .oliver-pethome-ui .app-shell.pethome-sidebar-collapsed .sidebar{width:82px!important;padding-inline:11px}
+  .oliver-pethome-ui .app-shell.pethome-sidebar-collapsed .main{margin-left:82px!important}
+  .oliver-pethome-ui .app-shell.pethome-sidebar-collapsed .sidebar-brand{justify-content:center;display:flex;flex-direction:column;gap:8px;padding:4px 0 14px}
+  .oliver-pethome-ui .app-shell.pethome-sidebar-collapsed .sidebar-brand>div{display:none!important}
+  .oliver-pethome-ui .app-shell.pethome-sidebar-collapsed .sidebar-logo{width:48px;height:48px}
+  .oliver-pethome-ui .app-shell.pethome-sidebar-collapsed .sidebar nav .nav-item{
+    font-size:0!important;justify-content:center;padding:11px 5px!important;
+  }
+  .oliver-pethome-ui .app-shell.pethome-sidebar-collapsed .sidebar .nav-item b,
+  .oliver-pethome-ui .app-shell.pethome-sidebar-collapsed .sidebar .nav-item .nav-label{font-size:0!important}
+  .oliver-pethome-ui .app-shell.pethome-sidebar-collapsed .sidebar .nav-item span{
+    display:inline-flex;width:auto;font-size:23px!important;margin:0!important;
+  }
+  .oliver-pethome-ui .app-shell.pethome-sidebar-collapsed .sidebar .mini-user{
+    justify-content:center;padding-inline:0;
+  }
+  .oliver-pethome-ui .app-shell.pethome-sidebar-collapsed .sidebar .mini-user>div:last-child{display:none!important}
+  .oliver-pethome-ui .app-shell.pethome-sidebar-collapsed .sidebar .ghost-btn{
+    font-size:0!important;min-height:44px;
+  }
+  .oliver-pethome-ui .app-shell.pethome-sidebar-collapsed .sidebar .ghost-btn:after{
+    content:"⇥";font-size:23px;
+  }
+}
+@media(max-width:760px){
+  .oliver-pethome-ui .sidebar-collapse-btn{display:none!important}
+  .oliver-pethome-ui .app-shell .sidebar{background:#eef3e8!important}
+  .oliver-pethome-ui .app-shell .sidebar .nav-item{
+    min-height:45px!important;box-shadow:none;
+  }
+  .oliver-pethome-ui .app-shell:not(.is-admin) .member-app-brand{border-radius:0 0 21px 21px}
+  .oliver-pethome-ui .app-shell:not(.is-admin) .main{background:#faf8f2}
+  .oliver-pethome-ui .app-shell.is-admin .adm18-header{gap:10px}
+  .oliver-pethome-ui .app-shell.is-admin .adm18-grid{gap:10px}
+  .oliver-pethome-ui :is(.panel,.home-profile-card,.home-money-card,.adm18-section){border-radius:16px}
+}
+@media(max-width:430px){
+  .oliver-pethome-ui .app-shell.is-admin .adm18-card strong{font-size:clamp(18px,5vw,24px)!important}
+  .oliver-pethome-ui .app-shell:not(.is-admin) .home-money-card strong{overflow-wrap:anywhere}
+}
+@media(prefers-reduced-motion:reduce){
+  .oliver-pethome-ui *{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}
+}
