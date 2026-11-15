@@ -9,6 +9,8 @@ const now = new Date();
 const currentMonthLabel = now.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
 const currentMonthRef = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
 const state = { session:null, user:null, profile:null, role:'member', settings:null, terms:null, credit:null };
+let passwordRecoveryMode=/(?:^|[&#?])type=recovery(?:&|$)/.test(window.location.hash)
+  ||new URLSearchParams(window.location.search).get('type')==='recovery';
 
 const OLIVER_EMAIL_CONFIRM_URL='https://caixinha-oliver.vercel.app/';
 function emailChangeErrorMessage(error){
@@ -50,23 +52,43 @@ function formatDate(v){if(!v)return '—';const d=new Date(v.length===10?`${v}T1
 function isAdmin(){return state.role==='admin'}
 function safe(v){return String(v??'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]))}
 function statusBadge(status){const map={confirmed:['success','Confirmado'],pending:['warning','Pendente'],under_review:['warning','Em análise'],approved:['success','Aprovado'],rejected:['danger','Recusado'],cancelled:['neutral','Cancelado'],open:['success','Aberto'],closed:['neutral','Encerrado'],draft:['neutral','Rascunho'],active:['info','Ativo'],paid:['success','Quitado'],late:['danger','Em atraso'],renegotiated:['warning','Renegociado'],recorded:['neutral','Registrado'],unpaid:['danger','Não pago'],review:['warning','Revisão'],void:['neutral','Ignorado']};const [c,l]=map[status]||['neutral',status||'—'];return `<span class="badge ${c}">${l}</span>`}
-function showLogin(){qs('#termsView').classList.add('hidden');qs('#firstAccessView').classList.add('hidden');qs('#appView').classList.add('hidden');qs('#loginView').classList.remove('hidden')}
-function showTerms(){qs('#loginView').classList.add('hidden');qs('#firstAccessView').classList.add('hidden');qs('#appView').classList.add('hidden');qs('#termsView').classList.remove('hidden');qs('#acceptTermsCheck').checked=false;qs('#acceptTermsBtn').disabled=true;qs('#acceptTermsBtn').classList.add('disabled-btn')}
+function showLogin(){qs('#passwordRecoveryView')?.classList.add('hidden');qs('#termsView').classList.add('hidden');qs('#firstAccessView').classList.add('hidden');qs('#appView').classList.add('hidden');qs('#loginView').classList.remove('hidden')}
+function showTerms(){qs('#passwordRecoveryView')?.classList.add('hidden');qs('#loginView').classList.add('hidden');qs('#firstAccessView').classList.add('hidden');qs('#appView').classList.add('hidden');qs('#termsView').classList.remove('hidden');qs('#acceptTermsCheck').checked=false;qs('#acceptTermsBtn').disabled=true;qs('#acceptTermsBtn').classList.add('disabled-btn')}
 function showFirstAccess(){
+  qs('#passwordRecoveryView')?.classList.add('hidden');
   qs('#loginView').classList.add('hidden');qs('#termsView').classList.add('hidden');qs('#appView').classList.add('hidden');qs('#firstAccessView').classList.remove('hidden');
   qs('#firstAccessName').value=state.profile?.full_name||'';
   qs('#firstAccessEmail').value=state.user?.email||state.profile?.email||'';
   qs('#firstAccessPhone').value=state.profile?.phone||'';
   qs('#firstAccessPassword').value='';
   qs('#firstAccessPasswordConfirm').value='';
-  const required=!!state.profile?.must_change_password;
-  const help=qs('#firstAccessNotice');
-  if(help)help.textContent=required
-    ? 'Por segurança, é necessário cadastrar uma nova senha (mínimo de 8 caracteres). Se trocar o e-mail, confirme a mensagem recebida antes de finalizar.'
-    : 'Você pode manter sua senha atual ou escolher uma nova. Se trocar o e-mail, confirme a mensagem recebida antes de finalizar.';
-  qs('#firstAccessPassword').required=required;
-  qs('#firstAccessPasswordConfirm').required=required;
+  updateFirstAccessPasswordRequirement();
+
 }
+function updateFirstAccessPasswordRequirement(){
+  const email=String(qs('#firstAccessEmail')?.value||'').trim().toLowerCase();
+  const current=String(state.user?.email||'').trim().toLowerCase();
+  const emailNeedsConfirmation=!!email&&email!==current;
+  const password=qs('#firstAccessPassword'),confirm=qs('#firstAccessPasswordConfirm');
+  if(password)password.required=!emailNeedsConfirmation;
+  if(confirm)confirm.required=!emailNeedsConfirmation;
+  const notice=qs('#firstAccessNotice');
+  if(notice)notice.textContent=emailNeedsConfirmation
+    ? 'Etapa 1 de 2: confirme o novo e-mail pelo link recebido. A senha NÃO é alterada nesta etapa. Depois volte para definir a nova senha obrigatória.'
+    : 'Etapa 2 de 2: defina uma nova senha obrigatória, com pelo menos 8 caracteres, e confirme-a. Só depois o cadastro será concluído.';
+}
+qs('#firstAccessEmail').addEventListener('input',updateFirstAccessPasswordRequirement);
+function showPasswordRecovery(){
+  qs('#loginView').classList.add('hidden');
+  qs('#firstAccessView').classList.add('hidden');
+  qs('#termsView').classList.add('hidden');
+  qs('#appView').classList.add('hidden');
+  qs('#passwordRecoveryView').classList.remove('hidden');
+  qs('#passwordRecoveryNew').value='';
+  qs('#passwordRecoveryConfirm').value='';
+  qs('#passwordRecoveryNotice').textContent='Crie uma senha nova de pelo menos 8 caracteres. Ela substituirá a antiga após a confirmação do Supabase.';
+}
+
 function applyRoleExperience(){
   const brandContext=qs('.sidebar-brand span');
   if(brandContext)brandContext.textContent=isAdmin()?'Administração':'Área dos cotistas';
@@ -96,11 +118,16 @@ function applyRoleExperience(){
   }
 }
 
-function showApp(){qs('#termsView').classList.add('hidden');qs('#firstAccessView').classList.add('hidden');qs('#loginView').classList.add('hidden');qs('#appView').classList.remove('hidden');qs('#appView').classList.toggle('is-admin',isAdmin());qs('#sidebarName').textContent=state.profile?.full_name||state.user?.email||'Usuário';qs('#sidebarRole').textContent=isAdmin()?'Administrador':'Cotista';qs('#sidebarAvatar').textContent=isAdmin()?'AD':`C${state.profile?.cotista_number||'–'}`;applyRoleExperience();navigate('dashboard');renderAll()}
+function showApp(){qs('#passwordRecoveryView')?.classList.add('hidden');qs('#termsView').classList.add('hidden');qs('#firstAccessView').classList.add('hidden');qs('#loginView').classList.add('hidden');qs('#appView').classList.remove('hidden');qs('#appView').classList.toggle('is-admin',isAdmin());qs('#sidebarName').textContent=state.profile?.full_name||state.user?.email||'Usuário';qs('#sidebarRole').textContent=isAdmin()?'Administrador':'Cotista';qs('#sidebarAvatar').textContent=isAdmin()?'AD':`C${state.profile?.cotista_number||'–'}`;applyRoleExperience();navigate('dashboard');renderAll()}
 
 async function loadCore(){
   const {data:{session}}=await db.auth.getSession();
-  if(!session){showLogin();return}
+  if(!session){
+    showLogin();
+    if(passwordRecoveryMode)toast('O link de recuperação é inválido ou expirou. Solicite outro em Esqueci minha senha.');
+    return;
+  }
+  if(passwordRecoveryMode){showPasswordRecovery();return}
   state.session=session;
   const {data:authInfo,error:authInfoError}=await db.auth.getUser();
   state.user=!authInfoError&&authInfo?.user?authInfo.user:session.user;
@@ -139,10 +166,95 @@ qs('#loginForm').addEventListener('submit',async e=>{
   const btn=e.submitter; if(btn){btn.disabled=true;btn.textContent='Entrando...'}
   const {error}=await db.auth.signInWithPassword({email,password});
   if(btn){btn.disabled=false;btn.textContent='Entrar no sistema'}
-  if(error){toast('E-mail ou senha incorretos.');return}
+  if(error){toast('E-mail ou senha incorretos. Se o e-mail foi trocado, tente a senha antiga ou use Esqueci minha senha.');return}
   await loadCore();
 });
 qs('#togglePassword').addEventListener('click',()=>{const p=qs('#loginPassword');p.type=p.type==='password'?'text':'password';qs('#togglePassword').textContent=p.type==='password'?'Mostrar':'Ocultar'});
+
+qs('#forgotPasswordBtn').addEventListener('click',()=>{
+  const box=qs('#forgotPasswordPanel');
+  const open=box.classList.contains('hidden');
+  box.classList.toggle('hidden',!open);
+  if(open){
+    qs('#forgotPasswordEmail').value=qs('#loginEmail').value.trim();
+    qs('#forgotPasswordEmail').focus();
+  }
+});
+qs('#forgotPasswordForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const email=qs('#forgotPasswordEmail').value.trim().toLowerCase();
+  const notice=qs('#forgotPasswordNotice');
+  if(!email||!qs('#forgotPasswordEmail').checkValidity()||email.endsWith('.example')){
+    notice.textContent='Use seu e-mail pessoal já confirmado. Endereços provisórios não recebem a recuperação.';
+    return;
+  }
+  const btn=e.submitter;
+  if(btn){btn.disabled=true;btn.textContent='Enviando...'}
+  try{
+    const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:OLIVER_EMAIL_CONFIRM_URL});
+    if(error)throw error;
+    notice.textContent='Solicitação registrada. Se o e-mail estiver cadastrado, você receberá um link para criar uma nova senha. Confira também o spam e não envie pedidos repetidos.';
+    toast('Confira seu e-mail para redefinir a senha.');
+  }catch(err){
+    notice.textContent=emailChangeErrorMessage(err);
+    toast(notice.textContent);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='Enviar link para redefinir senha'}
+  }
+});
+qs('#passwordRecoveryForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const password=qs('#passwordRecoveryNew').value;
+  const confirm=qs('#passwordRecoveryConfirm').value;
+  const notice=qs('#passwordRecoveryNotice');
+  if(password.length<8||password!==confirm){
+    notice.textContent=password.length<8?'A nova senha precisa ter pelo menos 8 caracteres.':'As duas senhas não conferem.';
+    return;
+  }
+  const btn=e.submitter;
+  if(btn){btn.disabled=true;btn.textContent='Salvando senha...'}
+  let saved=false;
+  try{
+    const {data:{session}}=await db.auth.getSession();
+    if(!session)throw new Error('Este link expirou. Solicite outro em Esqueci minha senha.');
+    const {error}=await db.auth.updateUser({password});
+    if(error)throw error;
+    saved=true;
+    // O titular que já confirmou o e-mail pessoal e redefiniu a senha
+    // cumpriu as duas etapas do primeiro acesso.
+    const {data:authInfo,error:authError}=await db.auth.getUser();
+    if(authError)throw authError;
+    const currentUser=authInfo?.user;
+    if(currentUser && currentUser.app_metadata?.role!=='admin' && currentUser.email &&
+       !currentUser.email.toLowerCase().endsWith('.example')){
+      const {data:profile,error:profileError}=await db.from('profiles')
+         .select('full_name,phone,active,first_access_completed_at,must_change_password')
+         .eq('id',currentUser.id).single();
+      if(profileError)throw profileError;
+      if(profile?.active&&(profile.must_change_password||!profile.first_access_completed_at)){
+        const {error:finishError}=await db.rpc('complete_first_access',{
+          p_full_name:profile.full_name,p_phone:profile.phone||null
+        });
+        if(finishError)throw finishError;
+      }
+    }
+    passwordRecoveryMode=false;
+    if(window.history&&window.location.hash)window.history.replaceState(null,'',window.location.pathname);
+    notice.textContent='Senha alterada com sucesso. Você já pode entrar com seu e-mail pessoal e a nova senha.';
+    toast('Nova senha cadastrada com sucesso.');
+    await loadCore();
+  }catch(err){
+    notice.textContent=saved
+      ? 'A nova senha foi salva no Supabase, mas houve problema ao concluir o cadastro. Entre com a nova senha e finalize seus dados.'
+      : (err?.message||'Não foi possível salvar a senha. Solicite outro link.');
+    toast(notice.textContent);
+  }finally{
+    qs('#passwordRecoveryNew').value='';
+    qs('#passwordRecoveryConfirm').value='';
+    if(btn){btn.disabled=false;btn.textContent='Salvar nova senha'}
+  }
+});
+
 qs('#firstAccessForm').addEventListener('submit',async e=>{
   e.preventDefault();
   const fullName=qs('#firstAccessName').value.trim();
@@ -150,13 +262,13 @@ qs('#firstAccessForm').addEventListener('submit',async e=>{
   const phone=qs('#firstAccessPhone').value.trim();
   const password=qs('#firstAccessPassword').value;
   const confirmPassword=qs('#firstAccessPasswordConfirm').value;
-  const passwordRequired=!!state.profile?.must_change_password;
+  const passwordRequired=true;
   const notice=qs('#firstAccessNotice');
   if(fullName.length<2){toast('Informe seu nome.');return}
   if(!email||!qs('#firstAccessEmail').checkValidity()||email.endsWith('.example')){
     toast('Informe um e-mail pessoal válido, que você possa acessar.');return;
   }
-  if(passwordRequired&&!password&&email===String(state.user?.email||'').toLowerCase()){toast('Por segurança, cadastre uma nova senha.');return}
+  if(passwordRequired&&!password&&email===String(state.user?.email||'').toLowerCase()){toast('Para concluir o primeiro acesso, crie uma nova senha obrigatória.');return}
   if(password && password.length<8){toast('A nova senha deve ter ao menos 8 caracteres.');return}
   if(password!==confirmPassword){toast('As senhas não conferem.');return}
   const btn=e.submitter;
@@ -167,15 +279,17 @@ qs('#firstAccessForm').addEventListener('submit',async e=>{
       const outcome=await requestPersonalEmailChange(email);
       if(outcome.pending){
         if(notice)notice.textContent='Solicitação recebida. Confirme o link enviado ao seu e-mail pessoal. O cadastro ainda NÃO foi concluído. Depois de confirmar, volte ao aplicativo para concluir o primeiro acesso e, se necessário, trocar a senha.';
-        toast('Pedido registrado. Confirme o e-mail para concluir.');
+        qs('#firstAccessPassword').value='';
+        qs('#firstAccessPasswordConfirm').value='';
+        toast('Confirme o e-mail e depois cadastre a nova senha.');
         return;
       }
     }
-    if(password){
-      const {data,error}=await db.auth.updateUser({password});
-      if(error)throw error;
-      if(data?.user)state.user=data.user;
-    }
+    const {data:passwordResult,error:passwordError}=await db.auth.updateUser({password});
+    if(passwordError)throw passwordError;
+    if(!passwordResult?.user)throw new Error('O Supabase não confirmou a atualização da senha. O cadastro não foi concluído.');
+    state.user=passwordResult.user;
+    // A função de conclusão só roda após a confirmação do e-mail E da senha.
     const {data:updated,error:profileError}=await db.rpc('complete_first_access',{
       p_full_name:fullName,p_phone:phone||null
     });
@@ -1452,6 +1566,16 @@ function closeModal(){qs('#modal').classList.add('hidden')}qs('#closeModal').add
 
 async function renderAll(){await Promise.all([renderDashboard(),renderRequests(),renderLoans(),renderPayments(),renderActivities()]);if(isAdmin())await Promise.all([renderMembers(),renderAdmin(),renderFinanceAgent(),renderInterestDistributionAudit(),renderLoanRuleStatus()]);if(window.renderAccount)await renderAccount();if(isAdmin()&&window.renderAdminExtras)await renderAdminExtras();applyCollapsiblePanels();enhanceResponsiveTables(document);updateSimulation()}
 
-db.auth.onAuthStateChange((_event,session)=>{if(!session&&state.session){state.session=null;state.user=null;state.profile=null;showLogin()}});
+db.auth.onAuthStateChange((event,session)=>{
+  if(event==='PASSWORD_RECOVERY'){
+    passwordRecoveryMode=true;
+    showPasswordRecovery();
+    return;
+  }
+  if(!session&&state.session){
+    state.session=null;state.user=null;state.profile=null;
+    if(!passwordRecoveryMode)showLogin();
+  }
+});
 loadCore();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js').catch(()=>{})})}
