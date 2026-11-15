@@ -48,8 +48,43 @@
         <button class="primary-btn" type="submit">Entrar no sistema</button>
         <button id="forgotPasswordBtn" class="link-btn forgot-password-btn" type="button">Esqueci minha senha</button>
       </form>
+      <div id="forgotPasswordPanel" class="hidden" style="margin-top:14px">
+        <form id="forgotPasswordForm" class="form-grid single">
+          <label>E-mail pessoal já confirmado
+            <input id="forgotPasswordEmail" type="email" autocomplete="email" required />
+          </label>
+          <button class="primary-btn" type="submit">Enviar link para redefinir senha</button>
+        </form>
+        <p id="forgotPasswordNotice" class="first-access-security" role="status" aria-live="polite">
+          Você receberá um link para criar uma senha nova no e-mail pessoal cadastrado.
+        </p>
+      </div>
       <div style="margin-top:18px;text-align:center;font-size:12px;color:#667085">Acesso exclusivo aos cotistas e administradores cadastrados.<span data-build="client-v2" class="build-stamp"> • versão atualizada</span></div>
 </div>
+  </section>
+
+  <section id="passwordRecoveryView" class="login-shell hidden">
+    <div class="login-brand">
+      <img class="brand-logo login-logo" src="/assets/oliver-logo.svg" alt="OLIVER Caixinha" />
+      <div><b>OLIVER Caixinha</b><small>Recuperação segura de acesso</small></div>
+    </div>
+    <div class="login-card first-access-card">
+      <span class="eyebrow">REDEFINIÇÃO DE SENHA</span>
+      <h1>Crie sua nova senha</h1>
+      <p>O link de recuperação permite cadastrar uma senha nova para entrar com seu e-mail pessoal confirmado.</p>
+      <form id="passwordRecoveryForm" class="form-grid single">
+        <label>Nova senha (obrigatória)
+          <input id="passwordRecoveryNew" type="password" minlength="8" autocomplete="new-password" required />
+        </label>
+        <label>Confirme a nova senha
+          <input id="passwordRecoveryConfirm" type="password" minlength="8" autocomplete="new-password" required />
+        </label>
+        <button class="primary-btn" type="submit">Salvar nova senha</button>
+      </form>
+      <p id="passwordRecoveryNotice" class="first-access-security" role="status" aria-live="polite">
+        A senha só será alterada após confirmação do Supabase.
+      </p>
+    </div>
   </section>
 
   <section id="firstAccessView" class="login-shell hidden">
@@ -60,12 +95,12 @@
     <div class="login-card first-access-card">
       <span class="eyebrow">PRIMEIRO ACESSO</span>
       <h1>Atualize seu cadastro</h1>
-      <p>Confirme seus dados e informe seu e-mail pessoal para receber comunicados e recuperar o acesso. A troca de senha é opcional, exceto quando solicitada por segurança.</p>
+      <p>Confirme seu e-mail pessoal e crie uma nova senha obrigatória no primeiro acesso. Se trocar o e-mail, primeiro confirme o link recebido e depois volte para cadastrar a senha.</p>
       <form id="firstAccessForm" class="form-grid single">
         <label>Nome completo<input id="firstAccessName" autocomplete="name" required /></label>
         <label>E-mail pessoal<input id="firstAccessEmail" type="email" autocomplete="email" inputmode="email" required /></label>
         <label>Telefone (opcional)<input id="firstAccessPhone" type="tel" autocomplete="tel" /></label>
-        <label>Nova senha (opcional)<input id="firstAccessPassword" type="password" minlength="8" autocomplete="new-password" /></label>
+        <label>Nova senha (obrigatória após confirmar e-mail)<input id="firstAccessPassword" type="password" minlength="8" autocomplete="new-password" /></label>
         <label>Confirmar nova senha<input id="firstAccessPasswordConfirm" type="password" minlength="8" autocomplete="new-password" /></label>
         <button class="primary-btn" type="submit">Salvar e continuar</button>
         <button id="firstAccessLogoutBtn" class="outline-btn" type="button">Sair</button>
@@ -791,7 +826,7 @@
   <div id="modal" class="modal hidden"><div class="modal-card"><button id="closeModal" class="modal-close">×</button><div id="modalContent"></div></div></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
   <script src="/config.js?v=20261007-mobile-hotfix-v16"></script>
-  <script src="/app.js?v=20261114-email-confirmacao"></script>
+  <script src="/app.js?v=20261114-recuperacao-senha-v1"></script>
   <script src="/features.js?v=20261114-email-confirmacao"></script>
   <script src="/admin-agent.js?v=20261007-mobile-hotfix-v16"></script>
   <script src="/yield-management.js?v=20261007-mobile-hotfix-v16"></script>
