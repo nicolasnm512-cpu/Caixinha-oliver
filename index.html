@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="theme-color" content="#175353" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -19,8 +19,13 @@
   <!-- stable-redeploy-20261012 -->
   <!-- admin-premium-preview-v18-base -->
   <link rel="stylesheet" href="/admin-premium-v18.css?v=20261022-due-reminders-v1" />
+  <!-- Camada de layout PET HOME: somente design, após todas as folhas anteriores. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/oliver-pethome-ui.css?v=20261114-pethome-v1" />
 </head>
-<body>
+<body class="oliver-pethome-ui">
   <div id="toast" class="toast" aria-live="polite"></div>
 
   <section id="loginView" class="login-shell">
@@ -160,6 +165,7 @@
       <div class="sidebar-brand">
         <img class="brand-logo sidebar-logo" src="/assets/oliver-logo.svg?v=20261007-mobile-hotfix-v16" alt="OLIVER Caixinha" />
         <div><strong>OLIVER Caixinha</strong><span>Área dos cotistas</span></div>
+        <button id="oliverSidebarToggle" class="sidebar-collapse-btn" type="button" aria-label="Recolher menu lateral" aria-pressed="false" title="Recolher menu lateral">«</button>
       </div>
       <nav id="mainNav">
         <button class="nav-item active" data-page="dashboard" data-member-label="Visão geral" data-admin-label="Início"><span>⌂</span><b class="nav-label">Início</b></button>
@@ -831,5 +837,6 @@
   <script src="/admin-agent.js?v=20261007-mobile-hotfix-v16"></script>
   <script src="/yield-management.js?v=20261007-mobile-hotfix-v16"></script>
   <script src="/admin-premium-v18.js?v=20261013-preview-v18-3"></script>
+  <script src="/oliver-pethome-ui.js?v=20261114-pethome-v1"></script>
 </body>
 </html>
